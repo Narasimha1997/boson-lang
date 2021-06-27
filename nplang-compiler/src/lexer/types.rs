@@ -1,3 +1,6 @@
+use std;
+use std::io::Read;
+
 #[allow(dead_code)]
 pub const SYMBOLS: &'static [&'static str] = &[
     "invalid", "+", "-", "*", "/", "(", ")", "<", ">", "<=", ">=", ";", ",", "%", "!", "=", "==",
@@ -13,66 +16,110 @@ pub const KEYWORDS: &'static [&'static str] = &[
 ];
 
 #[allow(dead_code)]
-pub enum KeywordKind  {
-    KInvalid  = 0,
-    KIf       = 1,
-    KElse     = 2,
-    KWhile    = 3,
-    KFor      = 4,
-    KBreak    = 5,
+pub enum KeywordKind {
+    KInvalid = 0,
+    KIf = 1,
+    KElse = 2,
+    KWhile = 3,
+    KFor = 4,
+    KBreak = 5,
     LContinue = 6,
-    KConst    = 7,
-    KVar      = 8,
-    KNone     = 9,
-    KFunc     = 10,
-    KReturn   = 11,
-    KTry      = 12,
-    KCatch    = 13,
-    KFinally  = 14,
-    KRethrow  = 15,
-    KThrow    = 16,
-    KAs       = 17,
-    KTrue     = 18,
-    KFalse    = 19,
-    KForEach  = 20,
-    KIn       = 21,
-    KIndexed  = 22,
-    KPure     = 23,
+    KConst = 7,
+    KVar = 8,
+    KNone = 9,
+    KFunc = 10,
+    KReturn = 11,
+    KTry = 12,
+    KCatch = 13,
+    KFinally = 14,
+    KRethrow = 15,
+    KThrow = 16,
+    KAs = 17,
+    KTrue = 18,
+    KFalse = 19,
+    KForEach = 20,
+    KIn = 21,
+    KIndexed = 22,
+    KPure = 23,
 }
 
 #[allow(dead_code)]
 pub enum TokenKind {
-    Invalid (char),
+    Invalid(char),
 
-    Integer (i128),
-    Str (String),
-    Float (f64),
+    Integer(i128),
+    Str(String),
+    Float(f64),
 
-    Identifier (String),
-    Operator (String),
-    Keyword (KeywordKind),
+    Identifier(String),
+    Operator(String),
+    Keyword(KeywordKind),
 
-    Unknown (String)
+    Unknown(String),
 }
 
 #[allow(dead_code)]
 pub struct Token {
     pub position: u32,
-    pub token: TokenKind
+    pub token: TokenKind,
 }
 
 /*
     LexerBuffer: This structure acts as a temp memory region that stores N characters/bytes
     read from the program source file at once. This buffer moves like a sliding window over the
     program source file, why we need this? Because we can reduce the number of reads on the file-system
-    by buffering N characters at once instead of reading a single character per read. The end marker 
-    i.e has_end_marker is true if we move over the last portion of the program that could not fill the
-    buffer completely, this is done in order to avoid scanning over null region.
+    by buffering N characters at once instead of reading a single character per read.
 */
 #[allow(dead_code)]
 pub struct LexerBuffer {
-    pub buffer: Vec<char>,
-    pub size: u32,
-    pub has_end_marker: bool,
-    pub ends_at: u32
+    pub buffer: Vec<u8>,
+    pub size: usize,
+}
+
+#[allow(dead_code)]
+pub struct ChunkedReader {
+    pub chunk_size: usize,
+    pub file_handle: std::fs::File,
+    pub is_end_reached: bool,
+}
+
+impl ChunkedReader {
+    #[allow(dead_code)]
+    pub fn next(&mut self) -> Option<LexerBuffer> {
+        if self.is_end_reached {
+            return None;
+        }
+
+        let mut chunk = Vec::with_capacity(self.chunk_size);
+        let n_read = self
+            .file_handle
+            .by_ref()
+            .take(self.chunk_size as u64)
+            .read_to_end(&mut chunk)
+            .expect("Failed to read file");
+        if self.chunk_size > n_read {
+            self.is_end_reached = true;
+        }
+
+        return Some(LexerBuffer {
+            buffer: chunk,
+            size: n_read,
+        });
+    }
+
+    #[allow(dead_code)]
+    pub fn is_end(&mut self) -> bool {
+        return self.is_end_reached;
+    }
+}
+
+#[allow(dead_code)]
+pub fn new_chunked_reader(file_name: String, chunk_size: usize) -> ChunkedReader {
+    let chunked_reader = ChunkedReader {
+        chunk_size: chunk_size,
+        file_handle: std::fs::File::open(&file_name).expect("File not found!"),
+        is_end_reached: false,
+    };
+
+    return chunked_reader;
 }
