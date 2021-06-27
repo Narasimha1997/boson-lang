@@ -51,5 +51,28 @@ pub enum TokenKind {
     Identifier (String),
     Operator (String),
     Keyword (KeywordKind),
+
     Unknown (String)
+}
+
+#[allow(dead_code)]
+pub struct Token {
+    pub position: u32,
+    pub token: TokenKind
+}
+
+/*
+    LexerBuffer: This structure acts as a temp memory region that stores N characters/bytes
+    read from the program source file at once. This buffer moves like a sliding window over the
+    program source file, why we need this? Because we can reduce the number of reads on the file-system
+    by buffering N characters at once instead of reading a single character per read. The end marker 
+    i.e has_end_marker is true if we move over the last portion of the program that could not fill the
+    buffer completely, this is done in order to avoid scanning over null region.
+*/
+#[allow(dead_code)]
+pub struct LexerBuffer {
+    pub buffer: Vec<char>,
+    pub size: u32,
+    pub has_end_marker: bool,
+    pub ends_at: u32
 }
