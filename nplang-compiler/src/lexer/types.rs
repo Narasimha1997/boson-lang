@@ -1,5 +1,6 @@
 use std;
 use std::io::Read;
+use std::vec::Vec;
 
 #[allow(dead_code)]
 pub const SYMBOLS: &'static [&'static str] = &[
@@ -122,4 +123,46 @@ pub fn new_chunked_reader(file_name: String, chunk_size: usize) -> ChunkedReader
     };
 
     return chunked_reader;
+}
+
+#[allow(dead_code)]
+pub struct ProgramBuffer {
+    pub buffer: Vec<u8>,
+    pub current_pos: usize,
+    pub next_pos: usize,
+    pub buffer_size: usize
+}
+
+impl ProgramBuffer {
+    #[allow(dead_code)]
+    pub fn peek_next(&mut self) -> u8 {
+        if self.next_pos >= self.buffer_size {
+            return 0x00;
+        } else {
+            return self.buffer[self.next_pos]
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn next_char(&mut self) -> u8 {
+        if self.next_pos >= self.buffer_size {
+            return 0x00;
+        } else {
+            let current_char = self.buffer[self.next_pos];
+            self.current_pos = self.next_pos;
+            self.next_pos = self.next_pos + 1;
+            return current_char;
+        }
+    }
+}
+
+#[allow(dead_code)]
+pub fn new_program_buffer(buffer: Vec<u8>) -> ProgramBuffer {
+    let buffer_length = buffer.len();
+    ProgramBuffer{
+        buffer: buffer,
+        current_pos: 0,
+        next_pos: 0,
+        buffer_size: buffer_length
+    }
 }

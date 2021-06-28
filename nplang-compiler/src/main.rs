@@ -1,24 +1,25 @@
 mod lexer;
 
-use std::str;
+
+use std::fs;
 
 fn main() {
     println!("Hello, world!");
-
-    let mut chunked_reader = lexer::types::new_chunked_reader(
-        String::from("Cargo.toml"), 10
+    let data = fs::read_to_string("Cargo.toml").expect(
+        "File not found!"
     );
 
-    while !chunked_reader.is_end() {
-        let lex_buffer = chunked_reader.next();
-        match lex_buffer {
-            Some(lb) => {
-                println!("Buffer has data");
-                println!("{}", str::from_utf8(&lb.buffer).expect("Failed do utf-8 decode"));
-            },
-            None => {
-                println!("End of buffer!");
-            }
+    let bytes = data.as_bytes().iter().cloned().collect();
+    let mut program_buffer = lexer::types::new_program_buffer(bytes);
+
+    let mut ch: u8;
+
+    loop {
+        ch = program_buffer.next_char();
+        if ch == 0x00 {
+            println!("End of buffer");
+            break;
         }
+        println!("{}", ch as char);
     }
 }
