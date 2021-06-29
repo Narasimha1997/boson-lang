@@ -1,11 +1,12 @@
 use std;
+use std::fs;
 use std::io::Read;
 use std::vec::Vec;
 
 #[allow(dead_code)]
 pub const SYMBOLS: &'static [&'static str] = &[
     "invalid", "+", "-", "*", "/", "(", ")", "<", ">", "<=", ">=", ";", ",", "%", "!", "=", "==",
-    "!=", "{", "}", "&", "|", "~", "&&", "||", "+=", "-=", "*=", "/=", "%=", "[", "]", "=>", ":",
+    "!=", "{", "}", "&", "|", "~", "&&", "||", "+=", "-=", "++", "--", "*=", "/=", "%=", "[", "]", "=>", ":",
     ".",
 ];
 
@@ -15,6 +16,47 @@ pub const KEYWORDS: &'static [&'static str] = &[
     "return", "try", "catch", "finally", "rethrow", "throw", "as", "true", "false", "foreach",
     "in", "indexed", "pure",
 ];
+
+#[allow(dead_code)]
+pub enum SymbolKind {
+    SInvalid = 0,
+    SPlus = 1,
+    SMinus = 2,
+    SMul = 3,
+    SDiv = 4,
+    SLParen = 5,
+    SRparen = 6,
+    SLt = 7,
+    SGt = 8,
+    SLte = 9,
+    SGte = 10,
+    SSemiColon = 11,
+    SComma = 12,
+    SMod = 13,
+    SExcl = 14,
+    SEq = 15,
+    SEeq = 16,
+    SNe = 17,
+    SLBrace = 18,
+    SRBrace = 19,
+    SAnd = 20,
+    SOr = 21,
+    SNeg = 22,
+    SLAnd = 23,
+    SLOr = 24,
+    SPlusEq = 25,
+    SMinusEq = 26,
+    SIncr = 27,
+    SDecr = 28,
+    SMulEq = 29,
+    SDivEq = 30,
+    SModEq = 31,
+    SLBox = 32,
+    SRBox = 33,
+    SImpl = 34,
+    SColon = 35,
+    SDot = 36
+}
 
 #[allow(dead_code)]
 pub enum KeywordKind {
@@ -46,30 +88,25 @@ pub enum KeywordKind {
 
 #[allow(dead_code)]
 pub enum TokenKind {
-    Invalid(char),
+    Invalid,
 
     Integer(i128),
     Str(String),
     Float(f64),
 
     Identifier(String),
-    Operator(String),
+    Operator(SymbolKind),
     Keyword(KeywordKind),
 
     Unknown(String),
-}
-
-#[allow(dead_code)]
-pub struct Token {
-    pub position: u32,
-    pub token: TokenKind,
 }
 
 /*
     LexerBuffer: This structure acts as a temp memory region that stores N characters/bytes
     read from the program source file at once. This buffer moves like a sliding window over the
     program source file, why we need this? Because we can reduce the number of reads on the file-system
-    by buffering N characters at once instead of reading a single character per read.
+    by buffering N characters at once instead of reading a single character per read. More work will take place
+    on this in future.
 */
 #[allow(dead_code)]
 pub struct LexerBuffer {
@@ -78,13 +115,22 @@ pub struct LexerBuffer {
 }
 
 #[allow(dead_code)]
-pub struct ChunkedReader {
+pub struct ChunkedBuffer {
     pub chunk_size: usize,
-    pub file_handle: std::fs::File,
+    pub file_handle: fs::File,
     pub is_end_reached: bool,
 }
 
-impl ChunkedReader {
+impl ChunkedBuffer {
+    #[allow(dead_code)]
+    pub fn new(file_name: String, chunk_size: usize) -> ChunkedBuffer {
+        ChunkedBuffer {
+            chunk_size: chunk_size,
+            file_handle: fs::File::open(&file_name).expect("File not found!"),
+            is_end_reached: false,
+        }
+    }
+
     #[allow(dead_code)]
     pub fn next(&mut self) -> Option<LexerBuffer> {
         if self.is_end_reached {
@@ -115,31 +161,51 @@ impl ChunkedReader {
 }
 
 #[allow(dead_code)]
-pub fn new_chunked_reader(file_name: String, chunk_size: usize) -> ChunkedReader {
-    let chunked_reader = ChunkedReader {
-        chunk_size: chunk_size,
-        file_handle: std::fs::File::open(&file_name).expect("File not found!"),
-        is_end_reached: false,
-    };
-
-    return chunked_reader;
-}
-
-#[allow(dead_code)]
 pub struct ProgramBuffer {
     pub buffer: Vec<u8>,
     pub current_pos: usize,
     pub next_pos: usize,
-    pub buffer_size: usize
+    pub buffer_size: usize,
 }
 
 impl ProgramBuffer {
+    #[allow(dead_code)]
+    pub fn new_from_buffer(buffer: Vec<u8>) -> ProgramBuffer {
+        let l = buffer.len();
+        ProgramBuffer {
+            buffer: buffer,
+            current_pos: 0,
+            next_pos: 0,
+            buffer_size: l,
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn new_from_file(file_name: String) -> ProgramBuffer {
+        let mut file_handle =
+            fs::File::open(&file_name).expect("Unable to read the source file, file not found.");
+        let file_metadata = fs::metadata(&file_name).expect("Unable to get metadata of the file.");
+        let f_len = file_metadata.len() as usize;
+        let mut buffer = vec![0; f_len];
+
+        file_handle
+            .read(&mut buffer)
+            .expect("Failed to read file into buffer");
+
+        ProgramBuffer {
+            buffer: buffer,
+            current_pos: 0,
+            next_pos: 0,
+            buffer_size: f_len,
+        }
+    }
+
     #[allow(dead_code)]
     pub fn peek_next(&mut self) -> u8 {
         if self.next_pos >= self.buffer_size {
             return 0x00;
         } else {
-            return self.buffer[self.next_pos]
+            return self.buffer[self.next_pos];
         }
     }
 
@@ -153,16 +219,5 @@ impl ProgramBuffer {
             self.next_pos = self.next_pos + 1;
             return current_char;
         }
-    }
-}
-
-#[allow(dead_code)]
-pub fn new_program_buffer(buffer: Vec<u8>) -> ProgramBuffer {
-    let buffer_length = buffer.len();
-    ProgramBuffer{
-        buffer: buffer,
-        current_pos: 0,
-        next_pos: 0,
-        buffer_size: buffer_length
     }
 }
