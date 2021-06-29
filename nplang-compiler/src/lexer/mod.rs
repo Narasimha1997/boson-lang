@@ -1,7 +1,9 @@
 pub mod types;
 
+use types::KeywordKind;
 use types::SymbolKind;
 use types::TokenKind;
+use types::EOF_BYTE;
 
 #[allow(dead_code)]
 pub struct StreamingLexer {
@@ -9,14 +11,14 @@ pub struct StreamingLexer {
 }
 
 #[allow(dead_code)]
-struct ProgramLexer {
+pub struct ProgramLexer {
     pub buffer: types::ProgramBuffer,
     pub current_char: u8,
 }
 
 impl ProgramLexer {
     #[allow(dead_code)]
-    fn new_from_file(file_name: String) -> ProgramLexer {
+    pub fn new_from_file(file_name: String) -> ProgramLexer {
         let mut lexer = ProgramLexer {
             buffer: types::ProgramBuffer::new_from_file(file_name),
             current_char: 0,
@@ -27,24 +29,137 @@ impl ProgramLexer {
         return lexer;
     }
 
-    #[allow(dead_code)]
     fn read_next(&mut self) {
         self.current_char = self.buffer.next_char();
     }
 
-    #[allow(dead_code)]
-    fn look_next_char(&mut self) -> u8 {
+    fn look_next_byte(&mut self) -> u8 {
         return self.buffer.peek_next();
     }
 
-    #[allow(dead_code)]
-    fn is_next_char_equals(&mut self, ch: u8) -> bool {
-        self.look_next_char() == ch
+    fn find_number_literal(&mut self) -> TokenKind {
+        let start_pos = self.buffer.current_pos;
+
+        let mut is_float = false;
+
+        loop {
+            match self.current_char {
+                b'0'..=b'9' | b'.' => {
+                    if self.current_char == b'.' {
+                        is_float = true;
+                    }
+                    self.read_next();
+                }
+                _ => {
+                    break;
+                }
+            }
+        }
+
+        if is_float {
+            return TokenKind::Float(self.buffer.get_as_f64(start_pos, self.buffer.current_pos));
+        } else {
+            return TokenKind::Integer(self.buffer.get_as_i64(start_pos, self.buffer.current_pos));
+        }
+    }
+
+    fn find_keyword_or_identifier(&mut self) -> TokenKind {
+        let start_pos = self.buffer.current_pos;
+
+        loop {
+            match self.current_char {
+                b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_' => {
+                    self.read_next();
+                    continue;
+                }
+                _ => {
+                    break;
+                }
+            }
+        }
+
+        // get the string view of the buffer:
+        let id_string = self
+            .buffer
+            .get_as_string(start_pos, self.buffer.current_pos);
+
+        // match against the keywords:
+        let token = match id_string.as_str() {
+            "if" => TokenKind::Keyword(KeywordKind::KIf),
+            "else" => TokenKind::Keyword(KeywordKind::KElse),
+            "while" => TokenKind::Keyword(KeywordKind::KWhile),
+            "for" => TokenKind::Keyword(KeywordKind::KFor),
+            "break" => TokenKind::Keyword(KeywordKind::KBreak),
+            "continue" => TokenKind::Keyword(KeywordKind::KContinue),
+            "const" => TokenKind::Keyword(KeywordKind::KConst),
+            "var" => TokenKind::Keyword(KeywordKind::KVar),
+            "none" => TokenKind::Keyword(KeywordKind::KNone),
+            "func" => TokenKind::Keyword(KeywordKind::KFunc),
+            "return" => TokenKind::Keyword(KeywordKind::KReturn),
+            "try" => TokenKind::Keyword(KeywordKind::KTry),
+            "catch" => TokenKind::Keyword(KeywordKind::KCatch),
+            "finally" => TokenKind::Keyword(KeywordKind::KFinally),
+            "rethrow" => TokenKind::Keyword(KeywordKind::KRethrow),
+            "throw" => TokenKind::Keyword(KeywordKind::KThrow),
+            "as" => TokenKind::Keyword(KeywordKind::KAs),
+            "true" => TokenKind::Keyword(KeywordKind::KTrue),
+            "false" => TokenKind::Keyword(KeywordKind::KFalse),
+            "foreach" => TokenKind::Keyword(KeywordKind::KForEach),
+            "in" => TokenKind::Keyword(KeywordKind::KIn),
+            "indexed" => TokenKind::Keyword(KeywordKind::KIndexed),
+            "pure" => TokenKind::Keyword(KeywordKind::KPure),
+
+            _ => TokenKind::Identifier(id_string),
+        };
+
+        return token;
+    }
+
+    fn find_string_literal(&mut self) -> TokenKind {
+        self.read_next();
+
+        let mut prev_char = self.current_char;
+        let start_pos = self.buffer.current_pos;
+        loop {
+            match self.current_char {
+                b'"' => {
+                    if prev_char == b'\\' {
+                        prev_char = self.current_char;
+                        self.read_next();
+                        continue;
+                    }
+
+                    break;
+                }
+                _ => {
+                    prev_char = self.current_char;
+                    self.read_next();
+                    continue;
+                }
+            }
+        }
+
+        let string_literal = self
+            .buffer
+            .get_as_string(start_pos, self.buffer.current_pos);
+        self.read_next();
+
+        return TokenKind::Str(string_literal);
+    }
+
+    fn find_char_literal(&mut self) -> TokenKind {
+        self.read_next();
+        let ch_read = self.buffer.get_as_char(self.buffer.current_pos);
+        self.read_next();
+        return TokenKind::Char(ch_read);
     }
 
     #[allow(dead_code)]
     pub fn next_token(&mut self) -> TokenKind {
         // handle whitespace
+
+        let mut incr_next_char = true;
+
         loop {
             match self.current_char {
                 b' ' | b'\t' => {
@@ -62,10 +177,11 @@ impl ProgramLexer {
                 self.read_next();
                 match self.current_char {
                     b'\n' => {
-                        self.read_next();
                         break;
                     }
-                    _ => continue,
+                    _ => {
+                        continue;
+                    }
                 }
             }
         }
@@ -73,7 +189,7 @@ impl ProgramLexer {
         let token = match self.current_char {
             // basic arithmetic and comparision operator:
             b'+' => {
-                let next_char = self.look_next_char();
+                let next_char = self.look_next_byte();
                 let combined_token = match next_char {
                     b'+' => {
                         self.read_next();
@@ -89,7 +205,7 @@ impl ProgramLexer {
             }
 
             b'-' => {
-                let next_char = self.look_next_char();
+                let next_char = self.look_next_byte();
                 let combined_token = match next_char {
                     b'-' => {
                         self.read_next();
@@ -105,7 +221,7 @@ impl ProgramLexer {
             }
 
             b'*' => {
-                let next_char = self.look_next_char();
+                let next_char = self.look_next_byte();
                 let combined_token = match next_char {
                     b'=' => {
                         self.read_next();
@@ -117,7 +233,7 @@ impl ProgramLexer {
             }
 
             b'/' => {
-                let next_char = self.look_next_char();
+                let next_char = self.look_next_byte();
                 let combined_token = match next_char {
                     b'=' => {
                         self.read_next();
@@ -129,7 +245,7 @@ impl ProgramLexer {
             }
 
             b'%' => {
-                let next_char = self.look_next_char();
+                let next_char = self.look_next_byte();
                 let combined_token = match next_char {
                     b'=' => {
                         self.read_next();
@@ -142,7 +258,7 @@ impl ProgramLexer {
 
             // comparision operators
             b'<' => {
-                let next_char = self.look_next_char();
+                let next_char = self.look_next_byte();
                 let combined_token = match next_char {
                     b'=' => {
                         self.read_next();
@@ -154,7 +270,7 @@ impl ProgramLexer {
             }
 
             b'>' => {
-                let next_char = self.look_next_char();
+                let next_char = self.look_next_byte();
                 let combined_token = match next_char {
                     b'=' => {
                         self.read_next();
@@ -167,7 +283,7 @@ impl ProgramLexer {
 
             // Equality operators:
             b'=' => {
-                let next_char = self.look_next_char();
+                let next_char = self.look_next_byte();
                 let combined_token = match next_char {
                     b'=' => {
                         self.read_next();
@@ -177,56 +293,44 @@ impl ProgramLexer {
                         self.read_next();
                         TokenKind::Operator(SymbolKind::SImpl)
                     }
-                    _ => {
-                        self.read_next();
-                        TokenKind::Operator(SymbolKind::SEq)
-                    }
+                    _ => TokenKind::Operator(SymbolKind::SEq),
                 };
                 combined_token
             }
 
             b'!' => {
-                let next_char = self.look_next_char();
+                let next_char = self.look_next_byte();
                 let combined_token = match next_char {
                     b'=' => {
                         self.read_next();
                         TokenKind::Operator(SymbolKind::SNe)
                     }
-                    _ => {
-                        self.read_next();
-                        TokenKind::Operator(SymbolKind::SExcl)
-                    }
+                    _ => TokenKind::Operator(SymbolKind::SExcl),
                 };
                 combined_token
             }
 
             // logical operators
             b'&' => {
-                let next_char = self.look_next_char();
+                let next_char = self.look_next_byte();
                 let combined_token = match next_char {
                     b'&' => {
                         self.read_next();
                         TokenKind::Operator(SymbolKind::SLAnd)
                     }
-                    _ => {
-                        self.read_next();
-                        TokenKind::Operator(SymbolKind::SAnd)
-                    }
+                    _ => TokenKind::Operator(SymbolKind::SAnd),
                 };
                 combined_token
             }
 
             b'|' => {
-                let next_char = self.look_next_char();
+                let next_char = self.look_next_byte();
                 let combined_token = match next_char {
                     b'|' => {
                         self.read_next();
                         TokenKind::Operator(SymbolKind::SLOr)
                     }
-                    _ => {
-                        self.read_next();
-                        TokenKind::Operator(SymbolKind::SOr)
-                    }
+                    _ => TokenKind::Operator(SymbolKind::SOr),
                 };
                 combined_token
             }
@@ -255,8 +359,43 @@ impl ProgramLexer {
 
             b'.' => TokenKind::Operator(SymbolKind::SDot),
 
+            b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
+                incr_next_char = false;
+                self.find_keyword_or_identifier()
+            }
+
+            b'0'..=b'9' => {
+                incr_next_char = false;
+                self.find_number_literal()
+            }
+
+            b'"' => {
+                incr_next_char = false;
+                self.find_string_literal()
+            }
+
+            b'\'' => {
+                incr_next_char = false;
+                self.find_char_literal()
+            }
+
+            b'\n' => {
+                let next_char = self.look_next_byte();
+                match next_char {
+                    b'\n' => TokenKind::Empty,
+                    _ => {
+                        self.read_next();
+                        return self.next_token();
+                    }
+                }
+            }
+            EOF_BYTE => TokenKind::EOF,
             _ => TokenKind::Invalid,
         };
+
+        if incr_next_char {
+            self.read_next();
+        }
 
         return token;
     }

@@ -1,0 +1,10 @@
+# this is a sample variable declaration.
+# this is called np-lang!!!
+         
+func x() {
+    try {
+        print("hello");#this is a comment
+    } catch(e) {
+        print("world");
+    }
+}

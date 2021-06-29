@@ -3,6 +3,9 @@ use std::fs;
 use std::io::Read;
 use std::vec::Vec;
 
+
+pub const EOF_BYTE:u8 = 0x00;
+
 #[allow(dead_code)]
 pub const SYMBOLS: &'static [&'static str] = &[
     "invalid", "+", "-", "*", "/", "(", ")", "<", ">", "<=", ">=", ";", ",", "%", "!", "=", "==",
@@ -18,6 +21,7 @@ pub const KEYWORDS: &'static [&'static str] = &[
 ];
 
 #[allow(dead_code)]
+#[derive(Debug)] 
 pub enum SymbolKind {
     SInvalid = 0,
     SPlus = 1,
@@ -59,6 +63,7 @@ pub enum SymbolKind {
 }
 
 #[allow(dead_code)]
+#[derive(Debug)] 
 pub enum KeywordKind {
     KInvalid = 0,
     KIf = 1,
@@ -66,7 +71,7 @@ pub enum KeywordKind {
     KWhile = 3,
     KFor = 4,
     KBreak = 5,
-    LContinue = 6,
+    KContinue = 6,
     KConst = 7,
     KVar = 8,
     KNone = 9,
@@ -87,12 +92,16 @@ pub enum KeywordKind {
 }
 
 #[allow(dead_code)]
+#[derive(Debug)] 
 pub enum TokenKind {
     Invalid,
+    Empty,
+    EOF,
 
-    Integer(i128),
+    Integer(i64),
     Str(String),
     Float(f64),
+    Char(char),
 
     Identifier(String),
     Operator(SymbolKind),
@@ -219,5 +228,24 @@ impl ProgramBuffer {
             self.next_pos = self.next_pos + 1;
             return current_char;
         }
+    }
+
+    pub fn get_as_i64(&mut self, start: usize, end: usize) -> i64 {
+        let sub_buffer = self.buffer[start..end].to_vec();
+        String::from_utf8(sub_buffer).unwrap().parse().unwrap()
+    }
+
+    pub fn get_as_f64(&mut self, start: usize, end: usize) -> f64 {
+        let sub_buffer = self.buffer[start..end].to_vec();
+        String::from_utf8(sub_buffer).unwrap().parse().unwrap()
+    }
+
+    pub fn get_as_string(&mut self, start: usize, end: usize) -> String {
+        let sub_buffer = self.buffer[start..end].to_vec();
+        String::from_utf8(sub_buffer).unwrap()
+    }
+
+    pub fn get_as_char(&mut self, pos: usize) -> char {
+        self.buffer[pos] as char
     }
 }
