@@ -5,6 +5,9 @@ use types::SymbolKind;
 use types::TokenKind;
 use types::EOF_BYTE;
 
+use std::fs;
+use std::io::Write;
+
 #[allow(dead_code)]
 pub struct StreamingLexer {
     file_name: String,
@@ -398,5 +401,24 @@ impl ProgramLexer {
         }
 
         return token;
+    }
+
+    #[allow(dead_code)]
+    pub fn dump_tokens(&mut self, file_name: String) {
+        let mut f_handle = fs::File::create(file_name).expect(
+            "Failed to open file while dumping tokens."
+        );
+
+        let mut token: TokenKind;
+        loop {
+            token = self.next_token();
+            f_handle.write_fmt(format_args!("{:?}\n", token)).expect(
+                "Failed to write token into the file"
+            );
+
+            if token == TokenKind::EOF {
+                break;
+            }
+        }
     }
 }

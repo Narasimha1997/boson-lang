@@ -8,42 +8,5 @@ fn main() {
         String::from("test.np")
     );
 
-    let mut token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
-    token = l.next_token();
-    println!("{:?}", token);
+    l.dump_tokens(String::from("dump.txt"));
 }

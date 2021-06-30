@@ -21,7 +21,7 @@ pub const KEYWORDS: &'static [&'static str] = &[
 ];
 
 #[allow(dead_code)]
-#[derive(Debug)] 
+#[derive(Debug, Clone, PartialEq)] 
 pub enum SymbolKind {
     SInvalid = 0,
     SPlus = 1,
@@ -63,7 +63,7 @@ pub enum SymbolKind {
 }
 
 #[allow(dead_code)]
-#[derive(Debug)] 
+#[derive(Debug, Clone, PartialEq)] 
 pub enum KeywordKind {
     KInvalid = 0,
     KIf = 1,
@@ -92,7 +92,7 @@ pub enum KeywordKind {
 }
 
 #[allow(dead_code)]
-#[derive(Debug)] 
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
     Invalid,
     Empty,

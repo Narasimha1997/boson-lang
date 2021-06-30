@@ -2,9 +2,19 @@
 # this is called np-lang!!!
          
 func x() {
-    try {
-        print("hello");#this is a comment
-    } catch(e) {
-        print("world");
-    }
+    var x = 'a';
+    return x;
 }
+
+func y() {
+    var x = 1.233;
+    var y = 1.
+    var z = 2
+
+    return x + y + z;
+}
+
+var t = x();
+var u = y();
+
+print("All done!")
