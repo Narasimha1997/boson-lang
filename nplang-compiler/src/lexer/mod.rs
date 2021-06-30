@@ -3,6 +3,7 @@ pub mod types;
 use types::KeywordKind;
 use types::SymbolKind;
 use types::TokenKind;
+use types::LexedToken;
 use types::EOF_BYTE;
 
 use std::fs;
@@ -155,6 +156,16 @@ impl ProgramLexer {
         let ch_read = self.buffer.get_as_char(self.buffer.current_pos);
         self.read_next();
         return TokenKind::Char(ch_read);
+    }
+
+    pub fn next_lexed_token(&mut self) -> LexedToken {
+        let current_pos = self.buffer.current_pos;
+        let token = self.next_token();
+
+        LexedToken{
+            token: token,
+            pos: current_pos
+        }
     }
 
     #[allow(dead_code)]
@@ -409,14 +420,14 @@ impl ProgramLexer {
             "Failed to open file while dumping tokens."
         );
 
-        let mut token: TokenKind;
+        let mut l_token: LexedToken;
         loop {
-            token = self.next_token();
-            f_handle.write_fmt(format_args!("{:?}\n", token)).expect(
+            l_token = self.next_lexed_token();
+            f_handle.write_fmt(format_args!("{:?} at {}\n", l_token.token, l_token.pos)).expect(
                 "Failed to write token into the file"
             );
 
-            if token == TokenKind::EOF {
+            if l_token.token == TokenKind::EOF {
                 break;
             }
         }

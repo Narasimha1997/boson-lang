@@ -111,6 +111,14 @@ pub enum TokenKind {
 }
 
 /*
+    the return value from Lexer
+*/
+pub struct LexedToken {
+    pub token: TokenKind,
+    pub pos: usize
+}
+
+/*
     LexerBuffer: This structure acts as a temp memory region that stores N characters/bytes
     read from the program source file at once. This buffer moves like a sliding window over the
     program source file, why we need this? Because we can reduce the number of reads on the file-system

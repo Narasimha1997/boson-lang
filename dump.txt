@@ -1,63 +1,63 @@
-Keyword(KFunc)
-Identifier("x")
-Operator(SLParen)
-Operator(SRparen)
-Operator(SLBrace)
-Keyword(KVar)
-Identifier("x")
-Operator(SEq)
-Char('a')
-Char(';')
-Keyword(KReturn)
-Identifier("x")
-Operator(SSemiColon)
-Operator(SRBrace)
-Empty
-Keyword(KFunc)
-Identifier("y")
-Operator(SLParen)
-Operator(SRparen)
-Operator(SLBrace)
-Keyword(KVar)
-Identifier("x")
-Operator(SEq)
-Float(1.233)
-Operator(SSemiColon)
-Keyword(KVar)
-Identifier("y")
-Operator(SEq)
-Float(1.0)
-Keyword(KVar)
-Identifier("z")
-Operator(SEq)
-Integer(2)
-Empty
-Keyword(KReturn)
-Identifier("x")
-Operator(SPlus)
-Identifier("y")
-Operator(SPlus)
-Identifier("z")
-Operator(SSemiColon)
-Operator(SRBrace)
-Empty
-Keyword(KVar)
-Identifier("t")
-Operator(SEq)
-Identifier("x")
-Operator(SLParen)
-Operator(SRparen)
-Operator(SSemiColon)
-Keyword(KVar)
-Identifier("u")
-Operator(SEq)
-Identifier("y")
-Operator(SLParen)
-Operator(SRparen)
-Operator(SSemiColon)
-Empty
-Identifier("print")
-Operator(SLParen)
-Str("All done!")
-Operator(SRparen)
-EOF
+Keyword(KFunc) at 0
+Identifier("x") at 83
+Operator(SLParen) at 85
+Operator(SRparen) at 86
+Operator(SLBrace) at 87
+Keyword(KVar) at 89
+Identifier("x") at 97
+Operator(SEq) at 99
+Char('a') at 101
+Char(';') at 104
+Keyword(KReturn) at 106
+Identifier("x") at 117
+Operator(SSemiColon) at 119
+Operator(SRBrace) at 120
+Empty at 122
+Keyword(KFunc) at 123
+Identifier("y") at 128
+Operator(SLParen) at 130
+Operator(SRparen) at 131
+Operator(SLBrace) at 132
+Keyword(KVar) at 134
+Identifier("x") at 142
+Operator(SEq) at 144
+Float(1.233) at 146
+Operator(SSemiColon) at 152
+Keyword(KVar) at 153
+Identifier("y") at 161
+Operator(SEq) at 163
+Float(1.0) at 165
+Keyword(KVar) at 168
+Identifier("z") at 176
+Operator(SEq) at 178
+Integer(2) at 180
+Empty at 182
+Keyword(KReturn) at 183
+Identifier("x") at 194
+Operator(SPlus) at 196
+Identifier("y") at 198
+Operator(SPlus) at 200
+Identifier("z") at 202
+Operator(SSemiColon) at 204
+Operator(SRBrace) at 205
+Empty at 207
+Keyword(KVar) at 208
+Identifier("t") at 212
+Operator(SEq) at 214
+Identifier("x") at 216
+Operator(SLParen) at 218
+Operator(SRparen) at 219
+Operator(SSemiColon) at 220
+Keyword(KVar) at 221
+Identifier("u") at 225
+Operator(SEq) at 227
+Identifier("y") at 229
+Operator(SLParen) at 231
+Operator(SRparen) at 232
+Operator(SSemiColon) at 233
+Empty at 234
+Identifier("print") at 235
+Operator(SLParen) at 241
+Str("All done!") at 242
+Operator(SRparen) at 253
+EOF at 253
