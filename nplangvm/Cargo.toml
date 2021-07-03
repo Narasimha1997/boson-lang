@@ -1,5 +1,5 @@
 [package]
-name = "nplang-vm"
+name = "nplangvm"
 version = "0.1.0"
 authors = ["Narasimha1997 <yogaimpression@gmail.com>"]
 edition = "2018"

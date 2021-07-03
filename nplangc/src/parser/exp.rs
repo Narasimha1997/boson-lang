@@ -1,6 +1,6 @@
 
-
 // contains definitions for parsing expressions, pre, post decrement
+#[derive(Debug, PartialEq, Clone)]
 pub enum PrefixExpKind {
     PreIncrement,
     PreDecrement,
@@ -14,11 +14,13 @@ pub enum PrefixExpKind {
     Not
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub enum SuffixExpKind {
     PostIncrement,
     PostDecrement
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub enum InfixExpKind {
     Plus,
     Minus,

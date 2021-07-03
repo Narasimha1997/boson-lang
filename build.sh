@@ -9,5 +9,5 @@ if [[ "$arg" == "prod" ]]; then
 elif [[ "$arg" == "debug" ]]; then 
     cargo build
 else
-    cargo run --bin nplang-compiler
+    cargo run --bin nplangc
 fi
