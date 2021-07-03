@@ -29,8 +29,10 @@ impl fmt::Display for ParserError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "{:?} at {}, Reason={}\nError Token: {:?}",
+            "Type={:?} Position={} Reason={} Error Token={:?}",
             self.t, self.pos, self.message, self.error_token
         )
     }
 }
+
+pub type ParserErrors = Vec<ParserError>;

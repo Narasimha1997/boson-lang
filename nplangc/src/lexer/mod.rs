@@ -1,26 +1,26 @@
 use std::fs;
-use std::vec::Vec;
 use std::io::Read;
 use std::io::Write;
+use std::vec::Vec;
 
-pub const EOF_BYTE:u8 = 0x00;
+pub const EOF_BYTE: u8 = 0x00;
 
 #[allow(dead_code)]
 pub const SYMBOLS: &'static [&'static str] = &[
     "invalid", "+", "-", "*", "/", "(", ")", "<", ">", "<=", ">=", ";", ",", "%", "!", "=", "==",
-    "!=", "{", "}", "&", "|", "~", "&&", "||", "+=", "-=", "++", "--", "*=", "/=", "%=", "[", "]", "=>", ":",
-    ".",
+    "!=", "{", "}", "&", "|", "~", "&&", "||", "+=", "-=", "++", "--", "*=", "/=", "%=", "[", "]",
+    "=>", ":", ".",
 ];
 
 #[allow(dead_code)]
 pub const KEYWORDS: &'static [&'static str] = &[
     "invalid", "if", "else", "while", "for", "break", "continue", "const", "var", "none", "func",
     "return", "try", "catch", "finally", "rethrow", "throw", "as", "true", "false", "foreach",
-    "in", "indexed", "pure", "lambda"
+    "in", "indexed", "pure", "lambda",
 ];
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, PartialEq)] 
+#[derive(Debug, Clone, PartialEq)]
 pub enum SymbolKind {
     SInvalid = 0,
     SPlus = 1,
@@ -58,11 +58,11 @@ pub enum SymbolKind {
     SRBox = 33,
     SImpl = 34,
     SColon = 35,
-    SDot = 36
+    SDot = 36,
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, PartialEq)] 
+#[derive(Debug, Clone, PartialEq)]
 pub enum KeywordKind {
     KInvalid = 0,
     KIf = 1,
@@ -88,7 +88,7 @@ pub enum KeywordKind {
     KIn = 21,
     KIndexed = 22,
     KPure = 23,
-    KLambda = 24
+    KLambda = 24,
 }
 
 #[allow(dead_code)]
@@ -116,7 +116,7 @@ pub enum TokenKind {
 #[derive(Debug, Clone)]
 pub struct LexedToken {
     pub token: TokenKind,
-    pub pos: usize
+    pub pos: usize,
 }
 
 /*
@@ -281,6 +281,18 @@ impl ProgramLexer {
         return lexer;
     }
 
+    #[allow(dead_code)]
+    pub fn new_from_buffer(buffer: Vec<u8>) -> ProgramLexer {
+        let mut lexer = ProgramLexer {
+            buffer: ProgramBuffer::new_from_buffer(buffer),
+            current_char: 0,
+        };
+
+        // read the first character from program buffer and return.
+        lexer.read_next();
+        return lexer;
+    }
+
     fn read_next(&mut self) {
         self.current_char = self.buffer.next_char();
     }
@@ -411,9 +423,9 @@ impl ProgramLexer {
         let current_pos = self.buffer.current_pos;
         let token = self.next_token();
 
-        LexedToken{
+        LexedToken {
             token: token,
-            pos: current_pos
+            pos: current_pos,
         }
     }
 
@@ -665,24 +677,104 @@ impl ProgramLexer {
 
     #[allow(dead_code)]
     pub fn dump_tokens(&mut self, file_name: String) {
-        let mut f_handle = fs::File::create(file_name).expect(
-            "Failed to open file while dumping tokens."
-        );
+        let mut f_handle =
+            fs::File::create(file_name).expect("Failed to open file while dumping tokens.");
 
         let mut l_token: LexedToken;
         loop {
             l_token = self.next_lexed_token();
-            (&mut f_handle).write_fmt(format_args!("{:?} at {}\n", l_token.token, l_token.pos)).expect(
-                "Failed to write token into the file"
-            );
+            (&mut f_handle)
+                .write_fmt(format_args!("{:?} at {}\n", l_token.token, l_token.pos))
+                .expect("Failed to write token into the file");
 
             if l_token.token == TokenKind::EOF {
                 break;
             }
         }
     }
-    
     pub fn reset(&mut self) {
         self.buffer.current_pos = 0;
+    }
+}
+
+pub struct LexerAPI {
+    pub lexer: ProgramLexer,
+    pub current_token: LexedToken,
+    pub next_token: LexedToken,
+}
+
+impl LexerAPI {
+    pub fn new_from_file(file_name: String) -> LexerAPI {
+        let mut lexer = ProgramLexer::new_from_file(file_name);
+        let tok1 = lexer.next_lexed_token();
+        let tok2 = lexer.next_lexed_token();
+        LexerAPI {
+            lexer: lexer,
+            current_token: tok1,
+            next_token: tok2,
+        }
+    }
+
+    pub fn new_from_buffer(buffer: Vec<u8>) -> LexerAPI {
+        let mut lexer = ProgramLexer::new_from_buffer(buffer);
+        let tok1 = lexer.next_lexed_token();
+        let tok2 = lexer.next_lexed_token();
+        LexerAPI {
+            lexer: lexer,
+            current_token: tok1,
+            next_token: tok2,
+        }
+    }
+
+    pub fn iterate(&mut self) {
+        self.current_token = self.lexer.next_lexed_token();
+        self.next_token = self.lexer.next_lexed_token();
+    }
+
+    pub fn get_tokens(&mut self) -> (LexedToken, LexedToken) {
+        (self.current_token.clone(), self.next_token.clone())
+    }
+
+    pub fn get_line_by_pos(&mut self, pos: usize) -> String {
+        let mut back_iter = pos;
+        let mut front_iter = pos;
+
+        let mut read_char: u8;
+        let back_pos: usize;
+        let front_pos: usize;
+
+        loop {
+            if back_iter == 0 {
+                back_pos = 0;
+                break;
+            }
+
+            read_char = self.lexer.buffer.buffer[back_iter];
+            if read_char != b'\n' {
+                back_iter -= 1;
+                continue;
+            } else {
+                back_pos = back_iter;
+                break;
+            }
+        }
+
+        loop {
+            if front_iter >= self.lexer.buffer.buffer_size {
+                front_pos = front_iter - 1;
+                break;
+            }
+
+            read_char = self.lexer.buffer.buffer[front_iter];
+            if read_char != b'\n' {
+                front_iter += 1;
+                continue;
+            } else {
+                front_pos = front_iter;
+                break;
+            }
+        }
+
+        self.lexer.buffer.get_as_string(back_pos, front_pos)
     }
 }

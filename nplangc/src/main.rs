@@ -14,5 +14,5 @@ fn main() {
       token
    );
 
-   println!("{:?}", pe)
+   println!("{}", pe)
 }
