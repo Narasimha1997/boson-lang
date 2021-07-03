@@ -17,7 +17,7 @@ pub const SYMBOLS: &'static [&'static str] = &[
 pub const KEYWORDS: &'static [&'static str] = &[
     "invalid", "if", "else", "while", "for", "break", "continue", "const", "var", "none", "func",
     "return", "try", "catch", "finally", "rethrow", "throw", "as", "true", "false", "foreach",
-    "in", "indexed", "pure",
+    "in", "indexed", "pure", "lambda"
 ];
 
 #[allow(dead_code)]
@@ -89,6 +89,7 @@ pub enum KeywordKind {
     KIn = 21,
     KIndexed = 22,
     KPure = 23,
+    KLambda = 24
 }
 
 #[allow(dead_code)]

@@ -1,4 +1,10 @@
+mod exp;
+
+use exp::InfixExpKind;
+use exp::PrefixExpKind;
+use exp::SuffixExpKind;
 use lexer::types::TokenKind;
+
 
 #[allow(dead_code)]
 pub struct Node {
@@ -45,6 +51,12 @@ pub struct IndexType {
     right: Box<ExpressionKind>
 }
 
+pub struct LambdaExpType {
+    parameters: Vec<ExpressionKind>,
+    expression: StatementKind; 
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum LiteralKind {
     Int(i64),
     Float(f64),
@@ -53,6 +65,7 @@ pub enum LiteralKind {
     HashTable<Vec<(ExpressionKind, ExpressionKind)>>
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub enum ExpressionKind {
     Identifier (IdentifierType),
     Literal (LiteralKind),
@@ -60,9 +73,13 @@ pub enum ExpressionKind {
     If  (IfElseType),
     Function (FunctionType),
     Call (CallType),
-    TryCatch (TryCatchType)
+    TryCatch (TryCatchType),
+    Infix (InfixExpKind),
+    Prefix (PrefixExpKind),
+    Suffix (SuffixExpKind)
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub enum StatementKind {
     Empty,
     Let (LetKind),

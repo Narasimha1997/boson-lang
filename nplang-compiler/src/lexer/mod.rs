@@ -112,6 +112,7 @@ impl ProgramLexer {
             "in" => TokenKind::Keyword(KeywordKind::KIn),
             "indexed" => TokenKind::Keyword(KeywordKind::KIndexed),
             "pure" => TokenKind::Keyword(KeywordKind::KPure),
+            "lambda" => TokenKind::Keyword(KeywordKind::KLambda),
 
             _ => TokenKind::Identifier(id_string),
         };
