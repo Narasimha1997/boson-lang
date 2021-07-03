@@ -743,6 +743,10 @@ impl LexerAPI {
         let back_pos: usize;
         let front_pos: usize;
 
+        if pos >= self.lexer.buffer.buffer_size {
+            return String::from("");
+        }
+
         loop {
             if back_iter == 0 {
                 back_pos = 0;
@@ -761,7 +765,7 @@ impl LexerAPI {
 
         loop {
             if front_iter >= self.lexer.buffer.buffer_size {
-                front_pos = front_iter - 1;
+                front_pos = self.lexer.buffer.buffer_size - 1;
                 break;
             }
 
