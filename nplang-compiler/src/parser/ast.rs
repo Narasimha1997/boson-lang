@@ -7,11 +7,15 @@ pub struct Node {
 };
 
 pub struct FunctionType {
-
+    name: String,
+    parameters: Vec<ExpressionKind>,
+    body: BlockStatement,
+    return_type: Option<String>
 }
 
 pub struct CallType {
-
+    function: Box<ExpressionKind>,
+    arguments: Vec<ExpressionKind>
 }
 
 pub struct IfElseType {
@@ -31,11 +35,15 @@ pub struct IdentifierType {
     type: Option<String>
 }
 
-pub struct Let {
-    Identifier (IdentifierKind)
-    Expression (ExpressionKind)
+pub struct LetType {
+    identifier: IdentifierKind,
+    expression: ExpressionKind
 }
 
+pub struct IndexType {
+    left: Box<ExpressionKind>,
+    right: Box<ExpressionKind>
+}
 
 pub enum LiteralKind {
     Int(i64),
@@ -46,7 +54,13 @@ pub enum LiteralKind {
 }
 
 pub enum ExpressionKind {
-
+    Identifier (IdentifierType),
+    Literal (LiteralKind),
+    Index (IndexType),
+    If  (IfElseType),
+    Function (FunctionType),
+    Call (CallType),
+    TryCatch (TryCatchType)
 }
 
 pub enum StatementKind {
