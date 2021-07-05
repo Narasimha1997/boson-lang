@@ -49,13 +49,13 @@ pub struct IdentifierType {
 #[derive(Debug, PartialEq, Clone)]
 pub struct LetType {
     pub identifier: IdentifierType,
-    pub expression: ExpressionKind,
+    pub expression: Option<ExpressionKind>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct ConstType {
+pub struct ConstType  {
     pub identifier: IdentifierType,
-    pub expression: ExpressionKind
+    pub expression: LiteralKind
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -95,7 +95,9 @@ pub struct AssertType {
 pub enum LiteralKind {
     Int(i64),
     Float(f64),
+    Char(char),
     Str(String),
+    Bool(bool),
     Array(Vec<ExpressionKind>),
     HashTable(Vec<(ExpressionKind, ExpressionKind)>),
 }
@@ -120,12 +122,12 @@ pub enum StatementKind {
     Empty,
     Break,
     Continue,
-    Let(LetType),
+    Var(LetType),
+    Const(ConstType),
     Return(ExpressionKind),
     Throw(ExpressionKind),
     Expression(ExpressionKind),
     TryCatch(TryCatchType),
-    Const(ConstType),
     Function(FunctionType),
     For(ForLoopType),
     While(WhileLoopType),
