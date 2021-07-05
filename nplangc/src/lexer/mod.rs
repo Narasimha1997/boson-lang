@@ -277,6 +277,7 @@ impl ProgramLexer {
             current_char: 0,
         };
 
+        lexer.append_eof_newline();
         // read the first character from program buffer and return.
         lexer.read_next();
         return lexer;
@@ -290,6 +291,7 @@ impl ProgramLexer {
         };
 
         // read the first character from program buffer and return.
+        lexer.append_eof_newline();
         lexer.read_next();
         return lexer;
     }
@@ -412,6 +414,13 @@ impl ProgramLexer {
         self.read_next();
 
         return TokenKind::Str(string_literal);
+    }
+
+    fn append_eof_newline(&mut self) {
+        if self.buffer.buffer[self.buffer.buffer_size - 1] != b'\n' {
+            self.buffer.buffer.push(b'\n');
+            self.buffer.buffer_size += 1;
+        }
     }
 
     fn find_char_literal(&mut self) -> TokenKind {
@@ -708,8 +717,8 @@ pub struct LexerAPI {
 impl LexerAPI {
     pub fn new_from_file(file_name: String) -> LexerAPI {
         let mut lexer = ProgramLexer::new_from_file(file_name);
-        let tok1 = lexer.next_lexed_token();
-        let tok2 = lexer.next_lexed_token();
+        let tok1 = lexer.next_lexed_token().clone();
+        let tok2 = lexer.next_lexed_token().clone();
         LexerAPI {
             lexer: lexer,
             current_token: tok1,
@@ -719,8 +728,8 @@ impl LexerAPI {
 
     pub fn new_from_buffer(buffer: Vec<u8>) -> LexerAPI {
         let mut lexer = ProgramLexer::new_from_buffer(buffer);
-        let tok1 = lexer.next_lexed_token();
-        let tok2 = lexer.next_lexed_token();
+        let tok1 = lexer.next_lexed_token().clone();
+        let tok2 = lexer.next_lexed_token().clone();
         LexerAPI {
             lexer: lexer,
             current_token: tok1,
@@ -729,12 +738,32 @@ impl LexerAPI {
     }
 
     pub fn iterate(&mut self) {
-        self.current_token = self.lexer.next_lexed_token();
-        self.next_token = self.lexer.next_lexed_token();
+        self.current_token = self.next_token.clone();
+        self.next_token = self.lexer.next_lexed_token().clone();
     }
 
     pub fn get_tokens(&mut self) -> (LexedToken, LexedToken) {
         (self.current_token.clone(), self.next_token.clone())
+    }
+
+    pub fn get_current_token(&mut self) -> LexedToken {
+        self.current_token.clone()
+    }
+
+    pub fn get_next_token(&mut self) -> LexedToken {
+        self.next_token.clone()
+    }
+
+    pub fn tokens_are_equal(&mut self, token1: &TokenKind, token2: TokenKind) -> bool {
+        token1 == (& token2)
+    }
+
+    pub fn keywords_are_equal(&mut self, kw1: &KeywordKind, kw2: KeywordKind) -> bool {
+        kw1 ==  (& kw2)
+    }
+
+    pub fn symbols_are_equal(&mut self, sym1: &SymbolKind, sym2: SymbolKind) -> bool {
+        sym1 == (& sym2)
     }
 
     pub fn get_line_by_pos(&mut self, pos: usize) -> String {

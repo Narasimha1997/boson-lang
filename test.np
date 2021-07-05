@@ -1,20 +1,5 @@
-# this is a sample variable declaration.
-# this is called np-lang!!!
-         
-func x() {
-    var x = 'a';
-    return x;
-}
 
-func y() {
-    var x = 1.233;
-    var y = 1.
-    var z = 2
-
-    return x + y + z;
-}
-
-var t = x();
-var u = y();
-
-print("All done!")
+continue;
+break;
+continue;
+break;

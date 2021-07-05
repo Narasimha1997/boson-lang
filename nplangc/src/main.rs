@@ -2,10 +2,12 @@ pub mod parser;
 pub mod lexer;
 
 fn main() {
-   let mut lexer_api = lexer::LexerAPI::new_from_file(
+   let lexer_api = lexer::LexerAPI::new_from_file(
       String::from("test.np")
    );
 
-   let err_string = lexer_api.get_line_by_pos(100000);
-   println!("{}", err_string);
+   let mut parser = parser::Parser::new_from_lexer(lexer_api);
+   let parsed_result = parser.parse();
+
+   println!("{:?}", parsed_result);
 }

@@ -111,7 +111,8 @@ pub enum ExpressionKind {
     Infix(InfixExpKind),
     Prefix(PrefixExpKind),
     Suffix(SuffixExpKind),
-    Lambda(LambdaExpType)
+    Lambda(LambdaExpType),
+    Boolean(bool)
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -133,7 +134,10 @@ pub enum StatementKind {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct BlockStatement {
-    statements: Vec<StatementKind>,
+    pub statements: Vec<StatementKind>,
 }
 
-pub type Program = BlockStatement;
+#[derive(Debug, PartialEq, Clone)]
+pub struct Program {
+    pub statements: Vec<StatementKind> 
+}
