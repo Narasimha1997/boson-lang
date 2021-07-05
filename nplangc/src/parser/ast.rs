@@ -37,6 +37,7 @@ pub struct TryCatchType {
     pub try_block: BlockStatement,
     pub exception_ident: IdentifierType,
     pub catch_block: BlockStatement,
+    pub final_block: Option<BlockStatement>
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -52,6 +53,12 @@ pub struct LetType {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct ConstType {
+    pub identifier: IdentifierType,
+    pub expression: ExpressionKind
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct IndexType {
     pub left: Box<ExpressionKind>,
     pub right: Box<ExpressionKind>,
@@ -60,7 +67,28 @@ pub struct IndexType {
 #[derive(Debug, PartialEq, Clone)]
 pub struct LambdaExpType {
     pub parameters: Vec<ExpressionKind>,
-    pub expression: StatementKind,
+    pub expression: Box<StatementKind>,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct ForLoopType {
+    pub target: Box<ExpressionKind>,
+    pub iter: Box<ExpressionKind>,
+    pub loop_block: BlockStatement,
+    pub else_block: Option<BlockStatement>
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct WhileLoopType {
+    pub target_expr: Box<ExpressionKind>,
+    pub loop_block: BlockStatement,
+    pub else_block: Option<BlockStatement>
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct AssertType {
+    pub target_expr: Box<ExpressionKind>,
+    pub fail_message: Box<ExpressionKind>
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -80,19 +108,27 @@ pub enum ExpressionKind {
     If(IfElseType),
     Function(FunctionType),
     Call(CallType),
-    TryCatch(TryCatchType),
     Infix(InfixExpKind),
     Prefix(PrefixExpKind),
     Suffix(SuffixExpKind),
+    Lambda(LambdaExpType)
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum StatementKind {
     Empty,
+    Break,
+    Continue,
     Let(LetType),
     Return(ExpressionKind),
     Throw(ExpressionKind),
     Expression(ExpressionKind),
+    TryCatch(TryCatchType),
+    Const(ConstType),
+    Function(FunctionType),
+    For(ForLoopType),
+    While(WhileLoopType),
+    Assert(AssertType)
 }
 
 #[derive(Debug, PartialEq, Clone)]
