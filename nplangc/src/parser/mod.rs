@@ -39,9 +39,7 @@ impl Parser {
         let next_token = self.lexer.get_next_token();
         let id_name_res = match next_token.token {
             TokenKind::Identifier(name) => Ok(name.to_string()),
-            _ => Err(self.new_invalid_token_err(
-                format!("invalid identifier {:?}", next_token)
-            )),
+            _ => Err(self.new_invalid_token_err(format!("invalid identifier {:?}", next_token))),
         };
 
         self.lexer.iterate();
@@ -50,8 +48,9 @@ impl Parser {
 
     fn new_invalid_token_err(&mut self, msg: String) -> ParserError {
         ParserError::new(
-            ParserErrorKind::UnexpectedToken, msg,
-            self.lexer.get_current_token()
+            ParserErrorKind::UnexpectedToken,
+            msg,
+            self.lexer.get_current_token(),
         )
     }
 
@@ -62,9 +61,10 @@ impl Parser {
             Ok(id) => {
                 if self.is_terminated() {
                     if is_const {
-                        Err(self.new_invalid_token_err(
-                            format!("const {} initialized without any value", id),
-                        ))
+                        Err(self.new_invalid_token_err(format!(
+                            "const {} initialized without any value",
+                            id
+                        )))
                     } else {
                         let var_stmt = ast::LetType {
                             identifier: ast::IdentifierType { name: id, t: None },
@@ -74,14 +74,130 @@ impl Parser {
                         Ok(ast::StatementKind::Var(var_stmt))
                     }
                 } else {
-                    Err(self.new_invalid_token_err(
-                        String::from("Expressions cannot be parsed as of now."),
-                    ))
+                    self.lexer.iterate();
+                    let current_token = self.lexer.get_current_token();
+                    let expr_result = match current_token.token {
+                        TokenKind::Operator(op) => {
+                            if self.lexer.symbols_are_equal(&op, SymbolKind::SEq) {
+                                self.lexer.iterate();
+                                self.parse_expression()
+                            } else {
+                                Err(self.new_invalid_token_err(String::from("Expected =")))
+                            }
+                        }
+                        _ => Err(self.new_invalid_token_err(String::from("Expected ="))),
+                    };
+
+                    let let_const_stmt = match expr_result {
+                        Ok(expr) => {
+                            if is_const {
+                                Ok(ast::StatementKind::Const(ast::ConstType {
+                                    identifier: ast::IdentifierType { name: id, t: None },
+                                    expression: Some(expr),
+                                }))
+                            } else {
+                                Ok(ast::StatementKind::Var(ast::LetType {
+                                    identifier: ast::IdentifierType { name: id, t: None },
+                                    expression: Some(expr),
+                                }))
+                            }
+                        }
+                        Err(error) => Err(error),
+                    };
+
+                    let_const_stmt
                 }
             }
         };
 
         return stmt_result;
+    }
+
+    fn parse_integer_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        let current_token = self.lexer.get_current_token();
+        let int_literal = match current_token.token {
+            TokenKind::Integer(num) => Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Int(
+                num.clone(),
+            ))),
+            _ => Err(self.new_invalid_token_err(String::from("Invalid syntax"))),
+        };
+
+        int_literal
+    }
+
+    fn parse_floating_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        let current_token = self.lexer.get_current_token();
+        let float_literal = match current_token.token {
+            TokenKind::Float(num) => Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Float(
+                num.clone(),
+            ))),
+            _ => Err(self.new_invalid_token_err(String::from("Invalid syntax"))),
+        };
+
+        float_literal
+    }
+
+    fn parse_char_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        let current_token = self.lexer.get_current_token();
+        let char_literal = match current_token.token {
+            TokenKind::Char(ch) => Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Char(
+                ch.clone(),
+            ))),
+            _ => Err(self.new_invalid_token_err(String::from("Invalid syntax"))),
+        };
+
+        char_literal
+    }
+
+    fn parse_string_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        let current_token = self.lexer.get_current_token();
+        let string_literal = match current_token.token {
+            TokenKind::Str(str) => Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Str(
+                str.clone(),
+            ))),
+            _ => Err(self.new_invalid_token_err(String::from("Invalid syntax"))),
+        };
+
+        string_literal
+    }
+
+    fn parse_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        // when an expression is called, the current_token should be at the starting
+        // the next_token should point to the next token after start.
+
+        let current_token = self.lexer.get_current_token();
+        let matched_prefix = match current_token.token {
+            // literals:
+            TokenKind::Integer(_) => self.parse_integer_expression(),
+            TokenKind::Float(_) => self.parse_floating_expression(),
+            TokenKind::Char(_) => self.parse_char_expression(),
+            TokenKind::Str(_) => self.parse_string_expression(),
+            TokenKind::Keyword(kw) => {
+                // all expressions that start with a keyword:
+                let kw_exp_result = match kw {
+                    KeywordKind::KTrue => {
+                        Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Bool(true)))
+                    }
+                    KeywordKind::KFalse => {
+                        Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Bool(true)))
+                    }
+                    _ => Err(self
+                        .new_invalid_token_err(String::from("Functionality not yet implemented"))),
+                };
+
+                kw_exp_result
+            }
+            _ => Err(self.new_invalid_token_err(String::from("Invalid token"))),
+        };
+
+        // check if next token is termination:
+        if self.is_terminated() {
+            return matched_prefix;
+        }
+
+        Err(self.new_invalid_token_err(String::from(
+            "Expressions that are not literals are yet to be implemented",
+        )))
     }
 
     fn parse_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
@@ -91,18 +207,14 @@ impl Parser {
                 if self.is_terminated() {
                     Ok(ast::StatementKind::Break)
                 } else {
-                    Err(self.new_invalid_token_err(
-                        String::from("Expected ; after break."),
-                    ))
+                    Err(self.new_invalid_token_err(String::from("Expected ; after break.")))
                 }
             }
             TokenKind::Keyword(KeywordKind::KContinue) => {
                 if self.is_terminated() {
                     Ok(ast::StatementKind::Continue)
                 } else {
-                    Err(self.new_invalid_token_err(
-                        String::from("Expected ; after continue."),
-                    ))
+                    Err(self.new_invalid_token_err(String::from("Expected ; after continue.")))
                 }
             }
             TokenKind::Keyword(KeywordKind::KVar) => {

@@ -1,6 +1,6 @@
-
-continue;
 break;
 continue;
-break;
-var z;
+var x = 20;
+const z = "Hello, world";
+var a = 21.12;
+var c = 'c' ;

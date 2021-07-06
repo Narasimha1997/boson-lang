@@ -55,7 +55,7 @@ pub struct LetType {
 #[derive(Debug, PartialEq, Clone)]
 pub struct ConstType  {
     pub identifier: IdentifierType,
-    pub expression: LiteralKind
+    pub expression: Option<ExpressionKind>
 }
 
 #[derive(Debug, PartialEq, Clone)]
