@@ -3,7 +3,6 @@ pub mod debug;
 pub mod exp;
 
 use crate::lexer::KeywordKind;
-use crate::lexer::LexedToken;
 use crate::lexer::LexerAPI;
 use crate::lexer::SymbolKind;
 use crate::lexer::TokenKind;
@@ -41,8 +40,7 @@ impl Parser {
         let id_name_res = match next_token.token {
             TokenKind::Identifier(name) => Ok(name.to_string()),
             _ => Err(self.new_invalid_token_err(
-                next_token.clone(),
-                format!("invalid identifier {:?}", next_token),
+                format!("invalid identifier {:?}", next_token)
             )),
         };
 
@@ -50,61 +48,11 @@ impl Parser {
         id_name_res
     }
 
-    fn new_invalid_token_err(&mut self, token: LexedToken, msg: String) -> ParserError {
-        ParserError::new(ParserErrorKind::UnexpectedToken, msg, token)
-    }
-
-    fn parse_const_literal(&mut self) -> Result<ast::LiteralKind, ParserError> {
-        let current_token = self.lexer.get_current_token();
-        let parse_result = match current_token.token {
-            TokenKind::Char(ch) => {
-                if !self.is_terminated() {
-                    Err(self.new_invalid_token_err(current_token, String::from("Expected ;")))
-                } else {
-                    Ok(ast::LiteralKind::Char(ch))
-                }
-            }
-            TokenKind::Float(f) => {
-                if !self.is_terminated() {
-                    Err(self.new_invalid_token_err(current_token, String::from("Expected ;")))
-                } else {
-                    Ok(ast::LiteralKind::Float(f))
-                }
-            }
-            TokenKind::Integer(i) => {
-                if !self.is_terminated() {
-                    Err(self.new_invalid_token_err(current_token, String::from("Expected ;")))
-                } else {
-                    Ok(ast::LiteralKind::Int(i))
-                }
-            }
-            TokenKind::Keyword(kbool) => {
-                let current_token = self.lexer.get_current_token();
-                if !self.is_terminated() {
-                    Err(self.new_invalid_token_err(current_token, String::from("Expected ;")))
-                } else {
-                    let bool_kind = match kbool {
-                        KeywordKind::KTrue => Ok(ast::LiteralKind::Bool(true)),
-                        KeywordKind::KFalse => Ok(ast::LiteralKind::Bool(false)),
-                        _ => Err(self
-                            .new_invalid_token_err(current_token, String::from("Invalid syntax"))),
-                    };
-                    bool_kind
-                }
-            }
-            TokenKind::Str(st) => {
-                if !self.is_terminated() {
-                    let current_token = self.lexer.get_current_token();
-                    Err(self.new_invalid_token_err(current_token, String::from("Expected ;")))
-                } else {
-                    Ok(ast::LiteralKind::Str(st))
-                }
-            }
-
-            _ => Err(self.new_invalid_token_err(current_token, String::from("Invalid syntax"))),
-        };
-
-        return parse_result;
+    fn new_invalid_token_err(&mut self, msg: String) -> ParserError {
+        ParserError::new(
+            ParserErrorKind::UnexpectedToken, msg,
+            self.lexer.get_current_token()
+        )
     }
 
     fn parse_var_or_const(&mut self, is_const: bool) -> Result<ast::StatementKind, ParserError> {
@@ -113,10 +61,8 @@ impl Parser {
             Err(error) => Err(error),
             Ok(id) => {
                 if self.is_terminated() {
-                    let next_token = self.lexer.get_next_token();
                     if is_const {
                         Err(self.new_invalid_token_err(
-                            next_token,
                             format!("const {} initialized without any value", id),
                         ))
                     } else {
@@ -128,9 +74,7 @@ impl Parser {
                         Ok(ast::StatementKind::Var(var_stmt))
                     }
                 } else {
-                    let current_token = self.lexer.get_next_token();
                     Err(self.new_invalid_token_err(
-                        current_token,
                         String::from("Expressions cannot be parsed as of now."),
                     ))
                 }
@@ -148,7 +92,6 @@ impl Parser {
                     Ok(ast::StatementKind::Break)
                 } else {
                     Err(self.new_invalid_token_err(
-                        current_token,
                         String::from("Expected ; after break."),
                     ))
                 }
@@ -158,26 +101,25 @@ impl Parser {
                     Ok(ast::StatementKind::Continue)
                 } else {
                     Err(self.new_invalid_token_err(
-                        current_token,
                         String::from("Expected ; after continue."),
                     ))
                 }
             }
             TokenKind::Keyword(KeywordKind::KVar) => {
                 if self.is_terminated() {
-                    Err(self.new_invalid_token_err(current_token, String::from("Invalid syntax")))
+                    Err(self.new_invalid_token_err(String::from("Invalid syntax")))
                 } else {
                     self.parse_var_or_const(false)
                 }
             }
             TokenKind::Keyword(KeywordKind::KConst) => {
                 if self.is_terminated() {
-                    Err(self.new_invalid_token_err(current_token, String::from("Invalid syntax")))
+                    Err(self.new_invalid_token_err(String::from("Invalid syntax")))
                 } else {
                     self.parse_var_or_const(true)
                 }
             }
-            _ => Err(self.new_invalid_token_err(current_token, String::from("Invalid token"))),
+            _ => Err(self.new_invalid_token_err(String::from("Invalid token"))),
         };
 
         statement_result
