@@ -113,6 +113,53 @@ impl Parser {
         return stmt_result;
     }
 
+    fn next_symbol_is(&mut self, compare: SymbolKind) -> bool {
+        let next_token = self.lexer.get_next_token();
+        let result = match next_token.token {
+            TokenKind::Operator(op) => self.lexer.symbols_are_equal(&op, compare),
+            _ => false,
+        };
+
+        result
+    }
+
+    fn current_symbol_is(&mut self, compare: SymbolKind) -> bool {
+        let current_token = self.lexer.get_current_token();
+        let result = match current_token.token {
+            TokenKind::Operator(op) => self.lexer.symbols_are_equal(&op, compare),
+            _ => false,
+        };
+
+        result
+    }
+
+    fn parse_array_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        self.lexer.iterate();
+
+        // parse expression until the consumed token is a right bracket:
+        let mut array_values = vec!();
+        while !self.current_symbol_is( SymbolKind::SRBox ) {
+            let matched_value = self.parse_expression();
+            match matched_value {
+                Ok(l) => {
+                    array_values.push(l);
+                    self.lexer.iterate();
+                }
+                Err(error) => return Err(error)
+            }
+        }
+
+        let array_len = array_values.len();
+
+        let array = ast::ArrayType{
+            array_values: array_values,
+            length: array_len
+        };
+
+        self.lexer.iterate();
+        Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Array(array)))
+    }
+
     fn parse_integer_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
         let current_token = self.lexer.get_current_token();
         let int_literal = match current_token.token {
@@ -187,6 +234,15 @@ impl Parser {
 
                 kw_exp_result
             }
+            // starts with a symbol:
+            TokenKind::Operator(op) => {
+                let op_expr_result = match op {
+                    SymbolKind::SLBox => self.parse_array_expression(),
+                    _ => Err(self.new_invalid_token_err(String::from("Invalid symbol"))),
+                };
+
+                op_expr_result
+            }
             _ => Err(self.new_invalid_token_err(String::from("Invalid token"))),
         };
 
@@ -195,9 +251,13 @@ impl Parser {
             return matched_prefix;
         }
 
-        Err(self.new_invalid_token_err(String::from(
-            "Expressions that are not literals are yet to be implemented",
-        )))
+        // next symbol is ,
+        if self.next_symbol_is(SymbolKind::SComma) {
+            self.lexer.iterate();
+            return matched_prefix;
+        }
+
+        return matched_prefix;
     }
 
     fn parse_statement(&mut self) -> Result<ast::StatementKind, ParserError> {

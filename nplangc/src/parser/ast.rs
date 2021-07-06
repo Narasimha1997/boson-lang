@@ -92,13 +92,19 @@ pub struct AssertType {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct ArrayType {
+    pub array_values: Vec<ExpressionKind>,
+    pub length: usize
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum LiteralKind {
     Int(i64),
     Float(f64),
     Char(char),
     Str(String),
     Bool(bool),
-    Array(Vec<ExpressionKind>),
+    Array(ArrayType),
     HashTable(Vec<(ExpressionKind, ExpressionKind)>),
 }
 
