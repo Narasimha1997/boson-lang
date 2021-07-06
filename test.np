@@ -3,4 +3,4 @@ continue;
 var x = 20;
 const z = "Hello, world";
 var a = 21.12;
-var c = 'c' ;
+var c = 'c'; var i = 10;

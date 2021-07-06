@@ -661,7 +661,7 @@ impl ProgramLexer {
             }
 
             b'\'' => {
-                incr_next_char = false;
+                incr_next_char = true;
                 self.find_char_literal()
             }
 
