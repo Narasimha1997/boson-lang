@@ -133,31 +133,64 @@ impl Parser {
         result
     }
 
-    fn parse_array_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+    fn parse_list_expr(&mut self) -> Result<Vec<ast::ExpressionKind>, ParserError> {
+        let mut exp_list = vec![];
+
         self.lexer.iterate();
 
-        // parse expression until the consumed token is a right bracket:
-        let mut array_values = vec!();
-        while !self.current_symbol_is( SymbolKind::SRBox ) {
-            let matched_value = self.parse_expression();
-            match matched_value {
-                Ok(l) => {
-                    array_values.push(l);
-                    self.lexer.iterate();
-                }
-                Err(error) => return Err(error)
+        // first entry:
+        let matched_expr = self.parse_expression();
+        match matched_expr {
+            Ok(expr) => exp_list.push(expr),
+            Err(error) => return Err(error),
+        }
+
+        while self.next_symbol_is(SymbolKind::SComma) {
+            self.lexer.iterate();
+            self.lexer.iterate();
+
+            let matched_expr = self.parse_expression();
+            match matched_expr {
+                Ok(expr) => exp_list.push(expr),
+                Err(error) => return Err(error),
             }
         }
 
-        let array_len = array_values.len();
+        Ok(exp_list)
+    }
 
-        let array = ast::ArrayType{
-            array_values: array_values,
-            length: array_len
-        };
+    fn parse_array_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        if self.next_symbol_is(SymbolKind::SRBox) {
+            self.lexer.iterate();
+            let array = ast::ArrayType {
+                array_values: vec![],
+                length: 0,
+            };
 
-        self.lexer.iterate();
-        Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Array(array)))
+            return Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Array(array)));
+        }
+
+        let list_expr = self.parse_list_expr();
+        match list_expr {
+            Ok(le) => {
+                if self.next_symbol_is(SymbolKind::SRBox) {
+                    self.lexer.iterate();
+
+                    let arr_len = le.len();
+                    let array = ast::ArrayType {
+                        array_values: le,
+                        length: arr_len,
+                    };
+
+                    return Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Array(array)));
+                } else {
+                    return Err(
+                        self.new_invalid_token_err(String::from("Array literal not terminated"))
+                    );
+                }
+            }
+            Err(error) => return Err(error),
+        }
     }
 
     fn parse_integer_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
@@ -251,12 +284,6 @@ impl Parser {
             return matched_prefix;
         }
 
-        // next symbol is ,
-        if self.next_symbol_is(SymbolKind::SComma) {
-            self.lexer.iterate();
-            return matched_prefix;
-        }
-
         return matched_prefix;
     }
 
@@ -305,6 +332,13 @@ impl Parser {
             .lexer
             .tokens_are_equal(&current_token.token, TokenKind::EOF)
         {
+            if self
+                .lexer
+                .tokens_are_equal(&current_token.token, TokenKind::Empty)
+            {
+                continue;
+            }
+
             let stmt_result = self.parse_statement();
             match stmt_result {
                 Ok(stmt) => program.statements.push(stmt),
