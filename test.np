@@ -5,3 +5,12 @@ const z = "Hello, world";
 var a = 21.12;
 var c = 'c'; var i = 10;
 var u = [1, 2, 3, 4, "Hello"];
+
+
+var N = {
+    "hello": "world",
+    "welcome": 123,
+    "x": 'c',
+    "y": true,
+    "z": 13.11
+};

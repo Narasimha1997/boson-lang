@@ -123,6 +123,7 @@ impl Parser {
         result
     }
 
+    #[allow(dead_code)]
     fn current_symbol_is(&mut self, compare: SymbolKind) -> bool {
         let current_token = self.lexer.get_current_token();
         let result = match current_token.token {
@@ -157,6 +158,68 @@ impl Parser {
         }
 
         Ok(exp_list)
+    }
+
+    fn parse_pair(&mut self) -> Result<(ast::ExpressionKind, ast::ExpressionKind), ParserError> {
+        let key_exp = self.parse_expression();
+        match key_exp {
+            Ok(key) => {
+                if !self.next_symbol_is(SymbolKind::SColon) {
+                    return Err(self
+                        .new_invalid_token_err(String::from("Expected : after key declaration")));
+                }
+
+                // parse value:
+                self.lexer.iterate();
+                self.lexer.iterate();
+
+                let value_exp = self.parse_expression();
+                match value_exp {
+                    Ok(value) => return Ok((key, value)),
+                    Err(error) => return Err(error),
+                }
+            }
+            Err(error) => return Err(error),
+        }
+    }
+
+    fn parse_hash_literal(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        let mut h_pairs = vec![];
+
+        if self.next_symbol_is(SymbolKind::SRBrace) {
+            self.lexer.iterate();
+            return Ok(ast::ExpressionKind::Literal(ast::LiteralKind::HashTable(
+                h_pairs,
+            )));
+        }
+
+        self.lexer.iterate();
+
+        match self.parse_pair() {
+            Ok((key, value)) => h_pairs.push((key, value)),
+            Err(error) => return Err(error),
+        }
+        // iterate over the dict and parse pair
+        while self.next_symbol_is(SymbolKind::SComma) {
+            self.lexer.iterate();
+            self.lexer.iterate();
+
+            match self.parse_pair() {
+                Ok((key, value)) => h_pairs.push((key, value)),
+                Err(error) => return Err(error),
+            }
+        }
+
+        // check if is terminated:
+        if !self.next_symbol_is(SymbolKind::SRBrace) {
+            return Err(
+                self.new_invalid_token_err(String::from("Hash-literal is not terminated with }"))
+            );
+        }
+        self.lexer.iterate();
+        return Ok(ast::ExpressionKind::Literal(ast::LiteralKind::HashTable(
+            h_pairs,
+        )));
     }
 
     fn parse_array_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
@@ -271,6 +334,7 @@ impl Parser {
             TokenKind::Operator(op) => {
                 let op_expr_result = match op {
                     SymbolKind::SLBox => self.parse_array_expression(),
+                    SymbolKind::SLBrace => self.parse_hash_literal(),
                     _ => Err(self.new_invalid_token_err(String::from("Invalid symbol"))),
                 };
 
@@ -336,6 +400,8 @@ impl Parser {
                 .lexer
                 .tokens_are_equal(&current_token.token, TokenKind::Empty)
             {
+                self.lexer.iterate();
+                current_token = self.lexer.get_current_token();
                 continue;
             }
 
