@@ -67,7 +67,7 @@ pub struct IndexType {
 #[derive(Debug, PartialEq, Clone)]
 pub struct LambdaExpType {
     pub parameters: Vec<ExpressionKind>,
-    pub expression: Box<StatementKind>,
+    pub expression: Box<ExpressionKind>,
 }
 
 #[derive(Debug, PartialEq, Clone)]

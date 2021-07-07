@@ -36,13 +36,11 @@ impl Parser {
     }
 
     fn get_identifier(&mut self) -> Result<String, ParserError> {
-        let next_token = self.lexer.get_next_token();
-        let id_name_res = match next_token.token {
+        let current_token = self.lexer.get_current_token();
+        let id_name_res = match current_token.token {
             TokenKind::Identifier(name) => Ok(name.to_string()),
-            _ => Err(self.new_invalid_token_err(format!("invalid identifier {:?}", next_token))),
+            _ => Err(self.new_invalid_token_err(format!("invalid identifier {:?}", current_token))),
         };
-
-        self.lexer.iterate();
         id_name_res
     }
 
@@ -55,6 +53,8 @@ impl Parser {
     }
 
     fn parse_var_or_const(&mut self, is_const: bool) -> Result<ast::StatementKind, ParserError> {
+        self.lexer.iterate();
+
         let id_name = self.get_identifier();
         let stmt_result = match id_name {
             Err(error) => Err(error),
@@ -176,6 +176,44 @@ impl Parser {
                 let value_exp = self.parse_expression();
                 match value_exp {
                     Ok(value) => return Ok((key, value)),
+                    Err(error) => return Err(error),
+                }
+            }
+            Err(error) => return Err(error),
+        }
+    }
+
+    fn parse_lambda_exp(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        if self.next_symbol_is(SymbolKind::SSemiColon) {
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+        }
+
+        if self.next_symbol_is(SymbolKind::SImpl) {
+            return Err(self.new_invalid_token_err(String::from(
+                "Lambdas with zero parameters are not accepted",
+            )));
+        }
+
+        // parse parameters list:
+        match self.parse_list_expr() {
+            Ok(lparams) => {
+                if !self.next_symbol_is(SymbolKind::SImpl) {
+                    return Err(self.new_invalid_token_err(String::from(
+                        "Expected => after parameters declaration",
+                    )));
+                }
+
+                self.lexer.iterate();
+                self.lexer.iterate();
+                // parse the right expression:
+                match self.parse_expression() {
+                    Ok(expr) => {
+                        return Ok(ast::ExpressionKind::Lambda(ast::LambdaExpType {
+                            expression: Box::new(expr),
+                            parameters: lparams,
+                        }))
+                    }
+
                     Err(error) => return Err(error),
                 }
             }
@@ -311,6 +349,13 @@ impl Parser {
         let current_token = self.lexer.get_current_token();
         let matched_prefix = match current_token.token {
             // literals:
+            TokenKind::Identifier(_) => match self.get_identifier() {
+                Ok(ident) => Ok(ast::ExpressionKind::Identifier(ast::IdentifierType {
+                    name: ident,
+                    t: None,
+                })),
+                _ => Err(self.new_invalid_token_err(String::from("Invalid identifier"))),
+            },
             TokenKind::Integer(_) => self.parse_integer_expression(),
             TokenKind::Float(_) => self.parse_floating_expression(),
             TokenKind::Char(_) => self.parse_char_expression(),
@@ -324,6 +369,7 @@ impl Parser {
                     KeywordKind::KFalse => {
                         Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Bool(true)))
                     }
+                    KeywordKind::KLambda => self.parse_lambda_exp(),
                     _ => Err(self
                         .new_invalid_token_err(String::from("Functionality not yet implemented"))),
                 };
