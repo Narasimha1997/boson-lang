@@ -586,14 +586,21 @@ impl Parser {
                 if self.is_terminated() {
                     return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
                 } else {
-                    self.parse_var_or_const(true)
+                    return self.parse_var_or_const(true)
                 }
             }
             TokenKind::Keyword(KeywordKind::KIf) => {
                 if self.is_terminated() {
                     return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
                 } else {
-                    self.parse_if_statement()
+                    return self.parse_if_statement()
+                }
+            }
+            TokenKind::Keyword(KeywordKind::KAssert) => {
+                if self.is_terminated() {
+                    return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+                } else {
+                    return self.parse_assert_statement()
                 }
             }
             TokenKind::Empty => return Ok(ast::StatementKind::Empty),

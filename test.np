@@ -30,4 +30,7 @@ if (x) {
     } else {
 
     }
+
+    assert x, "this is shit";
+    const z = 30;
 }
