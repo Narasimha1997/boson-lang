@@ -65,7 +65,14 @@ impl Parser {
 
         // parse each statement, until a '}' is encountered
         while !self.current_symbol_is(SymbolKind::SRBrace) {
+
+            if self.current_symbol_is(SymbolKind::SSemiColon) {
+                self.lexer.iterate();
+                continue;
+            }
+
             match self.parse_statement() {
+
                 Ok(stmt) => {
                     if !self.is_empty_statement(&stmt) {
                         block_statement.statements.push(stmt);
@@ -113,6 +120,63 @@ impl Parser {
                 }
             }
             Err(error) => return Err(error),
+        }
+    }
+
+    fn parse_function_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
+        self.lexer.iterate();
+
+        let current_token = self.lexer.get_current_token();
+        match current_token.token {
+            TokenKind::Identifier(_) => {
+                let id_result = self.get_identifier();
+                match id_result {
+                    Ok(id) => {
+                        if !self.next_symbol_is(SymbolKind::SLParen) {
+                            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+                        }
+
+                        self.lexer.iterate();
+                        // parse expression list:
+                        match self.parse_list_expr() {
+                            Ok(expr_list) => {
+                                if !self.next_symbol_is(SymbolKind::SRparen) {
+                                    return Err(
+                                        self.new_invalid_token_err(String::from("Invalid syntax"))
+                                    );
+                                }
+
+                                self.lexer.iterate();
+                                if !self.next_symbol_is(SymbolKind::SLBrace) {
+                                    return Err(
+                                        self.new_invalid_token_err(String::from("Invalid syntax"))
+                                    );
+                                }
+
+                                match self.parse_block_statement() {
+                                    Ok(block) => {
+                                        return Ok(ast::StatementKind::Function(
+                                            ast::FunctionType {
+                                                name: id,
+                                                parameters: expr_list,
+                                                body: block,
+                                                return_type: None,
+                                            },
+                                        ));
+                                    }
+                                    Err(error) => return Err(error),
+                                }
+                            }
+                            Err(error) => return Err(error),
+                        }
+                    }
+                    Err(error) => return Err(error),
+                }
+            }
+            _ => {
+                return Err(self
+                    .new_invalid_token_err(String::from("Expected identifier after func keyword")))
+            }
         }
     }
 
@@ -412,18 +476,20 @@ impl Parser {
 
     fn parse_return_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
         if self.is_terminated() {
-            return Ok(ast::StatementKind::Return(ast::ReturnType{
-                expression: None
-            }))
+            return Ok(ast::StatementKind::Return(ast::ReturnType {
+                expression: None,
+            }));
         }
 
         self.lexer.iterate();
         // parse the expression:
         match self.parse_expression() {
-            Ok(expr) => return Ok(ast::StatementKind::Return(ast::ReturnType{
-                expression: Some(expr)
-            })),
-            Err(error) => return Err(error)
+            Ok(expr) => {
+                return Ok(ast::StatementKind::Return(ast::ReturnType {
+                    expression: Some(expr),
+                }))
+            }
+            Err(error) => return Err(error),
         }
     }
 
@@ -660,6 +726,9 @@ impl Parser {
             TokenKind::Keyword(KeywordKind::KReturn) => {
                 return self.parse_return_statement();
             }
+            TokenKind::Keyword(KeywordKind::KFunc) => {
+                return self.parse_function_statement();
+            }
             TokenKind::Empty => return Ok(ast::StatementKind::Empty),
             _ => return Err(self.new_invalid_token_err(String::from("Invalid token"))),
         }
@@ -677,6 +746,12 @@ impl Parser {
                 .lexer
                 .tokens_are_equal(&current_token.token, TokenKind::Empty)
             {
+                self.lexer.iterate();
+                current_token = self.lexer.get_current_token();
+                continue;
+            }
+
+            if self.current_symbol_is(SymbolKind::SSemiColon) {
                 self.lexer.iterate();
                 current_token = self.lexer.get_current_token();
                 continue;

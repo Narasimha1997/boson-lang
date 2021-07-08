@@ -1,40 +1,14 @@
-break;
-continue;
-var x = 20;
-const z = "Hello, world";
-var a = 21.12;
-var c = 'c'; var i = 10;
-var u = [1, 2, 3, 4, "Hello"];
 
+func test_function(x, y) {
+    return x;
+}
 
-var N = {
-    "hello": "world",
-    "welcome": 123,
-    "x": 'c',
-    "y": true,
-    "z": 13.11
-};
-
-var x = lambda a, b, c => a;
+const x = 10;
+const y = 20;
 
 if (x) {
-    var a = 20;
-    var b = 30;
-} else {
-    var d = 10;
-    var z = lambda a, b, c => a;
-
-
-    if (y) {
-        var z = 10;
-    } else {
-
-    }
-
-    while (x) {
-        assert z, "this is not shit"
-    }
-
-    assert x, "this is shit";
-    const z = 30;
+    assert y, "this is done!";;;;;;;;;;;;;;
+    const a =  10;
 }
+
+const z = 10;

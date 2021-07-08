@@ -116,7 +116,6 @@ pub enum ExpressionKind {
     Identifier(IdentifierType),
     Literal(LiteralKind),
     Index(IndexType),
-    Function(FunctionType),
     Call(CallType),
     Infix(InfixExpKind),
     Prefix(PrefixExpKind),
