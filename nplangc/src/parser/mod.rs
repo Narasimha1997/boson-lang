@@ -65,14 +65,12 @@ impl Parser {
 
         // parse each statement, until a '}' is encountered
         while !self.current_symbol_is(SymbolKind::SRBrace) {
-
             if self.current_symbol_is(SymbolKind::SSemiColon) {
                 self.lexer.iterate();
                 continue;
             }
 
             match self.parse_statement() {
-
                 Ok(stmt) => {
                     if !self.is_empty_statement(&stmt) {
                         block_statement.statements.push(stmt);
