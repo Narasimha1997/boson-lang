@@ -16,3 +16,18 @@ var N = {
 };
 
 var x = lambda a, b, c => a;
+
+if (x) {
+    var a = 20;
+    var b = 30;
+} else {
+    var d = 10;
+    var z = lambda a, b, c => a;
+
+
+    if (y) {
+        var z = 10;
+    } else {
+
+    }
+}

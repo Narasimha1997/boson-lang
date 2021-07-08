@@ -28,8 +28,8 @@ pub struct CallType {
 #[derive(Debug, PartialEq, Clone)]
 pub struct IfElseType {
     pub condition: Box<ExpressionKind>,
-    pub main_condition: BlockStatement,
-    pub alternate_condition: Option<BlockStatement>,
+    pub main_block: BlockStatement,
+    pub alternate_block: Option<BlockStatement>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -88,7 +88,7 @@ pub struct WhileLoopType {
 #[derive(Debug, PartialEq, Clone)]
 pub struct AssertType {
     pub target_expr: Box<ExpressionKind>,
-    pub fail_message: Box<ExpressionKind>
+    pub fail_expr: Box<ExpressionKind>
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -113,7 +113,6 @@ pub enum ExpressionKind {
     Identifier(IdentifierType),
     Literal(LiteralKind),
     Index(IndexType),
-    If(IfElseType),
     Function(FunctionType),
     Call(CallType),
     Infix(InfixExpKind),
@@ -137,7 +136,8 @@ pub enum StatementKind {
     Function(FunctionType),
     For(ForLoopType),
     While(WhileLoopType),
-    Assert(AssertType)
+    Assert(AssertType),
+    If(IfElseType)
 }
 
 #[derive(Debug, PartialEq, Clone)]

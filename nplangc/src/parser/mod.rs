@@ -35,6 +35,155 @@ impl Parser {
         }
     }
 
+    fn is_empty_statement(&mut self, stmt: &ast::StatementKind) -> bool {
+        stmt == &ast::StatementKind::Empty
+    }
+
+    fn parse_block_statement(&mut self) -> Result<ast::BlockStatement, ParserError> {
+        self.lexer.iterate();
+
+        let mut block_statement = ast::BlockStatement { statements: vec![] };
+
+        if self.next_symbol_is(SymbolKind::SRBrace) {
+            self.lexer.iterate();
+            return Ok(block_statement);
+        }
+
+        self.lexer.iterate();
+
+        // parse the first statement:
+        match self.parse_statement() {
+            Ok(stmt) => {
+                if !self.is_empty_statement(&stmt) {
+                    block_statement.statements.push(stmt);
+                }
+            }
+            Err(error) => return Err(error),
+        }
+
+        self.lexer.iterate();
+
+        // parse each statement, until a '}' is encountered
+        while !self.current_symbol_is(SymbolKind::SRBrace) {
+            match self.parse_statement() {
+                Ok(stmt) => {
+                    if !self.is_empty_statement(&stmt) {
+                        block_statement.statements.push(stmt);
+                    }
+                    self.lexer.iterate();
+                }
+                Err(error) => return Err(error),
+            }
+        }
+
+        return Ok(block_statement);
+    }
+
+    fn parse_assert_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
+        self.lexer.iterate();
+
+        // parse the left expression:
+        match self.parse_expression() {
+            Ok(expr_target) => {
+
+                if self.is_terminated() {
+                    return Err(self.new_invalid_token_err(
+                        String::from("Assertion requires an action to be defined on failure"))
+                    );
+                }
+
+                // parse the alternative expresion:
+                if !self.next_symbol_is(SymbolKind::SComma) {
+                    return Err(self.new_invalid_token_err(
+                        String::from("Expected , after assert expression")
+                    ))
+                }
+
+                self.lexer.iterate();
+                self.lexer.iterate();
+
+                // parse the expression:
+                match self.parse_expression() {
+                    Ok(fail_expr) => {
+                        return Ok(ast::StatementKind::Assert(
+                            ast::AssertType{
+                                target_expr: Box::new(expr_target),
+                                fail_expr: Box::new(fail_expr)
+                            }
+                        ))
+                    }
+                    Err(error) => return Err(error)
+                }
+            }
+            Err(error) => return Err(error)
+        }
+    }
+
+    fn parse_if_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
+        self.lexer.iterate();
+
+        if !self.current_symbol_is(SymbolKind::SLParen) {
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+        }
+
+        self.lexer.iterate();
+
+        // parse the expression:
+        let if_expr = self.parse_expression();
+        match if_expr {
+            Ok(expr) => {
+                // parse the block statement and else expression if present:
+                if !self.next_symbol_is(SymbolKind::SRparen) {
+                    return Err(self.new_invalid_token_err(String::from("Invalid token")));
+                }
+
+                self.lexer.iterate();
+                if !self.next_symbol_is(SymbolKind::SLBrace) {
+                    return Err(
+                        self.new_invalid_token_err(String::from("If statement without body"))
+                    );
+                }
+
+                // parse the block statement:
+                println!("{:?}", self.lexer.get_current_token());
+
+                let if_block_stmts = self.parse_block_statement();
+                match if_block_stmts {
+                    Ok(m_stmts) => {
+                        // check if the current token is else:
+                        if !self.next_keyword_is(KeywordKind::KElse) {
+                            return Ok(ast::StatementKind::If(ast::IfElseType {
+                                condition: Box::new(expr),
+                                main_block: m_stmts,
+                                alternate_block: None,
+                            }));
+                        }
+
+                        // else is present:
+                        self.lexer.iterate();
+                        if !self.next_symbol_is(SymbolKind::SLBrace) {
+                            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+                        }
+
+                        let block_statement = self.parse_block_statement();
+                        match block_statement {
+                            Ok(a_stmts) => {
+                                return Ok(ast::StatementKind::If(ast::IfElseType {
+                                    condition: Box::new(expr),
+                                    main_block: m_stmts,
+                                    alternate_block: Some(a_stmts),
+                                }))
+                            }
+                            Err(error) => return Err(error),
+                        }
+                    }
+                    Err(error) => return Err(error),
+                }
+            }
+            Err(error) => return Err(error),
+        }
+    }
+
     fn get_identifier(&mut self) -> Result<String, ParserError> {
         let current_token = self.lexer.get_current_token();
         let id_name_res = match current_token.token {
@@ -111,6 +260,16 @@ impl Parser {
         };
 
         return stmt_result;
+    }
+
+    fn next_keyword_is(&mut self, compare: KeywordKind) -> bool {
+        let next_token = self.lexer.get_next_token();
+        let result = match next_token.token {
+            TokenKind::Keyword(kw) => self.lexer.keywords_are_equal(&kw, compare),
+            _ => false,
+        };
+
+        result
     }
 
     fn next_symbol_is(&mut self, compare: SymbolKind) -> bool {
@@ -399,39 +558,47 @@ impl Parser {
 
     fn parse_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
         let current_token = self.lexer.get_current_token();
-        let statement_result = match current_token.token {
+        match current_token.token {
             TokenKind::Keyword(KeywordKind::KBreak) => {
                 if self.is_terminated() {
-                    Ok(ast::StatementKind::Break)
+                    return Ok(ast::StatementKind::Break);
                 } else {
-                    Err(self.new_invalid_token_err(String::from("Expected ; after break.")))
+                    return Err(self.new_invalid_token_err(String::from("Expected ; after break.")));
                 }
             }
             TokenKind::Keyword(KeywordKind::KContinue) => {
                 if self.is_terminated() {
-                    Ok(ast::StatementKind::Continue)
+                    return Ok(ast::StatementKind::Continue);
                 } else {
-                    Err(self.new_invalid_token_err(String::from("Expected ; after continue.")))
+                    return Err(
+                        self.new_invalid_token_err(String::from("Expected ; after continue."))
+                    );
                 }
             }
             TokenKind::Keyword(KeywordKind::KVar) => {
                 if self.is_terminated() {
-                    Err(self.new_invalid_token_err(String::from("Invalid syntax")))
+                    return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
                 } else {
-                    self.parse_var_or_const(false)
+                    return self.parse_var_or_const(false);
                 }
             }
             TokenKind::Keyword(KeywordKind::KConst) => {
                 if self.is_terminated() {
-                    Err(self.new_invalid_token_err(String::from("Invalid syntax")))
+                    return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
                 } else {
                     self.parse_var_or_const(true)
                 }
             }
-            _ => Err(self.new_invalid_token_err(String::from("Invalid token"))),
-        };
-
-        statement_result
+            TokenKind::Keyword(KeywordKind::KIf) => {
+                if self.is_terminated() {
+                    return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+                } else {
+                    self.parse_if_statement()
+                }
+            }
+            TokenKind::Empty => return Ok(ast::StatementKind::Empty),
+            _ => return Err(self.new_invalid_token_err(String::from("Invalid token"))),
+        }
     }
 
     pub fn parse(&mut self) -> Result<ast::Program, &ParserErrors> {
