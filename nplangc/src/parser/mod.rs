@@ -85,18 +85,17 @@ impl Parser {
         // parse the left expression:
         match self.parse_expression() {
             Ok(expr_target) => {
-
                 if self.is_terminated() {
-                    return Err(self.new_invalid_token_err(
-                        String::from("Assertion requires an action to be defined on failure"))
-                    );
+                    return Err(self.new_invalid_token_err(String::from(
+                        "Assertion requires an action to be defined on failure",
+                    )));
                 }
 
                 // parse the alternative expresion:
                 if !self.next_symbol_is(SymbolKind::SComma) {
-                    return Err(self.new_invalid_token_err(
-                        String::from("Expected , after assert expression")
-                    ))
+                    return Err(self.new_invalid_token_err(String::from(
+                        "Expected , after assert expression",
+                    )));
                 }
 
                 self.lexer.iterate();
@@ -105,17 +104,15 @@ impl Parser {
                 // parse the expression:
                 match self.parse_expression() {
                     Ok(fail_expr) => {
-                        return Ok(ast::StatementKind::Assert(
-                            ast::AssertType{
-                                target_expr: Box::new(expr_target),
-                                fail_expr: Box::new(fail_expr)
-                            }
-                        ))
+                        return Ok(ast::StatementKind::Assert(ast::AssertType {
+                            target_expr: Box::new(expr_target),
+                            fail_expr: Box::new(fail_expr),
+                        }))
                     }
-                    Err(error) => return Err(error)
+                    Err(error) => return Err(error),
                 }
             }
-            Err(error) => return Err(error)
+            Err(error) => return Err(error),
         }
     }
 
@@ -335,6 +332,39 @@ impl Parser {
                 let value_exp = self.parse_expression();
                 match value_exp {
                     Ok(value) => return Ok((key, value)),
+                    Err(error) => return Err(error),
+                }
+            }
+            Err(error) => return Err(error),
+        }
+    }
+
+    fn parse_while_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
+        if !self.next_symbol_is(SymbolKind::SLParen) {
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+        }
+
+        self.lexer.iterate();
+        self.lexer.iterate();
+
+        // parse the expression:
+        match self.parse_expression() {
+            Ok(expr) => {
+                // parse the block statement:
+                if !self.next_symbol_is(SymbolKind::SRparen) {
+                    return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+                }
+
+                self.lexer.iterate();
+
+                // parse the block statement:
+                match self.parse_block_statement() {
+                    Ok(block) => {
+                        return Ok(ast::StatementKind::While(ast::WhileLoopType {
+                            target_expr: Box::new(expr),
+                            loop_block: block,
+                        }))
+                    }
                     Err(error) => return Err(error),
                 }
             }
@@ -586,21 +616,28 @@ impl Parser {
                 if self.is_terminated() {
                     return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
                 } else {
-                    return self.parse_var_or_const(true)
+                    return self.parse_var_or_const(true);
                 }
             }
             TokenKind::Keyword(KeywordKind::KIf) => {
                 if self.is_terminated() {
                     return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
                 } else {
-                    return self.parse_if_statement()
+                    return self.parse_if_statement();
                 }
             }
             TokenKind::Keyword(KeywordKind::KAssert) => {
                 if self.is_terminated() {
                     return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
                 } else {
-                    return self.parse_assert_statement()
+                    return self.parse_assert_statement();
+                }
+            }
+            TokenKind::Keyword(KeywordKind::KWhile) => {
+                if self.is_terminated() {
+                    return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+                } else {
+                    return self.parse_while_statement();
                 }
             }
             TokenKind::Empty => return Ok(ast::StatementKind::Empty),

@@ -74,15 +74,13 @@ pub struct LambdaExpType {
 pub struct ForLoopType {
     pub target: Box<ExpressionKind>,
     pub iter: Box<ExpressionKind>,
-    pub loop_block: BlockStatement,
-    pub else_block: Option<BlockStatement>
+    pub loop_block: BlockStatement
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct WhileLoopType {
     pub target_expr: Box<ExpressionKind>,
-    pub loop_block: BlockStatement,
-    pub else_block: Option<BlockStatement>
+    pub loop_block: BlockStatement
 }
 
 #[derive(Debug, PartialEq, Clone)]

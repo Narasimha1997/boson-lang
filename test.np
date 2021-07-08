@@ -31,6 +31,10 @@ if (x) {
 
     }
 
+    while (x) {
+        assert z, "this is not shit"
+    }
+
     assert x, "this is shit";
     const z = 30;
 }
