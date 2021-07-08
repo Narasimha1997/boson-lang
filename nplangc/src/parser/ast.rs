@@ -96,6 +96,11 @@ pub struct ArrayType {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct ReturnType {
+    pub expression: Option<ExpressionKind>
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum LiteralKind {
     Int(i64),
     Float(f64),
@@ -127,7 +132,7 @@ pub enum StatementKind {
     Continue,
     Var(LetType),
     Const(ConstType),
-    Return(ExpressionKind),
+    Return(ReturnType),
     Throw(ExpressionKind),
     Expression(ExpressionKind),
     TryCatch(TryCatchType),

@@ -410,6 +410,23 @@ impl Parser {
         }
     }
 
+    fn parse_return_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
+        if self.is_terminated() {
+            return Ok(ast::StatementKind::Return(ast::ReturnType{
+                expression: None
+            }))
+        }
+
+        self.lexer.iterate();
+        // parse the expression:
+        match self.parse_expression() {
+            Ok(expr) => return Ok(ast::StatementKind::Return(ast::ReturnType{
+                expression: Some(expr)
+            })),
+            Err(error) => return Err(error)
+        }
+    }
+
     fn parse_hash_literal(&mut self) -> Result<ast::ExpressionKind, ParserError> {
         let mut h_pairs = vec![];
 
@@ -639,6 +656,9 @@ impl Parser {
                 } else {
                     return self.parse_while_statement();
                 }
+            }
+            TokenKind::Keyword(KeywordKind::KReturn) => {
+                return self.parse_return_statement();
             }
             TokenKind::Empty => return Ok(ast::StatementKind::Empty),
             _ => return Err(self.new_invalid_token_err(String::from("Invalid token"))),
