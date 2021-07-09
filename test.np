@@ -12,3 +12,7 @@ if (x) {
 }
 
 const z = 10;
+
+for x in y {
+    const a = 10;
+}

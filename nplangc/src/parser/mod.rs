@@ -612,6 +612,55 @@ impl Parser {
         string_literal
     }
 
+    fn parse_for_loop_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
+        if self.next_symbol_is(SymbolKind::SSemiColon) {
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+        }
+
+        self.lexer.iterate();
+
+        // parse the expression
+        let mut parsed_exp_result = self.parse_expression();
+        if parsed_exp_result.is_err() {
+            return Err(parsed_exp_result.unwrap_err());
+        }
+
+        let target_expression = parsed_exp_result.unwrap();
+
+        if !self.next_keyword_is(KeywordKind::KIn) {
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+        }
+
+        self.lexer.iterate();
+        self.lexer.iterate();
+
+        // parse the iterator expression:
+        parsed_exp_result = self.parse_expression();
+        if parsed_exp_result.is_err() {
+            return Err(parsed_exp_result.unwrap_err());
+        }
+
+        let iterator_expression = parsed_exp_result.unwrap();
+
+        if !self.next_symbol_is(SymbolKind::SLBrace) {
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+        }
+
+        // parse the loop block:
+        let block_result = self.parse_block_statement();
+        if block_result.is_err() {
+            return Err(block_result.unwrap_err());
+        }
+
+        let block = block_result.unwrap();
+
+        return Ok(ast::StatementKind::For(ast::ForLoopType {
+            target: Box::new(target_expression),
+            iter: Box::new(iterator_expression),
+            loop_block: block,
+        }));
+    }
+
     fn parse_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
         // when an expression is called, the current_token should be at the starting
         // the next_token should point to the next token after start.
@@ -725,8 +774,20 @@ impl Parser {
                 return self.parse_return_statement();
             }
             TokenKind::Keyword(KeywordKind::KFunc) => {
-                return self.parse_function_statement();
+                if self.is_terminated() {
+                    return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+                } else {
+                    return self.parse_function_statement();
+                }
             }
+            TokenKind::Keyword(KeywordKind::KFor) => {
+                if self.is_terminated() {
+                    return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+                } else {
+                    return self.parse_for_loop_statement();
+                }
+            }
+
             TokenKind::Empty => return Ok(ast::StatementKind::Empty),
             _ => return Err(self.new_invalid_token_err(String::from("Invalid token"))),
         }
