@@ -1,26 +1,5 @@
 
-func test_function(x, y) {
-    return x;
-}
 
-const x = 10;
-const y = 20;
-
-if (x) {
-    assert y, "this is done!";;;;;;;;;;;;;;
-    const a =  10;
-}
-
-const z = 10;
-
-for x in y {
-    const a = 10;
-}
-
-try {
-    const z = 30;
-} catch err {
-    const l = 30;
-} finally {
-    const x = 30;
+if (x  {
+    const y = 10;
 }

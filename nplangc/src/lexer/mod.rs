@@ -766,7 +766,7 @@ impl LexerAPI {
         sym1 == (& sym2)
     }
 
-    pub fn get_line_by_pos(&mut self, pos: usize) -> String {
+    pub fn get_line_by_pos(&mut self, pos: usize) -> (String, usize, usize) {
         let mut back_iter = pos;
         let mut front_iter = pos;
 
@@ -775,7 +775,7 @@ impl LexerAPI {
         let front_pos: usize;
 
         if pos >= self.lexer.buffer.buffer_size {
-            return String::from("");
+            return (String::from(""), 0, 0);
         }
 
         loop {
@@ -810,6 +810,6 @@ impl LexerAPI {
             }
         }
 
-        self.lexer.buffer.get_as_string(back_pos, front_pos)
+        (self.lexer.buffer.get_as_string(back_pos, front_pos), back_pos, front_iter)
     }
 }

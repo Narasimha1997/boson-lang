@@ -9,5 +9,13 @@ fn main() {
    let mut parser = parser::Parser::new_from_lexer(lexer_api);
    let parsed_result = parser.parse();
 
-   println!("{:?}", parsed_result);
+   if parsed_result.is_err() {
+      let errors = parser.get_formatted_errors();
+      for err in &errors {
+         println!("{}", err);
+      }
+   } else {
+      let program = parsed_result.unwrap();
+      println!("{:?}", program);
+   }
 }

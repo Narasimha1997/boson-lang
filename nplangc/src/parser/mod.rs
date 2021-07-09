@@ -932,4 +932,20 @@ impl Parser {
 
         return Ok(program);
     }
+
+    pub fn get_formatted_errors(&mut self) -> Vec<String> {
+        let mut error_strings = vec!();
+
+        for err in &self.errors {
+            let (err_line, b_pos, _) = self.lexer.get_line_by_pos(err.pos);
+            let pointed_line = format!("{:0pos$}", "^^^", pos=(err.pos - b_pos));
+
+            error_strings.push(format!(
+                "Parsing Error at position: {}, Token: {:?}\n\t{}\n\t{}\n{}",
+                err.pos, err.error_token, err_line, pointed_line, err.message
+            ))
+        }
+
+        return error_strings
+    }
 }
