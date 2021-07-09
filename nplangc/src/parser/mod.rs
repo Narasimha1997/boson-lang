@@ -204,7 +204,6 @@ impl Parser {
                 }
 
                 // parse the block statement:
-                println!("{:?}", self.lexer.get_current_token());
 
                 let if_block_stmts = self.parse_block_statement();
                 match if_block_stmts {
@@ -716,6 +715,91 @@ impl Parser {
         return matched_prefix;
     }
 
+    fn parse_throw_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
+        self.lexer.iterate();
+
+        // parse the throw expression:
+        let parsed_exp_result = self.parse_expression();
+        if parsed_exp_result.is_err() {
+            return Err(parsed_exp_result.unwrap_err());
+        }
+
+        let throw_expression = parsed_exp_result.unwrap();
+        return Ok(ast::StatementKind::Throw(ast::ThrowType {
+            expression: Box::new(throw_expression),
+        }));
+    }
+
+    fn parse_try_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
+    
+        if !self.next_symbol_is(SymbolKind::SLBrace) {
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+        }
+
+        // parse the block statement of try:
+        let try_block_result = self.parse_block_statement();
+        if try_block_result.is_err() {
+            return Err(try_block_result.unwrap_err());
+        }
+
+        let try_block = try_block_result.unwrap();
+
+        if !self.next_keyword_is(KeywordKind::KCatch) {
+            return Err(
+                self.new_invalid_token_err(String::from("try without catch is not accepted"))
+            );
+        }
+
+        self.lexer.iterate();
+        self.lexer.iterate();
+
+        // parse catch block exp:
+        let catch_exp_result = self.parse_expression();
+        if catch_exp_result.is_err() {
+            return Err(catch_exp_result.unwrap_err());
+        }
+
+        let catch_exp = catch_exp_result.unwrap();
+
+        if !self.next_symbol_is(SymbolKind::SLBrace) {
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+        }
+
+        // parse the catch block:
+        let catch_block_result = self.parse_block_statement();
+        if catch_block_result.is_err() {
+            return Err(catch_block_result.unwrap_err());
+        }
+
+        let catch_block = catch_block_result.unwrap();
+
+        if !self.next_keyword_is(KeywordKind::KFinally) {
+            return Ok(ast::StatementKind::TryCatch(ast::TryCatchType {
+                try_block: try_block,
+                catch_block: catch_block,
+                exception_ident: Box::new(catch_exp),
+                final_block: None,
+            }));
+        }
+
+        self.lexer.iterate();
+
+        // parse finally block:
+        let final_block_result = self.parse_block_statement();
+        if final_block_result.is_err() {
+            return Err(final_block_result.unwrap_err());
+        }
+
+        let final_block = final_block_result.unwrap();
+
+        return Ok(ast::StatementKind::TryCatch(ast::TryCatchType {
+            try_block: try_block,
+            catch_block: catch_block,
+            exception_ident: Box::new(catch_exp),
+            final_block: Some(final_block),
+        }));
+    }
+
     fn parse_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
         let current_token = self.lexer.get_current_token();
         match current_token.token {
@@ -785,6 +869,22 @@ impl Parser {
                     return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
                 } else {
                     return self.parse_for_loop_statement();
+                }
+            }
+
+            TokenKind::Keyword(KeywordKind::KThrow) => {
+                if self.is_terminated() {
+                    return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+                } else {
+                    return self.parse_throw_statement();
+                }
+            }
+
+            TokenKind::Keyword(KeywordKind::KTry) => {
+                if self.is_terminated() {
+                    return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+                } else {
+                    return self.parse_try_statement();
                 }
             }
 

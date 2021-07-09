@@ -16,3 +16,11 @@ const z = 10;
 for x in y {
     const a = 10;
 }
+
+try {
+    const z = 30;
+} catch err {
+    const l = 30;
+} finally {
+    const x = 30;
+}

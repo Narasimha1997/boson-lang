@@ -35,7 +35,7 @@ pub struct IfElseType {
 #[derive(Debug, PartialEq, Clone)]
 pub struct TryCatchType {
     pub try_block: BlockStatement,
-    pub exception_ident: IdentifierType,
+    pub exception_ident: Box<ExpressionKind>,
     pub catch_block: BlockStatement,
     pub final_block: Option<BlockStatement>
 }
@@ -101,6 +101,11 @@ pub struct ReturnType {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct ThrowType {
+    pub expression: Box<ExpressionKind>
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum LiteralKind {
     Int(i64),
     Float(f64),
@@ -132,7 +137,7 @@ pub enum StatementKind {
     Var(LetType),
     Const(ConstType),
     Return(ReturnType),
-    Throw(ExpressionKind),
+    Throw(ThrowType),
     Expression(ExpressionKind),
     TryCatch(TryCatchType),
     Function(FunctionType),
