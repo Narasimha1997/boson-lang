@@ -106,6 +106,12 @@ pub struct ThrowType {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct ForEachType {
+    pub iterator_exp: Box<ExpressionKind>,
+    pub block: BlockStatement
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum LiteralKind {
     Int(i64),
     Float(f64),
@@ -144,7 +150,8 @@ pub enum StatementKind {
     For(ForLoopType),
     While(WhileLoopType),
     Assert(AssertType),
-    If(IfElseType)
+    If(IfElseType),
+    ForEach(ForEachType)
 }
 
 #[derive(Debug, PartialEq, Clone)]

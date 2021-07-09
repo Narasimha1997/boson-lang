@@ -611,6 +611,36 @@ impl Parser {
         string_literal
     }
 
+    fn parse_for_each_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
+        self.lexer.iterate();
+
+        // parse the expression:
+        let parsed_exp_result = self.parse_expression();
+        if parsed_exp_result.is_err() {
+            return Err(parsed_exp_result.unwrap_err());
+        }
+
+        let parsed_exp = parsed_exp_result.unwrap();
+
+        if !self.next_symbol_is(SymbolKind::SImpl) {
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+        }
+
+        self.lexer.iterate();
+        let block_result = self.parse_block_statement();
+        if block_result.is_err() {
+            return Err(block_result.unwrap_err());
+        }
+
+        let block = block_result.unwrap();
+
+        // return the forEach type:
+        return Ok(ast::StatementKind::ForEach(ast::ForEachType {
+            iterator_exp: Box::new(parsed_exp),
+            block: block,
+        }));
+    }
+
     fn parse_for_loop_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
         if self.next_symbol_is(SymbolKind::SSemiColon) {
             return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
@@ -731,7 +761,6 @@ impl Parser {
     }
 
     fn parse_try_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
-    
         if !self.next_symbol_is(SymbolKind::SLBrace) {
             return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
         }
@@ -810,6 +839,7 @@ impl Parser {
                     return Err(self.new_invalid_token_err(String::from("Expected ; after break.")));
                 }
             }
+
             TokenKind::Keyword(KeywordKind::KContinue) => {
                 if self.is_terminated() {
                     return Ok(ast::StatementKind::Continue);
@@ -819,6 +849,7 @@ impl Parser {
                     );
                 }
             }
+
             TokenKind::Keyword(KeywordKind::KVar) => {
                 if self.is_terminated() {
                     return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
@@ -826,6 +857,7 @@ impl Parser {
                     return self.parse_var_or_const(false);
                 }
             }
+
             TokenKind::Keyword(KeywordKind::KConst) => {
                 if self.is_terminated() {
                     return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
@@ -833,6 +865,7 @@ impl Parser {
                     return self.parse_var_or_const(true);
                 }
             }
+
             TokenKind::Keyword(KeywordKind::KIf) => {
                 if self.is_terminated() {
                     return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
@@ -840,6 +873,7 @@ impl Parser {
                     return self.parse_if_statement();
                 }
             }
+
             TokenKind::Keyword(KeywordKind::KAssert) => {
                 if self.is_terminated() {
                     return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
@@ -847,6 +881,7 @@ impl Parser {
                     return self.parse_assert_statement();
                 }
             }
+
             TokenKind::Keyword(KeywordKind::KWhile) => {
                 if self.is_terminated() {
                     return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
@@ -854,9 +889,11 @@ impl Parser {
                     return self.parse_while_statement();
                 }
             }
+
             TokenKind::Keyword(KeywordKind::KReturn) => {
                 return self.parse_return_statement();
             }
+
             TokenKind::Keyword(KeywordKind::KFunc) => {
                 if self.is_terminated() {
                     return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
@@ -885,6 +922,14 @@ impl Parser {
                     return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
                 } else {
                     return self.parse_try_statement();
+                }
+            }
+
+            TokenKind::Keyword(KeywordKind::KForEach) => {
+                if self.is_terminated() {
+                    return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+                } else {
+                    return self.parse_for_each_statement();
                 }
             }
 
@@ -934,11 +979,11 @@ impl Parser {
     }
 
     pub fn get_formatted_errors(&mut self) -> Vec<String> {
-        let mut error_strings = vec!();
+        let mut error_strings = vec![];
 
         for err in &self.errors {
             let (err_line, b_pos, _) = self.lexer.get_line_by_pos(err.pos);
-            let pointed_line = format!("{:0pos$}", "^^^", pos=(err.pos - b_pos));
+            let pointed_line = format!("{:0pos$}", "^^^", pos = (err.pos - b_pos));
 
             error_strings.push(format!(
                 "Parsing Error at position: {}, Token: {:?}\n\t{}\n\t{}\n{}",
@@ -946,6 +991,6 @@ impl Parser {
             ))
         }
 
-        return error_strings
+        return error_strings;
     }
 }
