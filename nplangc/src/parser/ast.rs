@@ -60,8 +60,8 @@ pub struct ConstType  {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct IndexType {
-    pub left: Box<ExpressionKind>,
-    pub right: Box<ExpressionKind>,
+    pub expression_left: Box<ExpressionKind>,
+    pub index: Box<ExpressionKind>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -108,6 +108,8 @@ pub struct ThrowType {
 #[derive(Debug, PartialEq, Clone)]
 pub struct ForEachType {
     pub iterator_exp: Box<ExpressionKind>,
+    pub index: Box<ExpressionKind>,
+    pub element: Box<ExpressionKind>,
     pub block: BlockStatement
 }
 
@@ -151,7 +153,8 @@ pub enum ExpressionKind {
     Prefix(PrefixType),
     Suffix(SuffixType),
     Lambda(LambdaExpType),
-    Boolean(bool)
+    Boolean(bool),
+    Noval,
 }
 
 #[derive(Debug, PartialEq, Clone)]

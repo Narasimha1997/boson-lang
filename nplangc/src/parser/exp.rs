@@ -31,6 +31,13 @@ pub enum InfixExpKind {
     GreaterThan,
     LesserThanEqual,
     LesserThan,
+    PlusEq,
+    MinusEq,
+    MulEq,
+    DivEq,
+    AndEq,
+    OrEq,
+    ModEq
 }
 
 #[derive(PartialEq, PartialOrd, Debug, Clone)]

@@ -14,7 +14,7 @@ pub const SYMBOLS: &'static [&'static str] = &[
 
 #[allow(dead_code)]
 pub const KEYWORDS: &'static [&'static str] = &[
-    "invalid", "if", "else", "while", "for", "break", "continue", "const", "var", "none", "fun",
+    "invalid", "if", "else", "while", "for", "break", "continue", "const", "var", "none", "func",
     "return", "try", "catch", "finally", "rethrow", "throw", "as", "true", "false", "foreach",
     "in", "indexed", "pure", "lambda", "assert"
 ];

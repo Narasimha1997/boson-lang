@@ -1,6 +1,29 @@
+const array = [1,2,4,5,6];
 
-func adder (x, y) {
-    return ++(x+y);
+const incr = lambda x => x + 1;
+
+func incement_array(arr) {
+   foreach arr, idx, element => {
+       const res = incr(element);
+       arr[idx] = res;
+   }
+   return arr;
 }
 
-const z = 10;
+func arr_div(arr) {
+    try {
+        var result = 1;
+        foreach arr, idx, element => {
+            if(element == 0) {
+                throw "Divide by zero";
+            }
+            result /= ++(element + 2.14);
+        }
+        return result;
+    } catch e {
+        return none;
+    }
+}
+
+array = incement_array(array);
+var result = arr_div(array);

@@ -14,6 +14,7 @@ use debug::ParserErrors;
 use exp::get_eval_order;
 use exp::ExpOrder;
 use exp::InfixExpKind;
+use exp::SuffixExpKind;
 
 pub struct Parser {
     pub lexer: LexerAPI,
@@ -660,12 +661,41 @@ impl Parser {
         self.lexer.iterate();
 
         // parse the expression:
+        println!("{:?}", self.lexer.get_current_token());
         let parsed_exp_result = self.parse_expression(ExpOrder::Zero);
         if parsed_exp_result.is_err() {
             return Err(parsed_exp_result.unwrap_err());
         }
 
         let parsed_exp = parsed_exp_result.unwrap();
+
+        if !self.next_symbol_is(SymbolKind::SComma) {
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+        }
+
+        self.lexer.iterate();
+        self.lexer.iterate();
+
+        let parsed_idx_result = self.parse_expression(ExpOrder::Zero);
+        if parsed_idx_result.is_err() {
+            return Err(parsed_idx_result.unwrap_err());
+        }
+
+        let parsed_idx = parsed_idx_result.unwrap();
+
+        if !self.next_symbol_is(SymbolKind::SComma) {
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+        }
+
+        self.lexer.iterate();
+        self.lexer.iterate();
+
+        let parsed_element_result = self.parse_expression(ExpOrder::Zero);
+        if parsed_element_result.is_err() {
+            return Err(parsed_element_result.unwrap_err());
+        }
+
+        let parsed_element = parsed_element_result.unwrap();
 
         if !self.next_symbol_is(SymbolKind::SImpl) {
             return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
@@ -682,6 +712,8 @@ impl Parser {
         // return the forEach type:
         return Ok(ast::StatementKind::ForEach(ast::ForEachType {
             iterator_exp: Box::new(parsed_exp),
+            index: Box::new(parsed_idx),
+            element: Box::new(parsed_element),
             block: block,
         }));
     }
@@ -690,12 +722,30 @@ impl Parser {
         let next_tok = self.lexer.get_next_token();
         match next_tok.token {
             TokenKind::Operator(op) => match op {
-                SymbolKind::SPlus | SymbolKind::SMinus | SymbolKind::SMul | SymbolKind::SDiv |
-                SymbolKind::SMod | SymbolKind::SAnd | SymbolKind::SOr | SymbolKind::SEq | SymbolKind::SEeq |
-                SymbolKind::SNe | SymbolKind::SGte | SymbolKind::SGt | SymbolKind::SLte | SymbolKind::SLt => return true,
-                _ => return false
-            }
-            _ => return false
+                SymbolKind::SPlus
+                | SymbolKind::SMinus
+                | SymbolKind::SMul
+                | SymbolKind::SDiv
+                | SymbolKind::SMod
+                | SymbolKind::SAnd
+                | SymbolKind::SOr
+                | SymbolKind::SEq
+                | SymbolKind::SEeq
+                | SymbolKind::SNe
+                | SymbolKind::SGte
+                | SymbolKind::SGt
+                | SymbolKind::SLte
+                | SymbolKind::SLt
+                | SymbolKind::SPlusEq
+                | SymbolKind::SMinusEq
+                | SymbolKind::SMulEq
+                | SymbolKind::SDivEq
+                | SymbolKind::SModEq
+                | SymbolKind::SAndEq
+                | SymbolKind::SOrEq => return true,
+                _ => return false,
+            },
+            _ => return false,
         }
     }
 
@@ -705,13 +755,16 @@ impl Parser {
         match next_tok.token {
             TokenKind::Operator(op) => match op {
                 SymbolKind::SIncr | SymbolKind::SDecr => return true,
-                _ => return false
-            }
-            _ => return false
+                _ => return false,
+            },
+            _ => return false,
         }
     }
 
-    fn parse_infix_expression(&mut self, expr_left: ast::ExpressionKind) -> Result<ast::ExpressionKind, ParserError> {
+    fn parse_infix_expression(
+        &mut self,
+        expr_left: ast::ExpressionKind,
+    ) -> Result<ast::ExpressionKind, ParserError> {
         let current_token = self.lexer.get_current_token();
         let current_precedence: ExpOrder;
 
@@ -732,12 +785,19 @@ impl Parser {
                     SymbolKind::SGt => InfixExpKind::GreaterThan,
                     SymbolKind::SLte => InfixExpKind::LesserThanEqual,
                     SymbolKind::SLt => InfixExpKind::LesserThan,
+                    SymbolKind::SPlusEq => InfixExpKind::PlusEq,
+                    SymbolKind::SMinusEq => InfixExpKind::MinusEq,
+                    SymbolKind::SMulEq => InfixExpKind::MulEq,
+                    SymbolKind::SModEq => InfixExpKind::ModEq,
+                    SymbolKind::SDivEq => InfixExpKind::DivEq,
+                    SymbolKind::SAndEq => InfixExpKind::AndEq,
+                    SymbolKind::SOrEq => InfixExpKind::OrEq,
                     _ => return Err(self.new_invalid_token_err(String::from("Invalid operator"))),
                 };
 
                 current_precedence = get_eval_order(&op);
                 matched_op_kind
-            },
+            }
             _ => {
                 return Err(self
                     .new_invalid_token_err(String::from("Expected an operator, invalid syntax")))
@@ -753,13 +813,39 @@ impl Parser {
             return Err(expr_right.unwrap_err());
         }
 
-        let infix_type = ast::InfixType{
+        let infix_type = ast::InfixType {
             infix: infix_sym,
             expression_right: Box::new(expr_right.unwrap()),
-            expression_left: Box::new(expr_left)
+            expression_left: Box::new(expr_left),
         };
 
         return Ok(ast::ExpressionKind::Infix(infix_type));
+    }
+
+    fn parse_suffix_expression(
+        &mut self,
+        exp_left: ast::ExpressionKind,
+    ) -> Result<ast::ExpressionKind, ParserError> {
+        let current_token = self.lexer.get_current_token();
+        let matched_suffix = match current_token.token {
+            TokenKind::Operator(op) => {
+                let matched_symbol = match op {
+                    SymbolKind::SIncr => SuffixExpKind::PostIncrement,
+                    SymbolKind::SDecr => SuffixExpKind::PostDecrement,
+                    _ => return Err(self.new_invalid_token_err(String::from("Invalid syntax"))),
+                };
+
+                matched_symbol
+            }
+            _ => return Err(self.new_invalid_token_err(String::from("Invalid syntax"))),
+        };
+
+        let suffix_type = ast::SuffixType {
+            expression: Box::new(exp_left),
+            suffix: matched_suffix,
+        };
+
+        return Ok(ast::ExpressionKind::Suffix(suffix_type));
     }
 
     fn parse_for_loop_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
@@ -839,6 +925,7 @@ impl Parser {
                         Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Bool(true)))
                     }
                     KeywordKind::KLambda => self.parse_lambda_exp(),
+                    KeywordKind::KNone => Ok(ast::ExpressionKind::Noval),
                     _ => Err(self
                         .new_invalid_token_err(String::from("Functionality not yet implemented"))),
                 };
@@ -854,7 +941,7 @@ impl Parser {
                     | SymbolKind::SDecr
                     | SymbolKind::SNeg
                     | SymbolKind::SExcl => self.parse_prefix_expression(),
-                    | SymbolKind::SLParen => self.parse_sub_expression(),
+                    SymbolKind::SLParen => self.parse_sub_expression(),
                     _ => Err(self.new_invalid_token_err(String::from("Invalid symbol"))),
                 };
 
@@ -869,13 +956,81 @@ impl Parser {
         }
 
         while !self.next_symbol_is(SymbolKind::SSemiColon) && pre < self.get_next_order() {
+
+            if matched_prefix.is_err() {
+                return Err(matched_prefix.unwrap_err());
+            }
+
             if self.has_infix() {
                 self.lexer.iterate();
                 matched_prefix = self.parse_infix_expression(matched_prefix.unwrap());
+            } else if self.has_suffix() {
+                self.lexer.iterate();
+                matched_prefix = self.parse_suffix_expression(matched_prefix.unwrap());
+            } else if self.next_symbol_is(SymbolKind::SLParen) {
+                self.lexer.iterate();
+                matched_prefix = self.parse_call_expression(matched_prefix.unwrap());
+            } else if self.next_symbol_is(SymbolKind::SLBox) {
+                self.lexer.iterate();
+                matched_prefix = self.parse_index_expression(matched_prefix.unwrap());
+            } else {
+                break;
             }
         }
 
         return matched_prefix;
+    }
+
+    fn parse_index_expression(
+        &mut self,
+        prefix_exp: ast::ExpressionKind,
+    ) -> Result<ast::ExpressionKind, ParserError> {
+        self.lexer.iterate();
+        let exp_result = self.parse_expression(ExpOrder::Zero);
+        if exp_result.is_err() {
+            return Err(exp_result.unwrap_err());
+        }
+
+        if !self.next_symbol_is(SymbolKind::SRBox) {
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+        }
+
+        self.lexer.iterate();
+        let index_type = ast::IndexType{
+            expression_left: Box::new(prefix_exp),
+            index: Box::new(exp_result.unwrap())
+        };
+
+        return Ok(ast::ExpressionKind::Index(index_type));
+    }
+
+    fn parse_call_expression(
+        &mut self,
+        caller_expr: ast::ExpressionKind,
+    ) -> Result<ast::ExpressionKind, ParserError> {
+
+        println!("{:?}", self.lexer.get_current_token());
+
+        if self.next_symbol_is(SymbolKind::SRparen) {
+            self.lexer.iterate();
+            return Ok(ast::ExpressionKind::Call(ast::CallType {
+                function: Box::new(caller_expr),
+                arguments: vec![],
+            }));
+        }
+
+        let args_list_result = self.parse_list_expr();
+        if args_list_result.is_err() {
+            return Err(args_list_result.unwrap_err());
+        }
+
+        self.lexer.iterate();
+        let call_type = ast::CallType {
+            function: Box::new(caller_expr),
+            arguments: args_list_result.unwrap(),
+        };
+
+        return Ok(ast::ExpressionKind::Call(call_type));
     }
 
     fn parse_throw_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
@@ -896,9 +1051,7 @@ impl Parser {
     fn parse_sub_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
         self.lexer.iterate();
         if self.next_symbol_is(SymbolKind::SRparen) {
-            return Err(self.new_invalid_token_err(String::from(
-                "Invalid syntax"
-            )));
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
         }
 
         let sub_exp_result = self.parse_expression(ExpOrder::Zero);
@@ -907,9 +1060,7 @@ impl Parser {
         }
 
         if !self.next_symbol_is(SymbolKind::SRparen) {
-            return Err(self.new_invalid_token_err(
-                String::from("Invalid syntax")
-            ))
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
         }
 
         self.lexer.iterate();
@@ -997,7 +1148,6 @@ impl Parser {
     fn parse_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
         let current_token = self.lexer.get_current_token();
 
-        println!("{:?}", current_token);
         match current_token.token {
             TokenKind::Keyword(KeywordKind::KBreak) => {
                 if self.is_terminated() {
