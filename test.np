@@ -1,8 +1,7 @@
+const z = 10;
 
-foreach x => {
-    const z = 30;
+func x(x) {
+    const a = 20;
 }
 
-for y in [1,2,4,5,6] {
-    const z = 10;
-}
+const a = 10;
