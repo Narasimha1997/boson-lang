@@ -352,13 +352,14 @@ impl Parser {
     }
 
     fn parse_list_expr(&mut self) -> Result<Vec<ast::ExpressionKind>, ParserError> {
-        let mut exp_list = vec![];
 
-        self.lexer.iterate();
+        let mut exp_list = vec![];
 
         if self.next_symbol_is(SymbolKind::SRparen) {
             return Ok(exp_list);
         }
+
+        self.lexer.iterate();
 
         // first entry:
         let matched_expr = self.parse_expression();
@@ -579,6 +580,41 @@ impl Parser {
         int_literal
     }
 
+    fn parse_prefix_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        let current_token = self.lexer.get_current_token();
+        match current_token.token {
+            TokenKind::Operator(sym) => {
+                let matched_prefix = match sym {
+                    SymbolKind::SPlusEq => exp::PrefixExpKind::PlusEq,
+                    SymbolKind::SMinusEq => exp::PrefixExpKind::MinusEq,
+                    SymbolKind::SMulEq => exp::PrefixExpKind::MulEq,
+                    SymbolKind::SDivEq => exp::PrefixExpKind::DivEq,
+                    SymbolKind::SModEq => exp::PrefixExpKind::ModEq,
+                    SymbolKind::SAndEq => exp::PrefixExpKind::AndEq,
+                    SymbolKind::SOrEq => exp::PrefixExpKind::OrEq,
+                    SymbolKind::SIncr => exp::PrefixExpKind::PreIncrement,
+                    SymbolKind::SDecr => exp::PrefixExpKind::PreDecrement,
+                    SymbolKind::SNeg => exp::PrefixExpKind::Not,
+                    _ => {
+                        return Err(self.new_invalid_token_err(format!("Invalid prefix {:?}", sym)))
+                    }
+                };
+
+                self.lexer.iterate();
+                let exp_result = self.parse_expression();
+                if exp_result.is_err() {
+                    return Err(exp_result.unwrap_err());
+                }
+
+                return Ok(ast::ExpressionKind::Prefix(ast::PrefixType {
+                    prefix: matched_prefix,
+                    expression: Box::new(exp_result.unwrap()),
+                }));
+            }
+            _ => return Err(self.new_invalid_token_err(String::from("Invalid syntax"))),
+        }
+    }
+
     fn parse_floating_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
         let current_token = self.lexer.get_current_token();
         let float_literal = match current_token.token {
@@ -733,6 +769,15 @@ impl Parser {
                 let op_expr_result = match op {
                     SymbolKind::SLBox => self.parse_array_expression(),
                     SymbolKind::SLBrace => self.parse_hash_literal(),
+                    SymbolKind::SIncr
+                    | SymbolKind::SDecr
+                    | SymbolKind::SPlusEq
+                    | SymbolKind::SMinusEq
+                    | SymbolKind::SMulEq
+                    | SymbolKind::SDivEq
+                    | SymbolKind::SAndEq
+                    | SymbolKind::SModEq
+                    | SymbolKind::SOrEq => self.parse_prefix_expression(),
                     _ => Err(self.new_invalid_token_err(String::from("Invalid symbol"))),
                 };
 
@@ -833,8 +878,19 @@ impl Parser {
         }));
     }
 
+    fn parse_expression_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
+        let parsed_exp = self.parse_expression();
+        if parsed_exp.is_err() {
+            return Err(parsed_exp.unwrap_err());
+        }
+
+        return Ok(ast::StatementKind::Expression(parsed_exp.unwrap()));
+    }
+
     fn parse_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
         let current_token = self.lexer.get_current_token();
+
+        println!("{:?}", current_token);
         match current_token.token {
             TokenKind::Keyword(KeywordKind::KBreak) => {
                 if self.is_terminated() {
@@ -938,7 +994,7 @@ impl Parser {
             }
 
             TokenKind::Empty => return Ok(ast::StatementKind::Empty),
-            _ => return Err(self.new_invalid_token_err(String::from("Invalid token"))),
+            _ => return self.parse_expression_statement(),
         }
     }
 

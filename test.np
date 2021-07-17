@@ -1,9 +1,6 @@
+const z = 10;
+const x = [];
 
-foreach x => {
-    const z = 30;
+func x () {
+    ++x;   
 }
-
-for y in [1,2,4,5,6] {
-    const z = 10;
-}
-++z;

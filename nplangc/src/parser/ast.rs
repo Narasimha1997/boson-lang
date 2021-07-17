@@ -112,6 +112,18 @@ pub struct ForEachType {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct PrefixType {
+    pub prefix: PrefixExpKind,
+    pub expression: Box<ExpressionKind>
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct SuffixType {
+    pub prefix: SuffixExpKind,
+    pub expression: Box<ExpressionKind>
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum LiteralKind {
     Int(i64),
     Float(f64),
@@ -129,8 +141,8 @@ pub enum ExpressionKind {
     Index(IndexType),
     Call(CallType),
     Infix(InfixExpKind),
-    Prefix(PrefixExpKind),
-    Suffix(SuffixExpKind),
+    Prefix(PrefixType),
+    Suffix(SuffixType),
     Lambda(LambdaExpType),
     Boolean(bool)
 }

@@ -44,21 +44,23 @@ pub enum SymbolKind {
     SRBrace = 19,
     SAnd = 20,
     SOr = 21,
-    SNeg = 22,
-    SLAnd = 23,
-    SLOr = 24,
-    SPlusEq = 25,
-    SMinusEq = 26,
-    SIncr = 27,
-    SDecr = 28,
-    SMulEq = 29,
-    SDivEq = 30,
-    SModEq = 31,
-    SLBox = 32,
-    SRBox = 33,
-    SImpl = 34,
-    SColon = 35,
-    SDot = 36,
+    SAndEq = 22,
+    SOrEq = 23,
+    SNeg = 24,
+    SLAnd = 25,
+    SLOr = 26,
+    SPlusEq = 27,
+    SMinusEq = 28,
+    SIncr = 29,
+    SDecr = 30,
+    SMulEq = 31,
+    SDivEq = 32,
+    SModEq = 33,
+    SLBox = 34,
+    SRBox = 35,
+    SImpl = 36,
+    SColon = 37,
+    SDot = 38,
 }
 
 #[allow(dead_code)]
@@ -604,6 +606,10 @@ impl ProgramLexer {
                         self.read_next();
                         TokenKind::Operator(SymbolKind::SLAnd)
                     }
+                    b'=' => {
+                        self.read_next();
+                        TokenKind::Operator(SymbolKind::SAndEq)
+                    }
                     _ => TokenKind::Operator(SymbolKind::SAnd),
                 };
                 combined_token
@@ -615,6 +621,10 @@ impl ProgramLexer {
                     b'|' => {
                         self.read_next();
                         TokenKind::Operator(SymbolKind::SLOr)
+                    }
+                    b'=' => {
+                        self.read_next();
+                        TokenKind::Operator(SymbolKind::SOrEq)
                     }
                     _ => TokenKind::Operator(SymbolKind::SOr),
                 };
