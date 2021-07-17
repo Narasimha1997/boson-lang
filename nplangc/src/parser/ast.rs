@@ -119,8 +119,15 @@ pub struct PrefixType {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct SuffixType {
-    pub prefix: SuffixExpKind,
+    pub suffix: SuffixExpKind,
     pub expression: Box<ExpressionKind>
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct InfixType {
+    pub infix: InfixExpKind,
+    pub expression_left: Box<ExpressionKind>,
+    pub expression_right: Box<ExpressionKind>
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -140,7 +147,7 @@ pub enum ExpressionKind {
     Literal(LiteralKind),
     Index(IndexType),
     Call(CallType),
-    Infix(InfixExpKind),
+    Infix(InfixType),
     Prefix(PrefixType),
     Suffix(SuffixType),
     Lambda(LambdaExpType),

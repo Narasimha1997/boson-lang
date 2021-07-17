@@ -11,6 +11,10 @@ use debug::ParserError;
 use debug::ParserErrorKind;
 use debug::ParserErrors;
 
+use exp::get_eval_order;
+use exp::ExpOrder;
+use exp::InfixExpKind;
+
 pub struct Parser {
     pub lexer: LexerAPI,
     pub errors: ParserErrors,
@@ -37,6 +41,14 @@ impl Parser {
 
     fn is_empty_statement(&mut self, stmt: &ast::StatementKind) -> bool {
         stmt == &ast::StatementKind::Empty
+    }
+
+    fn get_next_order(&mut self) -> ExpOrder {
+        let token = self.lexer.get_next_token().token;
+        match token {
+            TokenKind::Operator(sym) => return get_eval_order(&sym),
+            _ => return ExpOrder::Zero,
+        }
     }
 
     fn parse_block_statement(&mut self) -> Result<ast::BlockStatement, ParserError> {
@@ -88,7 +100,7 @@ impl Parser {
         self.lexer.iterate();
 
         // parse the left expression:
-        match self.parse_expression() {
+        match self.parse_expression(ExpOrder::Zero) {
             Ok(expr_target) => {
                 if self.is_terminated() {
                     return Err(self.new_invalid_token_err(String::from(
@@ -107,7 +119,7 @@ impl Parser {
                 self.lexer.iterate();
 
                 // parse the expression:
-                match self.parse_expression() {
+                match self.parse_expression(ExpOrder::Zero) {
                     Ok(fail_expr) => {
                         return Ok(ast::StatementKind::Assert(ast::AssertType {
                             target_expr: Box::new(expr_target),
@@ -188,7 +200,7 @@ impl Parser {
         self.lexer.iterate();
 
         // parse the expression:
-        let if_expr = self.parse_expression();
+        let if_expr = self.parse_expression(ExpOrder::Zero);
         match if_expr {
             Ok(expr) => {
                 // parse the block statement and else expression if present:
@@ -287,7 +299,7 @@ impl Parser {
                         TokenKind::Operator(op) => {
                             if self.lexer.symbols_are_equal(&op, SymbolKind::SEq) {
                                 self.lexer.iterate();
-                                self.parse_expression()
+                                self.parse_expression(ExpOrder::Zero)
                             } else {
                                 Err(self.new_invalid_token_err(String::from("Expected =")))
                             }
@@ -352,7 +364,6 @@ impl Parser {
     }
 
     fn parse_list_expr(&mut self) -> Result<Vec<ast::ExpressionKind>, ParserError> {
-
         let mut exp_list = vec![];
 
         if self.next_symbol_is(SymbolKind::SRparen) {
@@ -362,7 +373,7 @@ impl Parser {
         self.lexer.iterate();
 
         // first entry:
-        let matched_expr = self.parse_expression();
+        let matched_expr = self.parse_expression(ExpOrder::Zero);
         match matched_expr {
             Ok(expr) => exp_list.push(expr),
             Err(error) => return Err(error),
@@ -372,7 +383,7 @@ impl Parser {
             self.lexer.iterate();
             self.lexer.iterate();
 
-            let matched_expr = self.parse_expression();
+            let matched_expr = self.parse_expression(ExpOrder::Zero);
             match matched_expr {
                 Ok(expr) => exp_list.push(expr),
                 Err(error) => return Err(error),
@@ -383,7 +394,7 @@ impl Parser {
     }
 
     fn parse_pair(&mut self) -> Result<(ast::ExpressionKind, ast::ExpressionKind), ParserError> {
-        let key_exp = self.parse_expression();
+        let key_exp = self.parse_expression(ExpOrder::Zero);
         match key_exp {
             Ok(key) => {
                 if !self.next_symbol_is(SymbolKind::SColon) {
@@ -395,7 +406,7 @@ impl Parser {
                 self.lexer.iterate();
                 self.lexer.iterate();
 
-                let value_exp = self.parse_expression();
+                let value_exp = self.parse_expression(ExpOrder::Zero);
                 match value_exp {
                     Ok(value) => return Ok((key, value)),
                     Err(error) => return Err(error),
@@ -414,7 +425,7 @@ impl Parser {
         self.lexer.iterate();
 
         // parse the expression:
-        match self.parse_expression() {
+        match self.parse_expression(ExpOrder::Zero) {
             Ok(expr) => {
                 // parse the block statement:
                 if !self.next_symbol_is(SymbolKind::SRparen) {
@@ -461,7 +472,7 @@ impl Parser {
                 self.lexer.iterate();
                 self.lexer.iterate();
                 // parse the right expression:
-                match self.parse_expression() {
+                match self.parse_expression(ExpOrder::Zero) {
                     Ok(expr) => {
                         return Ok(ast::ExpressionKind::Lambda(ast::LambdaExpType {
                             expression: Box::new(expr),
@@ -485,7 +496,7 @@ impl Parser {
 
         self.lexer.iterate();
         // parse the expression:
-        match self.parse_expression() {
+        match self.parse_expression(ExpOrder::Zero) {
             Ok(expr) => {
                 return Ok(ast::StatementKind::Return(ast::ReturnType {
                     expression: Some(expr),
@@ -585,13 +596,7 @@ impl Parser {
         match current_token.token {
             TokenKind::Operator(sym) => {
                 let matched_prefix = match sym {
-                    SymbolKind::SPlusEq => exp::PrefixExpKind::PlusEq,
-                    SymbolKind::SMinusEq => exp::PrefixExpKind::MinusEq,
-                    SymbolKind::SMulEq => exp::PrefixExpKind::MulEq,
-                    SymbolKind::SDivEq => exp::PrefixExpKind::DivEq,
-                    SymbolKind::SModEq => exp::PrefixExpKind::ModEq,
-                    SymbolKind::SAndEq => exp::PrefixExpKind::AndEq,
-                    SymbolKind::SOrEq => exp::PrefixExpKind::OrEq,
+                    SymbolKind::SExcl => exp::PrefixExpKind::Neg,
                     SymbolKind::SIncr => exp::PrefixExpKind::PreIncrement,
                     SymbolKind::SDecr => exp::PrefixExpKind::PreDecrement,
                     SymbolKind::SNeg => exp::PrefixExpKind::Not,
@@ -601,7 +606,7 @@ impl Parser {
                 };
 
                 self.lexer.iterate();
-                let exp_result = self.parse_expression();
+                let exp_result = self.parse_expression(ExpOrder::Zero);
                 if exp_result.is_err() {
                     return Err(exp_result.unwrap_err());
                 }
@@ -655,7 +660,7 @@ impl Parser {
         self.lexer.iterate();
 
         // parse the expression:
-        let parsed_exp_result = self.parse_expression();
+        let parsed_exp_result = self.parse_expression(ExpOrder::Zero);
         if parsed_exp_result.is_err() {
             return Err(parsed_exp_result.unwrap_err());
         }
@@ -681,6 +686,82 @@ impl Parser {
         }));
     }
 
+    fn has_infix(&mut self) -> bool {
+        let next_tok = self.lexer.get_next_token();
+        match next_tok.token {
+            TokenKind::Operator(op) => match op {
+                SymbolKind::SPlus | SymbolKind::SMinus | SymbolKind::SMul | SymbolKind::SDiv |
+                SymbolKind::SMod | SymbolKind::SAnd | SymbolKind::SOr | SymbolKind::SEq | SymbolKind::SEeq |
+                SymbolKind::SNe | SymbolKind::SGte | SymbolKind::SGt | SymbolKind::SLte | SymbolKind::SLt => return true,
+                _ => return false
+            }
+            _ => return false
+        }
+    }
+
+    #[allow(dead_code)]
+    fn has_suffix(&mut self) -> bool {
+        let next_tok = self.lexer.get_next_token();
+        match next_tok.token {
+            TokenKind::Operator(op) => match op {
+                SymbolKind::SIncr | SymbolKind::SDecr => return true,
+                _ => return false
+            }
+            _ => return false
+        }
+    }
+
+    fn parse_infix_expression(&mut self, expr_left: ast::ExpressionKind) -> Result<ast::ExpressionKind, ParserError> {
+        let current_token = self.lexer.get_current_token();
+        let current_precedence: ExpOrder;
+
+        let infix_sym = match current_token.token {
+            TokenKind::Operator(op) => {
+                let matched_op_kind = match op {
+                    SymbolKind::SPlus => InfixExpKind::Plus,
+                    SymbolKind::SMinus => InfixExpKind::Minus,
+                    SymbolKind::SMul => InfixExpKind::Mul,
+                    SymbolKind::SDiv => InfixExpKind::Div,
+                    SymbolKind::SMod => InfixExpKind::Mod,
+                    SymbolKind::SAnd => InfixExpKind::And,
+                    SymbolKind::SOr => InfixExpKind::Or,
+                    SymbolKind::SEq => InfixExpKind::Equal,
+                    SymbolKind::SEeq => InfixExpKind::EEqual,
+                    SymbolKind::SNe => InfixExpKind::NotEqual,
+                    SymbolKind::SGte => InfixExpKind::GreaterThanEqual,
+                    SymbolKind::SGt => InfixExpKind::GreaterThan,
+                    SymbolKind::SLte => InfixExpKind::LesserThanEqual,
+                    SymbolKind::SLt => InfixExpKind::LesserThan,
+                    _ => return Err(self.new_invalid_token_err(String::from("Invalid operator"))),
+                };
+
+                current_precedence = get_eval_order(&op);
+                matched_op_kind
+            },
+            _ => {
+                return Err(self
+                    .new_invalid_token_err(String::from("Expected an operator, invalid syntax")))
+            }
+        };
+
+        // parse the remaining expression:
+        self.lexer.iterate();
+
+        let expr_right = self.parse_expression(current_precedence);
+
+        if expr_right.is_err() {
+            return Err(expr_right.unwrap_err());
+        }
+
+        let infix_type = ast::InfixType{
+            infix: infix_sym,
+            expression_right: Box::new(expr_right.unwrap()),
+            expression_left: Box::new(expr_left)
+        };
+
+        return Ok(ast::ExpressionKind::Infix(infix_type));
+    }
+
     fn parse_for_loop_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
         if self.next_symbol_is(SymbolKind::SSemiColon) {
             return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
@@ -689,7 +770,7 @@ impl Parser {
         self.lexer.iterate();
 
         // parse the expression
-        let mut parsed_exp_result = self.parse_expression();
+        let mut parsed_exp_result = self.parse_expression(ExpOrder::Zero);
         if parsed_exp_result.is_err() {
             return Err(parsed_exp_result.unwrap_err());
         }
@@ -704,7 +785,7 @@ impl Parser {
         self.lexer.iterate();
 
         // parse the iterator expression:
-        parsed_exp_result = self.parse_expression();
+        parsed_exp_result = self.parse_expression(ExpOrder::Zero);
         if parsed_exp_result.is_err() {
             return Err(parsed_exp_result.unwrap_err());
         }
@@ -730,12 +811,12 @@ impl Parser {
         }));
     }
 
-    fn parse_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+    fn parse_expression(&mut self, pre: ExpOrder) -> Result<ast::ExpressionKind, ParserError> {
         // when an expression is called, the current_token should be at the starting
         // the next_token should point to the next token after start.
 
         let current_token = self.lexer.get_current_token();
-        let matched_prefix = match current_token.token {
+        let mut matched_prefix = match current_token.token {
             // literals:
             TokenKind::Identifier(_) => match self.get_identifier() {
                 Ok(ident) => Ok(ast::ExpressionKind::Identifier(ast::IdentifierType {
@@ -771,13 +852,9 @@ impl Parser {
                     SymbolKind::SLBrace => self.parse_hash_literal(),
                     SymbolKind::SIncr
                     | SymbolKind::SDecr
-                    | SymbolKind::SPlusEq
-                    | SymbolKind::SMinusEq
-                    | SymbolKind::SMulEq
-                    | SymbolKind::SDivEq
-                    | SymbolKind::SAndEq
-                    | SymbolKind::SModEq
-                    | SymbolKind::SOrEq => self.parse_prefix_expression(),
+                    | SymbolKind::SNeg
+                    | SymbolKind::SExcl => self.parse_prefix_expression(),
+                    | SymbolKind::SLParen => self.parse_sub_expression(),
                     _ => Err(self.new_invalid_token_err(String::from("Invalid symbol"))),
                 };
 
@@ -791,6 +868,13 @@ impl Parser {
             return matched_prefix;
         }
 
+        while !self.next_symbol_is(SymbolKind::SSemiColon) && pre < self.get_next_order() {
+            if self.has_infix() {
+                self.lexer.iterate();
+                matched_prefix = self.parse_infix_expression(matched_prefix.unwrap());
+            }
+        }
+
         return matched_prefix;
     }
 
@@ -798,7 +882,7 @@ impl Parser {
         self.lexer.iterate();
 
         // parse the throw expression:
-        let parsed_exp_result = self.parse_expression();
+        let parsed_exp_result = self.parse_expression(ExpOrder::Zero);
         if parsed_exp_result.is_err() {
             return Err(parsed_exp_result.unwrap_err());
         }
@@ -807,6 +891,29 @@ impl Parser {
         return Ok(ast::StatementKind::Throw(ast::ThrowType {
             expression: Box::new(throw_expression),
         }));
+    }
+
+    fn parse_sub_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        self.lexer.iterate();
+        if self.next_symbol_is(SymbolKind::SRparen) {
+            return Err(self.new_invalid_token_err(String::from(
+                "Invalid syntax"
+            )));
+        }
+
+        let sub_exp_result = self.parse_expression(ExpOrder::Zero);
+        if sub_exp_result.is_err() {
+            return Err(sub_exp_result.unwrap_err());
+        }
+
+        if !self.next_symbol_is(SymbolKind::SRparen) {
+            return Err(self.new_invalid_token_err(
+                String::from("Invalid syntax")
+            ))
+        }
+
+        self.lexer.iterate();
+        return Ok(sub_exp_result.unwrap());
     }
 
     fn parse_try_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
@@ -832,7 +939,7 @@ impl Parser {
         self.lexer.iterate();
 
         // parse catch block exp:
-        let catch_exp_result = self.parse_expression();
+        let catch_exp_result = self.parse_expression(ExpOrder::Zero);
         if catch_exp_result.is_err() {
             return Err(catch_exp_result.unwrap_err());
         }
@@ -879,7 +986,7 @@ impl Parser {
     }
 
     fn parse_expression_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
-        let parsed_exp = self.parse_expression();
+        let parsed_exp = self.parse_expression(ExpOrder::Zero);
         if parsed_exp.is_err() {
             return Err(parsed_exp.unwrap_err());
         }

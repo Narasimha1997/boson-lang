@@ -1,6 +1,6 @@
-const z = 10;
-const x = [];
 
-func x () {
-    ++x;   
+func adder (x, y) {
+    return ++(x+y);
 }
+
+const z = 10;
