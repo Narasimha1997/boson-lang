@@ -356,6 +356,10 @@ impl Parser {
 
         self.lexer.iterate();
 
+        if self.next_symbol_is(SymbolKind::SRparen) {
+            return Ok(exp_list);
+        }
+
         // first entry:
         let matched_expr = self.parse_expression();
         match matched_expr {
