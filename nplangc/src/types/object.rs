@@ -2,6 +2,8 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
+use crate::types::array::Array;
+use crate::types::hash::HashTable;
 use crate::types::subroutine::Subroutine;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -13,7 +15,11 @@ pub enum Object {
     Str(String),
     Float(f64),
     Subroutine(Rc<Subroutine>),
+    Array(Rc<Array>),
+    HashTable(Rc<HashTable>),
 }
+
+impl Eq for Object {}
 
 impl Hash for Object {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -29,7 +35,7 @@ impl Hash for Object {
 }
 
 impl Object {
-    fn describe(&self) -> String {
+    pub fn describe(&self) -> String {
         match self {
             Object::Int(i) => i.to_string(),
             Object::Char(c) => c.to_string(),
