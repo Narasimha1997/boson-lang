@@ -1,6 +1,8 @@
 pub mod parser;
 pub mod lexer;
 
+pub mod types;
+
 fn main() {
    let lexer_api = lexer::LexerAPI::new_from_file(
       String::from("test.np")
@@ -18,4 +20,5 @@ fn main() {
       let program = parsed_result.unwrap();
       println!("{:?}", program);
    }
+   
 }
