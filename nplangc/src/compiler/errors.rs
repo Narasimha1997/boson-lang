@@ -14,7 +14,8 @@ pub struct CompileError {
 }
 
 impl CompileError {
-    fn new(message: &str, t: CompilerErrorKind, pos: usize) -> CompileError {
+    #[allow(dead_code)]
+    pub fn new(message: &str, t: CompilerErrorKind, pos: usize) -> CompileError {
         return CompileError {
             message: message.to_string(),
             t: t,

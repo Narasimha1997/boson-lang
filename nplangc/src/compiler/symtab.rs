@@ -1,9 +1,6 @@
+use crate::types::object::Object;
 use std::collections::HashMap;
 use std::rc::Rc;
-
-use crate::compiler::errors::CompileError;
-use crate::compiler::errors::CompilerErrorKind;
-use crate::types::object::Object;
 
 pub enum ScopeKind {
     Global,
@@ -98,9 +95,26 @@ impl SymbolTable {
         return ref_counted_symbol;
     }
 
-    pub fn resolve(name: &str, symtab: &SymbolTable) -> Option<Rc<Symbol>> {
+    pub fn resolve_symbol(&mut self, name: &str) -> Option<Rc<Symbol>> {
+        let result = self.__resolve(name);
+
+        if result.is_some() {
+            let unwrapped_sym = result.unwrap();
+            match unwrapped_sym.scope {
+                ScopeKind::Global | ScopeKind::Builtin => return Some(Rc::clone(&unwrapped_sym)),
+                ScopeKind::Local | ScopeKind::Free => {
+                    let free = self.insert_free_symbol(&unwrapped_sym);
+                    return Some(free);
+                }
+            }
+        }
+
+        return None;
+    }
+
+    fn __resolve(&self, name: &str) -> Option<Rc<Symbol>> {
         let sym_key = name.to_string();
-        let mut current_symtab = symtab;
+        let mut current_symtab = self;
 
         let mut symbol_res = current_symtab.get_symbol(&sym_key);
         while symbol_res.is_none() && current_symtab.level != 0 {
