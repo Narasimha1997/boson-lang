@@ -52,6 +52,23 @@ impl SymbolTable {
         };
     }
 
+    pub fn insert_free_symbol(&mut self, symbol: &Rc<Symbol>) -> Rc<Symbol> {
+        self.free_symbols.push(Rc::clone(symbol));
+
+        let new_symbol = Symbol {
+            name: symbol.name.clone(),
+            pos: self.free_symbols.len() - 1,
+            is_const: symbol.is_const,
+            scope: ScopeKind::Free,
+        };
+
+        let ref_c_new_symbol = Rc::new(new_symbol);
+
+        self.symbols
+            .insert(symbol.name.clone(), Rc::clone(&ref_c_new_symbol));
+        return ref_c_new_symbol;
+    }
+
     pub fn get_symbol(&self, name: &String) -> Option<Rc<Symbol>> {
         let result = self.symbols.get(name).cloned();
         return result;
@@ -76,7 +93,7 @@ impl SymbolTable {
         let ref_counted_symbol = Rc::new(symbol);
         // enter into the hash map:
         self.symbols
-            .insert(name.to_string(), ref_counted_symbol.clone());
+            .insert(name.to_string(), Rc::clone(&ref_counted_symbol));
         self.n_items += 1;
         return ref_counted_symbol;
     }
@@ -90,7 +107,6 @@ impl SymbolTable {
             current_symtab = current_symtab.parent.as_ref().unwrap();
             symbol_res = current_symtab.get_symbol(&sym_key);
         }
-
         return symbol_res;
     }
 }
