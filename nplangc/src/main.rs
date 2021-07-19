@@ -2,6 +2,7 @@ pub mod parser;
 pub mod lexer;
 pub mod compiler;
 pub mod types;
+pub mod config;
 
 fn main() {
    let lexer_api = lexer::LexerAPI::new_from_file(
