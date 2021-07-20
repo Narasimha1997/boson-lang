@@ -3,7 +3,7 @@ use crate::config::BYTE_ENDIAN;
 
 use isa::InstructionKind;
 
-type Operands = Vec<usize>;
+pub type Operands = Vec<usize>;
 
 pub struct InstructionPacker {}
 

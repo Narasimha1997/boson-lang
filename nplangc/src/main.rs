@@ -18,8 +18,14 @@ fn main() {
          println!("{}", err);
       }
    } else {
-      let program = parsed_result.unwrap();
-      println!("{:?}", program);
+      let mut p_compiler = compiler::BytecodeCompiler::new();
+      let bytecode_result = p_compiler.compile(&parsed_result.unwrap());
+      if bytecode_result.is_err() {
+         let err = bytecode_result.unwrap_err();
+         println!("Compilation Error: {:?}", err);
+      } else {
+         println!("{:?}", bytecode_result.unwrap().instructions);
+      }
    }
    
 }

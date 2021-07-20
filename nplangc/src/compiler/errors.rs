@@ -1,12 +1,16 @@
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum CompilerErrorKind {
     UnresolvedSymbol,
     ConstantAssignment,
     InvalidOperand,
+    InvalidScope,
+    SymbolAlreadyExist,
+    BuiltinAssignment,
 }
 
+#[derive(Debug, Clone)]
 pub struct CompileError {
     pub t: CompilerErrorKind,
     pub message: String,
@@ -15,9 +19,9 @@ pub struct CompileError {
 
 impl CompileError {
     #[allow(dead_code)]
-    pub fn new(message: &str, t: CompilerErrorKind, pos: usize) -> CompileError {
+    pub fn new(message: String, t: CompilerErrorKind, pos: usize) -> CompileError {
         return CompileError {
-            message: message.to_string(),
+            message: message,
             t: t,
             pos: pos,
         };

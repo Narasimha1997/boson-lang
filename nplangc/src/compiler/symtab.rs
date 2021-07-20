@@ -2,6 +2,7 @@ use crate::types::object::Object;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum ScopeKind {
     Global,
     Local,
@@ -9,6 +10,7 @@ pub enum ScopeKind {
     Free,
 }
 
+#[derive(Debug, Clone)]
 pub struct Symbol {
     pub name: String,
     pub pos: usize,
@@ -18,6 +20,7 @@ pub struct Symbol {
 
 pub type SymbolsMap = HashMap<String, Rc<Symbol>>;
 
+#[derive(Debug, Clone)]
 pub struct SymbolTable {
     pub parent: Option<Box<SymbolTable>>,
     pub symbols: SymbolsMap,
@@ -126,6 +129,7 @@ impl SymbolTable {
 }
 
 // constant pool: This stores all the literal objects that will be referenced by the VM
+#[derive(Debug, Clone)]
 pub struct ConstantPool {
     pub objects: Vec<Rc<Object>>,
     pub size: usize,
@@ -146,8 +150,13 @@ impl ConstantPool {
         return None;
     }
 
-    pub fn set_object(&mut self, object: Rc<Object>) {
+    pub fn set_object(&mut self, object: Rc<Object>) -> usize {
         self.objects.push(object);
         self.size += 1;
+        return self.size - 1;
+    }
+
+    pub fn get_size(&self) -> usize {
+        self.size
     }
 }
