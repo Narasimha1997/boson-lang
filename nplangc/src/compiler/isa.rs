@@ -18,8 +18,12 @@ pub enum InstructionKind {
     IMod,
 
     // unary arithmetic
-    IIncr,
-    IDecr,
+    IPreIncr,
+    IPreDecr,
+
+    // unary arithmetic
+    IPostIncr,
+    IPostDecr,
 
     // bitwise
     IOr,

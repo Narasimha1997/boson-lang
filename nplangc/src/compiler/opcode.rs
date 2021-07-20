@@ -90,6 +90,11 @@ impl InstructionKind {
             InstructionKind::IStoreLocal => "IStoreLocal".to_string(),
             InstructionKind::ILoadGlobal => "ILoadGlobal".to_string(),
             InstructionKind::ILoadLocal => "ILoadLocal".to_string(),
+            InstructionKind::INeg => "INeg".to_string(),
+            InstructionKind::IPostDecr => "IPostDecr".to_string(),
+            InstructionKind::IPostIncr => "IPostIncr".to_string(),
+            InstructionKind::IPreDecr => "IPreDecr".to_string(),
+            InstructionKind::IPreIncr => "IPreIncr".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -107,7 +112,12 @@ impl InstructionKind {
             | InstructionKind::IDiv
             | InstructionKind::IAnd
             | InstructionKind::IMod
-            | InstructionKind::IOr => vec![],
+            | InstructionKind::IOr
+            | InstructionKind::INeg
+            | InstructionKind::IPreDecr
+            | InstructionKind::IPreIncr
+            | InstructionKind::IPostIncr
+            | InstructionKind::IPostDecr => vec![],
 
             InstructionKind::IStoreLocal | InstructionKind::ILoadLocal => vec![1],
 

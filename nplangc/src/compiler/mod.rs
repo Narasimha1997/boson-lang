@@ -239,6 +239,91 @@ impl BytecodeCompiler {
         return None;
     }
 
+    fn compile_incr_decr(
+        &mut self,
+        expr: &ast::PrefixType,
+        is_pre: bool,
+        is_decr: bool,
+    ) -> Option<errors::CompileError> {
+        match expr.expression.as_ref() {
+            ast::ExpressionKind::Identifier(id) => {
+                // resolve the identifier:
+                let resolve_res = self.symbol_table.resolve_symbol(&id.name);
+                if resolve_res.is_none() {
+                    return Some(errors::CompileError::new(
+                        format!("Unresolved symbol {}", id.name),
+                        errors::CompilerErrorKind::InvalidAssignment,
+                        0,
+                    ));
+                }
+
+                let resolved_symbol = resolve_res.unwrap();
+                if resolved_symbol.is_const {
+                    return Some(errors::CompileError::new(
+                        format!("Cannot assign to constant symbol {}", id.name),
+                        errors::CompilerErrorKind::InvalidAssignment,
+                        0,
+                    ));
+                }
+
+                // compile the identifier:
+                let res = self.compile_identifier(&id);
+                if res.is_some() {
+                    return res;
+                }
+            }
+            _ => {
+                return Some(errors::CompileError::new(
+                    format!("Invalid operand, {:?}", expr.expression),
+                    errors::CompilerErrorKind::InvalidOperand,
+                    0,
+                ))
+            }
+        }
+
+        if is_pre && is_decr {
+            self.save(isa::InstructionKind::IPreDecr, &vec![]);
+        } else if is_pre && !is_decr {
+            self.save(isa::InstructionKind::IPreIncr, &vec![]);
+        } else if !is_pre && is_decr {
+            self.save(isa::InstructionKind::IPostDecr, &vec![]);
+        } else {
+            self.save(isa::InstructionKind::IPostIncr, &vec![]);
+        }
+
+        return None;
+    }
+
+    fn compile_prefix_expression(
+        &mut self,
+        expr: &ast::PrefixType,
+    ) -> Option<errors::CompileError> {
+        match expr.prefix {
+            exp::PrefixExpKind::Neg => {
+                let res = self.compile_expression(&expr.expression);
+                if res.is_some() {
+                    return res;
+                }
+                self.save(isa::InstructionKind::INeg, &vec![]);
+            }
+            exp::PrefixExpKind::PreIncrement => {
+                let res = self.compile_incr_decr(&expr, true, false);
+                if res.is_some() {
+                    return res;
+                }
+            }
+            exp::PrefixExpKind::PreDecrement => {
+                let res = self.compile_incr_decr(&expr, true, true);
+                if res.is_some() {
+                    return res;
+                }
+            }
+            _ => {}
+        }
+
+        return None;
+    }
+
     fn compile_infix_expression(&mut self, expr: &ast::InfixType) -> Option<errors::CompileError> {
         // parse the expression:
         if expr.infix != exp::InfixExpKind::Equal {
@@ -270,7 +355,7 @@ impl BytecodeCompiler {
                     let resolved_symbol = resolve_result.unwrap();
                     if resolved_symbol.is_const {
                         return Some(errors::CompileError::new(
-                            format!("Cannot assign to symbol {}", id.name),
+                            format!("Cannot assign to constant symbol {}", id.name),
                             errors::CompilerErrorKind::InvalidAssignment,
                             0,
                         ));
@@ -360,6 +445,12 @@ impl BytecodeCompiler {
             }
             ast::ExpressionKind::Infix(expr) => {
                 let result = self.compile_infix_expression(&expr);
+                if result.is_some() {
+                    return Some(result.unwrap());
+                }
+            }
+            ast::ExpressionKind::Prefix(expr) => {
+                let result = self.compile_prefix_expression(&expr);
                 if result.is_some() {
                     return Some(result.unwrap());
                 }
