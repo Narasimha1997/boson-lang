@@ -7,6 +7,7 @@ pub mod opcode;
 pub mod symtab;
 
 use crate::parser::ast;
+use crate::parser::exp;
 use crate::types::object::Object;
 
 use symtab::ConstantPool;
@@ -174,12 +175,198 @@ impl BytecodeCompiler {
         return Ok(instructions);
     }
 
+    fn compile_literal(&mut self, literal: &ast::LiteralKind) -> Option<errors::CompileError> {
+        match literal {
+            ast::LiteralKind::Str(st) => {
+                let idx = self.register_constant(Object::Str(st.to_string()));
+
+                self.save(isa::InstructionKind::IConstant, &vec![idx]);
+            }
+            ast::LiteralKind::Float(f) => {
+                let idx = self.register_constant(Object::Float(f.clone()));
+
+                self.save(isa::InstructionKind::IConstant, &vec![idx]);
+            }
+            ast::LiteralKind::Int(i) => {
+                let idx = self.register_constant(Object::Int(i.clone()));
+                self.save(isa::InstructionKind::IConstant, &vec![idx]);
+            }
+            ast::LiteralKind::Char(c) => {
+                let idx = self.register_constant(Object::Char(c.clone()));
+                self.save(isa::InstructionKind::IConstant, &vec![idx]);
+            }
+            ast::LiteralKind::Bool(b) => {
+                let idx = self.register_constant(Object::Bool(b.clone()));
+                self.save(isa::InstructionKind::IConstant, &vec![idx]);
+            }
+            _ => return None,
+        }
+
+        return None;
+    }
+
+    fn compile_identifier(&mut self, idt: &ast::IdentifierType) -> Option<errors::CompileError> {
+        let id_name = &idt.name;
+        // resolve it
+        let resolve_result = self.symbol_table.resolve_symbol(id_name);
+        if resolve_result.is_none() {
+            return Some(errors::CompileError::new(
+                format!("Unresolved symbol {}", id_name),
+                errors::CompilerErrorKind::UnresolvedSymbol,
+                0,
+            ));
+        }
+
+        let resolved_symbol = resolve_result.unwrap();
+        match resolved_symbol.scope {
+            symtab::ScopeKind::Builtin => {
+                return None; // as of now
+            }
+            symtab::ScopeKind::Free => {
+                return None;
+            }
+            symtab::ScopeKind::Global => {
+                self.save(
+                    isa::InstructionKind::ILoadGlobal,
+                    &vec![resolved_symbol.pos],
+                );
+            }
+            symtab::ScopeKind::Local => {
+                self.save(isa::InstructionKind::ILoadLocal, &vec![resolved_symbol.pos]);
+            }
+        }
+
+        return None;
+    }
+
+    fn compile_infix_expression(&mut self, expr: &ast::InfixType) -> Option<errors::CompileError> {
+        // parse the expression:
+        if expr.infix != exp::InfixExpKind::Equal {
+            let mut res = self.compile_expression(&expr.expression_left);
+            if res.is_some() {
+                return res;
+            }
+            res = self.compile_expression(&expr.expression_right);
+            if res.is_some() {
+                return res;
+            }
+        } else {
+            let res = self.compile_expression(&expr.expression_right);
+            if res.is_some() {
+                return res;
+            }
+            let left = &expr.expression_left;
+            match left.as_ref() {
+                ast::ExpressionKind::Identifier(id) => {
+                    let resolve_result = self.symbol_table.resolve_symbol(&id.name);
+                    if resolve_result.is_none() {
+                        return Some(errors::CompileError::new(
+                            format!("Unresolved symbol {}", id.name),
+                            errors::CompilerErrorKind::InvalidAssignment,
+                            0,
+                        ));
+                    }
+
+                    let resolved_symbol = resolve_result.unwrap();
+                    if resolved_symbol.is_const {
+                        return Some(errors::CompileError::new(
+                            format!("Cannot assign to symbol {}", id.name),
+                            errors::CompilerErrorKind::InvalidAssignment,
+                            0,
+                        ));
+                    }
+
+                    // the symbol is resolved without any errors, store it back:
+                    match resolved_symbol.scope {
+                        symtab::ScopeKind::Global => {
+                            self.save(
+                                isa::InstructionKind::IStoreGlobal,
+                                &vec![resolved_symbol.pos],
+                            );
+                        }
+                        symtab::ScopeKind::Local => {
+                            self.save(
+                                isa::InstructionKind::IStoreLocal,
+                                &vec![resolved_symbol.pos],
+                            );
+                        }
+                        _ => {
+                            return Some(errors::CompileError::new(
+                                format!("Invalid assignment {}", id.name),
+                                errors::CompilerErrorKind::InvalidAssignment,
+                                0,
+                            ))
+                        }
+                    }
+                }
+                _ => {
+                    return Some(errors::CompileError::new(
+                        "Invalid assignment".to_string(),
+                        errors::CompilerErrorKind::InvalidAssignment,
+                        0,
+                    ))
+                }
+            }
+
+            return None;
+        }
+
+        // check the operator in the middle:
+        match expr.infix {
+            exp::InfixExpKind::Plus => {
+                self.save(isa::InstructionKind::IAdd, &vec![]);
+            }
+            exp::InfixExpKind::Minus => {
+                self.save(isa::InstructionKind::ISub, &vec![]);
+            }
+            exp::InfixExpKind::Mul => {
+                self.save(isa::InstructionKind::IMul, &vec![]);
+            }
+            exp::InfixExpKind::Div => {
+                self.save(isa::InstructionKind::IDiv, &vec![]);
+            }
+            exp::InfixExpKind::Mod => {
+                self.save(isa::InstructionKind::IMod, &vec![]);
+            }
+            exp::InfixExpKind::And => {
+                self.save(isa::InstructionKind::IAnd, &vec![]);
+            }
+            exp::InfixExpKind::Or => {
+                self.save(isa::InstructionKind::IOr, &vec![]);
+            }
+            _ => {}
+        }
+
+        return None;
+    }
+
     #[allow(unused_variables)]
     fn compile_expression(
         &mut self,
         expression: &ast::ExpressionKind,
     ) -> Option<errors::CompileError> {
-        None
+        match expression {
+            ast::ExpressionKind::Literal(lt) => {
+                let result = self.compile_literal(&lt);
+                if result.is_some() {
+                    return Some(result.unwrap());
+                }
+            }
+            ast::ExpressionKind::Identifier(id) => {
+                let result = self.compile_identifier(&id);
+                if result.is_some() {
+                    return Some(result.unwrap());
+                }
+            }
+            ast::ExpressionKind::Infix(expr) => {
+                let result = self.compile_infix_expression(&expr);
+                if result.is_some() {
+                    return Some(result.unwrap());
+                }
+            }
+            _ => return None,
+        }
+        return None;
     }
 
     fn compile_const_declr(&mut self, stmt: &ast::ConstType) -> Option<errors::CompileError> {
@@ -303,5 +490,31 @@ impl BytecodeCompiler {
         }
 
         return Ok(self.get_bytecode());
+    }
+}
+
+pub struct BytecodeDecompiler {}
+
+impl BytecodeDecompiler {
+    pub fn disassemble(bytecode: &CompiledBytecode) -> String {
+        let instructions = &bytecode.instructions;
+        let length = instructions.len();
+
+        let mut decoded_string = String::new();
+        let mut idx = 0;
+
+        while idx < length {
+            let op = instructions[idx];
+            let op_kind: isa::InstructionKind = unsafe { ::std::mem::transmute(op) };
+            let (operands, next_offset) =
+                opcode::InstructionPacker::decode_instruction(&op_kind, &instructions[idx + 1..]);
+
+            decoded_string.push_str(&op_kind.disasm_instruction(&operands));
+            decoded_string.push('\n');
+
+            idx = idx + next_offset + 1;
+        }
+
+        return decoded_string;
     }
 }

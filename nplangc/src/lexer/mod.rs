@@ -525,9 +525,9 @@ impl ProgramLexer {
                 let combined_token = match next_char {
                     b'=' => {
                         self.read_next();
-                        TokenKind::Operator(SymbolKind::SModEq)
+                        TokenKind::Operator(SymbolKind::SDivEq)
                     }
-                    _ => TokenKind::Operator(SymbolKind::SDivEq),
+                    _ => TokenKind::Operator(SymbolKind::SDiv),
                 };
                 combined_token
             }

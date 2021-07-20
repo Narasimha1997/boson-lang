@@ -8,6 +8,7 @@ pub enum CompilerErrorKind {
     InvalidScope,
     SymbolAlreadyExist,
     BuiltinAssignment,
+    InvalidAssignment,
 }
 
 #[derive(Debug, Clone)]

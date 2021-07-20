@@ -78,18 +78,18 @@ impl InstructionKind {
         match self {
             // TODO: Match more and more instructions,
             // support for only airthmetic and data operations as of now.
-            InstructionKind::IAdd => "add".to_string(),
-            InstructionKind::ISub => "sub".to_string(),
-            InstructionKind::IMul => "mul".to_string(),
-            InstructionKind::IDiv => "div".to_string(),
-            InstructionKind::IMod => "mod".to_string(),
-            InstructionKind::IAnd => "and".to_string(),
-            InstructionKind::IOr => "or".to_string(),
-            InstructionKind::IConstant => "constant".to_string(),
-            InstructionKind::IStoreGlobal => "set_global".to_string(),
-            InstructionKind::IStoreLocal => "set_local".to_string(),
-            InstructionKind::ILoadGlobal => "get_local".to_string(),
-            InstructionKind::ILoadLocal => "get_local".to_string(),
+            InstructionKind::IAdd => "IAdd".to_string(),
+            InstructionKind::ISub => "ISub".to_string(),
+            InstructionKind::IMul => "IMul".to_string(),
+            InstructionKind::IDiv => "IDiv".to_string(),
+            InstructionKind::IMod => "IMod".to_string(),
+            InstructionKind::IAnd => "IAnd".to_string(),
+            InstructionKind::IOr => "IOr".to_string(),
+            InstructionKind::IConstant => "IConstant".to_string(),
+            InstructionKind::IStoreGlobal => "IStoreGlobal".to_string(),
+            InstructionKind::IStoreLocal => "IStoreLocal".to_string(),
+            InstructionKind::ILoadGlobal => "ILoadGlobal".to_string(),
+            InstructionKind::ILoadLocal => "ILoadLocal".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -116,7 +116,7 @@ impl InstructionKind {
     }
 
     #[allow(dead_code)]
-    pub fn disasm_instruction(&self, operands: Operands) -> String {
+    pub fn disasm_instruction(&self, operands: &Operands) -> String {
         let op_strings: Vec<String> = operands.into_iter().map(|op| op.to_string()).collect();
         let op_formatted = op_strings.join(", ");
         let opcode = self.as_string();

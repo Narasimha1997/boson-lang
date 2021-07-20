@@ -24,7 +24,13 @@ fn main() {
          let err = bytecode_result.unwrap_err();
          println!("Compilation Error: {:?}", err);
       } else {
-         println!("{:?}", bytecode_result.unwrap().instructions);
+
+         println!("Compilation success.");
+         let disasm = compiler::BytecodeDecompiler::disassemble(
+            &bytecode_result.unwrap()
+         );
+
+         println!("{}", disasm);
       }
    }
    
