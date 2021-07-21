@@ -294,6 +294,52 @@ impl BytecodeCompiler {
         return None;
     }
 
+
+    fn compile_suffix_expression(
+        &mut self,
+        expr: &ast::SuffixType
+    ) -> Option<errors::CompileError> {
+        
+        match expr.suffix {
+            exp::SuffixExpKind::PostDecrement => {
+                // transform suffix to prefix:
+                let transformed_prefix = ast::PrefixType{
+                    expression: expr.expression.clone(),
+                    prefix: exp::PrefixExpKind::PreDecrement
+                };
+
+                let res = self.compile_incr_decr(
+                    &transformed_prefix, 
+                    false, 
+                    true
+                );
+
+                if res.is_some() {
+                    return res;
+                }
+            }
+            exp::SuffixExpKind::PostIncrement => {
+                // transform suffix to prefix:
+                let transformed_prefix = ast::PrefixType{
+                    expression: expr.expression.clone(),
+                    prefix: exp::PrefixExpKind::PreIncrement
+                };
+
+                let res = self.compile_incr_decr(
+                    &transformed_prefix, 
+                    false, 
+                    false
+                );
+
+                if res.is_some() {
+                    return res;
+                }
+            }
+        }
+
+        return None
+    }
+
     fn compile_prefix_expression(
         &mut self,
         expr: &ast::PrefixType,
@@ -451,6 +497,12 @@ impl BytecodeCompiler {
             }
             ast::ExpressionKind::Prefix(expr) => {
                 let result = self.compile_prefix_expression(&expr);
+                if result.is_some() {
+                    return Some(result.unwrap());
+                }
+            }
+            ast::ExpressionKind::Suffix(expr) => {
+                let result = self.compile_suffix_expression(&expr);
                 if result.is_some() {
                     return Some(result.unwrap());
                 }
