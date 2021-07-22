@@ -97,6 +97,7 @@ impl InstructionKind {
             InstructionKind::IPreIncr => "IPreIncr".to_string(),
             InstructionKind::IJump => "IJump".to_string(),
             InstructionKind::INotJump => "INotJump".to_string(),
+            InstructionKind::INoOp => "INoOp".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -106,7 +107,9 @@ impl InstructionKind {
         match self {
             InstructionKind::IStoreGlobal
             | InstructionKind::ILoadGlobal
-            | InstructionKind::IConstant => vec![2],
+            | InstructionKind::IConstant
+            | InstructionKind::IJump
+            | InstructionKind::INotJump => vec![2],
 
             InstructionKind::IAdd
             | InstructionKind::ISub
@@ -120,18 +123,17 @@ impl InstructionKind {
             | InstructionKind::IPreIncr
             | InstructionKind::IPostIncr
             | InstructionKind::IPostDecr
-            | InstructionKind::IJump
-            | InstructionKind::INotJump => vec![],
+            | InstructionKind::INoOp => vec![],
 
-            InstructionKind::IStoreLocal | InstructionKind::ILoadLocal => vec![1],
-
+            InstructionKind::IStoreLocal
+            | InstructionKind::ILoadLocal => vec![1],
             _ => vec![],
         }
     }
 
     #[allow(dead_code)]
     pub fn disasm_instruction(&self, operands: &Operands) -> String {
-        let op_strings: Vec<String> = operands.into_iter().map(|op| op.to_string()).collect();
+        let op_strings: Vec<String> = operands.into_iter().map(|op| format!("{:x}", op)).collect();
         let op_formatted = op_strings.join(", ");
         let opcode = self.as_string();
 

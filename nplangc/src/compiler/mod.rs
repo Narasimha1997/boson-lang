@@ -606,7 +606,7 @@ impl BytecodeCompiler {
         operands: &opcode::Operands,
         pos: &usize,
     ) -> Option<errors::CompileError> {
-        if scope_idx <= self.scopes.len() {
+        if self.scopes.len() <= scope_idx {
             return Some(errors::CompileError::new(
                 "Reached out of scope while replacing opcode".to_string(),
                 errors::CompilerErrorKind::BytecodeError,
@@ -696,7 +696,7 @@ impl BytecodeCompiler {
         self.save(isa::InstructionKind::IJump, &vec![current_pos]);
         self.loop_ctls[current_loop_ctl].pos_after_loop = self.save(
             isa::InstructionKind::INoOp,
-            &vec![self.loop_ctls[current_loop_ctl].loop_start_pos],
+            &vec![],
         );
 
         // replace loop instructions:
@@ -808,11 +808,13 @@ impl BytecodeDecompiler {
             let op_kind: isa::InstructionKind = unsafe { ::std::mem::transmute(op) };
             let (operands, next_offset) =
                 opcode::InstructionPacker::decode_instruction(&op_kind, &instructions[idx + 1..]);
-
+            
+            decoded_string.push_str(&format!("{:0>8x} ", idx));
             decoded_string.push_str(&op_kind.disasm_instruction(&operands));
             decoded_string.push('\n');
 
             idx = idx + next_offset + 1;
+            
         }
 
         return decoded_string;
