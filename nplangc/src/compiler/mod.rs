@@ -104,6 +104,13 @@ pub struct BytecodeCompiler {
     pub symbol_table: symtab::SymbolTable,
     scopes: ProgramScopes,
     scope_index: usize,
+    loop_ctls: Vec<LoopControl>
+}
+
+struct LoopControl {
+    loop_start_pos: usize,
+    pos_after_loop: usize,
+    break_pos: Vec<usize>,
 }
 
 impl BytecodeCompiler {
@@ -117,6 +124,7 @@ impl BytecodeCompiler {
             symbol_table: symbol_table,
             scopes: vec![root_scope],
             scope_index: 0,
+            loop_ctls: vec![],
         };
     }
 
@@ -131,6 +139,7 @@ impl BytecodeCompiler {
             symbol_table: symbol_table,
             scopes: vec![root_scope],
             scope_index: 0,
+            loop_ctls: vec![],
         };
     }
 
@@ -294,25 +303,19 @@ impl BytecodeCompiler {
         return None;
     }
 
-
     fn compile_suffix_expression(
         &mut self,
-        expr: &ast::SuffixType
+        expr: &ast::SuffixType,
     ) -> Option<errors::CompileError> {
-        
         match expr.suffix {
             exp::SuffixExpKind::PostDecrement => {
                 // transform suffix to prefix:
-                let transformed_prefix = ast::PrefixType{
+                let transformed_prefix = ast::PrefixType {
                     expression: expr.expression.clone(),
-                    prefix: exp::PrefixExpKind::PreDecrement
+                    prefix: exp::PrefixExpKind::PreDecrement,
                 };
 
-                let res = self.compile_incr_decr(
-                    &transformed_prefix, 
-                    false, 
-                    true
-                );
+                let res = self.compile_incr_decr(&transformed_prefix, false, true);
 
                 if res.is_some() {
                     return res;
@@ -320,16 +323,12 @@ impl BytecodeCompiler {
             }
             exp::SuffixExpKind::PostIncrement => {
                 // transform suffix to prefix:
-                let transformed_prefix = ast::PrefixType{
+                let transformed_prefix = ast::PrefixType {
                     expression: expr.expression.clone(),
-                    prefix: exp::PrefixExpKind::PreIncrement
+                    prefix: exp::PrefixExpKind::PreIncrement,
                 };
 
-                let res = self.compile_incr_decr(
-                    &transformed_prefix, 
-                    false, 
-                    false
-                );
+                let res = self.compile_incr_decr(&transformed_prefix, false, false);
 
                 if res.is_some() {
                     return res;
@@ -337,7 +336,7 @@ impl BytecodeCompiler {
             }
         }
 
-        return None
+        return None;
     }
 
     fn compile_prefix_expression(
@@ -600,6 +599,179 @@ impl BytecodeCompiler {
         return None;
     }
 
+    fn replace_instruction_operands(
+        &mut self,
+        scope_idx: usize,
+        inst: isa::InstructionKind,
+        operands: &opcode::Operands,
+        pos: &usize,
+    ) -> Option<errors::CompileError> {
+        if scope_idx <= self.scopes.len() {
+            return Some(errors::CompileError::new(
+                "Reached out of scope while replacing opcode".to_string(),
+                errors::CompilerErrorKind::BytecodeError,
+                0,
+            ));
+        }
+
+        let opcodes_length = self.scopes[scope_idx].get_size();
+        if opcodes_length <= *pos {
+            return Some(errors::CompileError::new(
+                "Reached out of buffer while replacing opcode".to_string(),
+                errors::CompilerErrorKind::BytecodeError,
+                0,
+            ));
+        }
+
+        // substitute:
+        let compiled_opcode = opcode::InstructionPacker::encode_instruction(inst, &operands);
+
+        for idx in 0..compiled_opcode.len() {
+            self.scopes[scope_idx].instructions[*pos + idx] = compiled_opcode[idx];
+        }
+
+        return None;
+    }
+
+    fn compile_break_stmt(&mut self) -> Option<errors::CompileError> {
+        let n_loop_ctls = self.loop_ctls.len();
+        if n_loop_ctls == 0 {
+            return Some(errors::CompileError::new(
+                "break encountered outside loop".to_string(),
+                errors::CompilerErrorKind::InvalidBreak,
+                0
+            ));
+        }
+
+        let break_pos = self.save(
+            isa::InstructionKind::IBreak,
+            &vec![0]
+        );
+
+        self.loop_ctls[n_loop_ctls - 1].break_pos.push(break_pos);
+        return None;
+    }
+
+    fn compile_continue_stmt(&mut self) -> Option<errors::CompileError> {
+        let n_loop_ctls = self.loop_ctls.len();
+        if n_loop_ctls == 0 {
+            return Some(errors::CompileError::new(
+                "continue encountered outside loop".to_string(),
+                errors::CompilerErrorKind::InvalidContinue,
+                0
+            ));
+        }
+
+        let jump_pos = self.loop_ctls[n_loop_ctls - 1].loop_start_pos;
+        self.save(isa::InstructionKind::IContinue, &vec![jump_pos]);
+
+        return None;
+    }
+
+    fn compile_while_loop(&mut self, node: &ast::WhileLoopType) -> Option<errors::CompileError> {
+        let while_expr = &node.target_expr;
+        let current_pos = self.scopes[self.scope_index].get_size();
+        let new_loop_ctl = LoopControl{
+            loop_start_pos: current_pos.clone(),
+            pos_after_loop: 0,
+            break_pos: vec![],
+        };
+
+        self.loop_ctls.push(new_loop_ctl);
+        let current_loop_ctl = self.loop_ctls.len() - 1;
+
+        // compile the loop expression:
+        let expr_error = self.compile_expression(&while_expr);
+        if expr_error.is_some() {
+            return expr_error;
+        }
+
+        // append a jump statement if loop fails:
+        let jump_inst_pos = self.save(isa::InstructionKind::INotJump, &vec![0]);
+
+        // compile loop block statement:
+        let block_error = self.compile_block_statement(&node.loop_block);
+        if block_error.is_some() {
+            return block_error;
+        }
+
+        // append a jump back command
+        self.save(isa::InstructionKind::IJump, &vec![current_pos]);
+        self.loop_ctls[current_loop_ctl].pos_after_loop = self.save(
+            isa::InstructionKind::INoOp,
+            &vec![self.loop_ctls[current_loop_ctl].loop_start_pos],
+        );
+
+        // replace loop instructions:
+        let error = self.replace_instruction_operands(
+            self.scope_index,
+            isa::InstructionKind::INotJump,
+            &vec![self.loop_ctls[current_loop_ctl].pos_after_loop],
+            &jump_inst_pos,
+        );
+
+        if error.is_some() {
+            return error;
+        }
+
+        // replace all break instructions:
+        for idx in 0..self.loop_ctls[current_loop_ctl].break_pos.len() {
+            let pos = self.loop_ctls[current_loop_ctl].break_pos[idx];
+            let error = self.replace_instruction_operands(
+                self.scope_index,
+                isa::InstructionKind::IBreak,
+                &vec![self.loop_ctls[current_loop_ctl].pos_after_loop],
+                &pos,
+            );
+            if error.is_some() {
+                return error;
+            }
+        }
+
+        self.loop_ctls.pop();
+
+        return None;
+    }
+
+    fn compile_statement(&mut self, stmt: &ast::StatementKind) -> Option<errors::CompileError> {
+        let error = match stmt {
+            ast::StatementKind::Expression(node) => self.compile_expression(&node),
+            ast::StatementKind::Var(node) => self.compile_variable_declr(&node),
+            ast::StatementKind::Const(node) => self.compile_const_declr(&node),
+            ast::StatementKind::While(node) => self.compile_while_loop(&node),
+            ast::StatementKind::Break => self.compile_break_stmt(),
+            ast::StatementKind::Continue => self.compile_continue_stmt(),
+            _ => {
+                return Some(errors::CompileError::new(
+                    "Not yet implemented".to_string(),
+                    errors::CompilerErrorKind::UnresolvedSymbol,
+                    0,
+                ))
+            }
+        };
+
+        if error.is_some() {
+            let unwrapped_error = error.unwrap();
+            return Some(unwrapped_error);
+        }
+
+        return None;
+    }
+
+    fn compile_block_statement(
+        &mut self,
+        node: &ast::BlockStatement,
+    ) -> Option<errors::CompileError> {
+        for stmt in &node.statements {
+            let error = self.compile_statement(&stmt);
+            if error.is_some() {
+                return error;
+            }
+        }
+
+        return None;
+    }
+
     fn get_bytecode(&self) -> CompiledBytecode {
         return CompiledBytecode {
             constant_pool: self.constant_pool.clone(),
@@ -613,19 +785,7 @@ impl BytecodeCompiler {
     ) -> Result<CompiledBytecode, errors::CompileError> {
         let statements = &program_ast.statements;
         for stmt in statements {
-            let error = match stmt {
-                ast::StatementKind::Expression(node) => self.compile_expression(&node),
-                ast::StatementKind::Var(node) => self.compile_variable_declr(&node),
-                ast::StatementKind::Const(node) => self.compile_const_declr(&node),
-                _ => {
-                    return Err(errors::CompileError::new(
-                        "Not yet implemented".to_string(),
-                        errors::CompilerErrorKind::UnresolvedSymbol,
-                        0,
-                    ))
-                }
-            };
-
+            let error = self.compile_statement(&stmt);
             if error.is_some() {
                 let unwrapped_error = error.unwrap();
                 return Err(unwrapped_error);

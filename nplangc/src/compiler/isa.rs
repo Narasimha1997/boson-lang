@@ -66,6 +66,10 @@ pub enum InstructionKind {
     IForEach,
     IWhile,
 
+    // Control flow
+    IBreak,
+    IContinue,
+
     // Exception
     IRaise,
 

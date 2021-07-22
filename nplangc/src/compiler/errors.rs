@@ -9,6 +9,9 @@ pub enum CompilerErrorKind {
     SymbolAlreadyExist,
     BuiltinAssignment,
     InvalidAssignment,
+    BytecodeError,
+    InvalidBreak,
+    InvalidContinue,
 }
 
 #[derive(Debug, Clone)]
