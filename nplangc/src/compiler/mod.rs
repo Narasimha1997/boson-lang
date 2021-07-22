@@ -104,7 +104,7 @@ pub struct BytecodeCompiler {
     pub symbol_table: symtab::SymbolTable,
     scopes: ProgramScopes,
     scope_index: usize,
-    loop_ctls: Vec<LoopControl>
+    loop_ctls: Vec<LoopControl>,
 }
 
 struct LoopControl {
@@ -639,14 +639,11 @@ impl BytecodeCompiler {
             return Some(errors::CompileError::new(
                 "break encountered outside loop".to_string(),
                 errors::CompilerErrorKind::InvalidBreak,
-                0
+                0,
             ));
         }
 
-        let break_pos = self.save(
-            isa::InstructionKind::IBreak,
-            &vec![0]
-        );
+        let break_pos = self.save(isa::InstructionKind::IJump, &vec![0]);
 
         self.loop_ctls[n_loop_ctls - 1].break_pos.push(break_pos);
         return None;
@@ -658,12 +655,12 @@ impl BytecodeCompiler {
             return Some(errors::CompileError::new(
                 "continue encountered outside loop".to_string(),
                 errors::CompilerErrorKind::InvalidContinue,
-                0
+                0,
             ));
         }
 
         let jump_pos = self.loop_ctls[n_loop_ctls - 1].loop_start_pos;
-        self.save(isa::InstructionKind::IContinue, &vec![jump_pos]);
+        self.save(isa::InstructionKind::IJump, &vec![jump_pos]);
 
         return None;
     }
@@ -671,7 +668,7 @@ impl BytecodeCompiler {
     fn compile_while_loop(&mut self, node: &ast::WhileLoopType) -> Option<errors::CompileError> {
         let while_expr = &node.target_expr;
         let current_pos = self.scopes[self.scope_index].get_size();
-        let new_loop_ctl = LoopControl{
+        let new_loop_ctl = LoopControl {
             loop_start_pos: current_pos.clone(),
             pos_after_loop: 0,
             break_pos: vec![],
@@ -719,7 +716,7 @@ impl BytecodeCompiler {
             let pos = self.loop_ctls[current_loop_ctl].break_pos[idx];
             let error = self.replace_instruction_operands(
                 self.scope_index,
-                isa::InstructionKind::IBreak,
+                isa::InstructionKind::IJump,
                 &vec![self.loop_ctls[current_loop_ctl].pos_after_loop],
                 &pos,
             );

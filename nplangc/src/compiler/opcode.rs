@@ -95,6 +95,8 @@ impl InstructionKind {
             InstructionKind::IPostIncr => "IPostIncr".to_string(),
             InstructionKind::IPreDecr => "IPreDecr".to_string(),
             InstructionKind::IPreIncr => "IPreIncr".to_string(),
+            InstructionKind::IJump => "IJump".to_string(),
+            InstructionKind::INotJump => "INotJump".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -117,7 +119,9 @@ impl InstructionKind {
             | InstructionKind::IPreDecr
             | InstructionKind::IPreIncr
             | InstructionKind::IPostIncr
-            | InstructionKind::IPostDecr => vec![],
+            | InstructionKind::IPostDecr
+            | InstructionKind::IJump
+            | InstructionKind::INotJump => vec![],
 
             InstructionKind::IStoreLocal | InstructionKind::ILoadLocal => vec![1],
 
