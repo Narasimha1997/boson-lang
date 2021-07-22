@@ -875,7 +875,7 @@ impl BytecodeDecompiler {
             &BytecodeDecompiler::disassemble_instructions(&bytecode)
         );
 
-        decoded_string.push_str("Constants: \n");
+        decoded_string.push_str("\nConstants: \n");
 
         decoded_string.push_str(
             &BytecodeDecompiler::disassemble_constants(&bytecode)
