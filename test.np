@@ -2,7 +2,9 @@ var x = 30;
 var y = 20;
 x = x + (y / 2) * 3 + (y++);
 
-while ((x < y) && (x > 30)) {
+const z = "Hello, world!";
+
+while ((x < y) || (x > 30)) {
     x++;
     break;
 }

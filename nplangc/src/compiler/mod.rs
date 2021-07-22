@@ -824,7 +824,8 @@ impl BytecodeCompiler {
 pub struct BytecodeDecompiler {}
 
 impl BytecodeDecompiler {
-    pub fn disassemble(bytecode: &CompiledBytecode) -> String {
+
+    pub fn disassemble_instructions(bytecode: &CompiledBytecode) -> String {
         let instructions = &bytecode.instructions;
         let length = instructions.len();
 
@@ -842,6 +843,43 @@ impl BytecodeDecompiler {
 
             idx = idx + next_offset + 1;
         }
+
+        return decoded_string;
+    }
+
+    pub fn disassemble_constants(bytecode: &CompiledBytecode) -> String {
+
+        // constant pool:
+        let constant_pool = &bytecode.constant_pool;
+        let mut decoded_string = String::new();
+        
+        let mut idx = 0;
+        for item in &constant_pool.objects {
+            let repr = item.describe();
+            decoded_string.push_str(&format!(
+               "{:0>8x} {}\n", idx, repr
+            ));
+            idx = idx + 1;
+        }
+
+        return decoded_string;
+    }
+
+    pub fn disassemble(bytecode: &CompiledBytecode) -> String {
+
+        let mut decoded_string = String::new();
+
+        decoded_string.push_str("Instructions: \n");
+
+        decoded_string.push_str(
+            &BytecodeDecompiler::disassemble_instructions(&bytecode)
+        );
+
+        decoded_string.push_str("Constants: \n");
+
+        decoded_string.push_str(
+            &BytecodeDecompiler::disassemble_constants(&bytecode)
+        );
 
         return decoded_string;
     }
