@@ -31,6 +31,8 @@ pub enum InfixExpKind {
     GreaterThan,
     LesserThanEqual,
     LesserThan,
+    LogicalOr,
+    LogicalAnd,
     PlusEq,
     MinusEq,
     MulEq,
@@ -44,6 +46,8 @@ pub enum InfixExpKind {
 pub enum ExpOrder {
     Zero,
     Equals,
+    LogicalOr,
+    LogicalAnd,
     BitwiseOr,
     BitwiseAnd,
     Equality,
@@ -67,6 +71,9 @@ pub fn get_eval_order(sym: &SymbolKind) -> ExpOrder {
         | SymbolKind::SMulEq
         | SymbolKind::SDivEq
         | SymbolKind::SModEq => return ExpOrder::Equals,
+
+        SymbolKind::SLOr => return ExpOrder::LogicalOr,
+        SymbolKind::SLAnd => return ExpOrder::LogicalAnd,
 
         SymbolKind::SOr => return ExpOrder::BitwiseOr,
         SymbolKind::SAnd => return ExpOrder::BitwiseAnd,

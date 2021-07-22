@@ -98,6 +98,15 @@ impl InstructionKind {
             InstructionKind::IJump => "IJump".to_string(),
             InstructionKind::INotJump => "INotJump".to_string(),
             InstructionKind::INoOp => "INoOp".to_string(),
+            InstructionKind::ILLTe => "ILLTe".to_string(),
+            InstructionKind::ILLt => "ILLt".to_string(),
+            InstructionKind::ILGt => "ILGt".to_string(),
+            InstructionKind::ILGte => "ILGte".to_string(),
+            InstructionKind::ILEq => "ILEq".to_string(),
+            InstructionKind::ILNe => "ILNe".to_string(),
+            InstructionKind::ILNot => "ILNot".to_string(),
+            InstructionKind::ILOr => "ILOr".to_string(),
+            InstructionKind::ILAnd => "ILAnd".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -123,7 +132,16 @@ impl InstructionKind {
             | InstructionKind::IPreIncr
             | InstructionKind::IPostIncr
             | InstructionKind::IPostDecr
-            | InstructionKind::INoOp => vec![],
+            | InstructionKind::INoOp
+            | InstructionKind::ILGt
+            | InstructionKind::ILGte
+            | InstructionKind::ILLt
+            | InstructionKind::ILLTe
+            | InstructionKind::ILNot
+            | InstructionKind::ILEq
+            | InstructionKind::ILNe
+            | InstructionKind::ILOr
+            | InstructionKind::ILAnd => vec![],
 
             InstructionKind::IStoreLocal
             | InstructionKind::ILoadLocal => vec![1],

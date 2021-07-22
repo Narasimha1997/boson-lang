@@ -742,7 +742,9 @@ impl Parser {
                 | SymbolKind::SDivEq
                 | SymbolKind::SModEq
                 | SymbolKind::SAndEq
-                | SymbolKind::SOrEq => return true,
+                | SymbolKind::SOrEq
+                | SymbolKind::SLOr
+                | SymbolKind::SLAnd => return true,
                 _ => return false,
             },
             _ => return false,
@@ -792,6 +794,8 @@ impl Parser {
                     SymbolKind::SDivEq => InfixExpKind::DivEq,
                     SymbolKind::SAndEq => InfixExpKind::AndEq,
                     SymbolKind::SOrEq => InfixExpKind::OrEq,
+                    SymbolKind::SLOr => InfixExpKind::LogicalOr,
+                    SymbolKind::SLAnd => InfixExpKind::LogicalAnd,
                     _ => return Err(self.new_invalid_token_err(String::from("Invalid operator"))),
                 };
 

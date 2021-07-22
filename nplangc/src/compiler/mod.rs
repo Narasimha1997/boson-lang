@@ -363,7 +363,13 @@ impl BytecodeCompiler {
                     return res;
                 }
             }
-            _ => {}
+            exp::PrefixExpKind::Not => {
+                let res = self.compile_expression(&expr.expression);
+                if res.is_some() {
+                    return res;
+                }
+                self.save(isa::InstructionKind::ILNot, &vec![]);
+            }
         }
 
         return None;
@@ -463,6 +469,30 @@ impl BytecodeCompiler {
             }
             exp::InfixExpKind::Or => {
                 self.save(isa::InstructionKind::IOr, &vec![]);
+            }
+            exp::InfixExpKind::LesserThan => {
+                self.save(isa::InstructionKind::ILLt, &vec![]);
+            }
+            exp::InfixExpKind::LesserThanEqual => {
+                self.save(isa::InstructionKind::ILLTe, &vec![]);
+            }
+            exp::InfixExpKind::GreaterThan => {
+                self.save(isa::InstructionKind::ILGt, &vec![]);
+            }
+            exp::InfixExpKind::GreaterThanEqual => {
+                self.save(isa::InstructionKind::ILGte, &vec![]);
+            }
+            exp::InfixExpKind::EEqual => {
+                self.save(isa::InstructionKind::ILEq, &vec![]);
+            }
+            exp::InfixExpKind::NotEqual => {
+                self.save(isa::InstructionKind::ILNe, &vec![]);
+            }
+            exp::InfixExpKind::LogicalOr => {
+                self.save(isa::InstructionKind::ILOr, &vec![]);
+            }
+            exp::InfixExpKind::LogicalAnd => {
+                self.save(isa::InstructionKind::ILAnd, &vec![]);
             }
             _ => {}
         }
@@ -694,10 +724,8 @@ impl BytecodeCompiler {
 
         // append a jump back command
         self.save(isa::InstructionKind::IJump, &vec![current_pos]);
-        self.loop_ctls[current_loop_ctl].pos_after_loop = self.save(
-            isa::InstructionKind::INoOp,
-            &vec![],
-        );
+        self.loop_ctls[current_loop_ctl].pos_after_loop =
+            self.save(isa::InstructionKind::INoOp, &vec![]);
 
         // replace loop instructions:
         let error = self.replace_instruction_operands(
@@ -808,13 +836,11 @@ impl BytecodeDecompiler {
             let op_kind: isa::InstructionKind = unsafe { ::std::mem::transmute(op) };
             let (operands, next_offset) =
                 opcode::InstructionPacker::decode_instruction(&op_kind, &instructions[idx + 1..]);
-            
             decoded_string.push_str(&format!("{:0>8x} ", idx));
             decoded_string.push_str(&op_kind.disasm_instruction(&operands));
             decoded_string.push('\n');
 
             idx = idx + next_offset + 1;
-            
         }
 
         return decoded_string;

@@ -33,12 +33,14 @@ pub enum InstructionKind {
     INeg,
 
     // logical operators
-    ILeq,
+    ILEq,
     ILGt,
     ILGte,
     ILLt,
     ILLTe,
     ILNe,
+    ILAnd,
+    ILOr,
 
     // logical unary
     ILNot,
