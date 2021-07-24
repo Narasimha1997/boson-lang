@@ -6,5 +6,10 @@ const z = "Hello, world!";
 
 while ((x < y) || (x > 30)) {
     x++;
-    break;
+}
+
+if (x > 10) {
+    x++;
+} else {
+    x--;
 }

@@ -214,6 +214,66 @@ impl BytecodeCompiler {
         return None;
     }
 
+    fn compile_if_statement(&mut self, node: &ast::IfElseType) -> Option<errors::CompileError> {
+        let if_expr = &node.condition;
+        
+        // compile the if expr:
+        let mut error = self.compile_expression(&if_expr);
+        if error.is_some() {
+            return error;
+        }
+
+        // add a not jump, this will be replaced to either else or NoOp
+        let jump_instr_pos = self.save(isa::InstructionKind::INotJump, &vec![0]);
+
+        // compile the if block:
+        error = self.compile_block_statement(&node.main_block);
+        if error.is_some() {
+            return error;
+        }
+
+        // check if there is an else block:
+        if node.alternate_block.is_none() {
+            // no else block, add a NoOp and replace INotJump Pos:
+            let no_op_pos = self.save(
+                isa::InstructionKind::INoOp, &vec![]
+            );
+
+            error = self.replace_instruction_operands(
+                self.scope_index, isa::InstructionKind::INotJump,
+                &vec![no_op_pos], &jump_instr_pos
+            );
+
+            if error.is_some() {
+                return error;
+            }
+
+            return None;
+        }
+
+        // it has an else statement:
+        let else_pos = self.save(isa::InstructionKind::INoOp, &vec![]);
+        error = self.replace_instruction_operands(
+            self.scope_index, isa::InstructionKind::INotJump,
+            &vec![else_pos], &jump_instr_pos
+        );
+
+        if error.is_some() {
+            return error;
+        }
+
+        // compile the else block
+        error = self.compile_block_statement(
+            &node.alternate_block.as_ref().unwrap()
+        );
+        if error.is_some() {
+            return error;
+        }
+
+        self.save(isa::InstructionKind::INoOp, &vec![]);
+        return None;
+    }
+
     fn compile_identifier(&mut self, idt: &ast::IdentifierType) -> Option<errors::CompileError> {
         let id_name = &idt.name;
         // resolve it
@@ -766,6 +826,7 @@ impl BytecodeCompiler {
             ast::StatementKind::While(node) => self.compile_while_loop(&node),
             ast::StatementKind::Break => self.compile_break_stmt(),
             ast::StatementKind::Continue => self.compile_continue_stmt(),
+            ast::StatementKind::If(node) => self.compile_if_statement(&node),
             _ => {
                 return Some(errors::CompileError::new(
                     "Not yet implemented".to_string(),
