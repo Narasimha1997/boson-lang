@@ -3,6 +3,7 @@ use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 use crate::types::array::Array;
+use crate::types::closure::ClosureContext;
 use crate::types::hash::HashTable;
 use crate::types::subroutine::Subroutine;
 
@@ -15,6 +16,7 @@ pub enum Object {
     Str(String),
     Float(f64),
     Subroutine(Rc<Subroutine>),
+    ClosureContext(Rc<ClosureContext>),
     Array(Rc<Array>),
     HashTable(Rc<HashTable>),
 }
@@ -29,6 +31,10 @@ impl Hash for Object {
             Object::Char(c) => c.hash(state),
             Object::Str(st) => st.hash(state),
             Object::Float(f) => f.to_string().hash(state),
+            Object::Array(arr) => arr.hash(state),
+            Object::HashTable(ht) => ht.hash(state),
+            Object::Subroutine(sub) => sub.hash(state),
+            Object::ClosureContext(ctx) => ctx.hash(state),
             _ => "undef".hash(state),
         }
     }
@@ -42,6 +48,10 @@ impl Object {
             Object::Str(st) => st.clone(),
             Object::Float(f) => f.to_string(),
             Object::Bool(b) => b.to_string(),
+            Object::Array(arr) => arr.describe(),
+            Object::HashTable(ht) => ht.describe(),
+            Object::Subroutine(sub) => sub.describe(),
+            Object::ClosureContext(ctx) => ctx.describe(),
             _ => String::from("undef"),
         }
     }

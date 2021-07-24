@@ -11,7 +11,7 @@ pub struct Array {
 }
 
 impl Array {
-    fn describe(&self) -> String {
+    pub fn describe(&self) -> String {
         let values: Vec<String> = (&self.elements)
             .into_iter()
             .map(|e| e.to_string())

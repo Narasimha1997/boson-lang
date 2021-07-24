@@ -1,22 +1,34 @@
-use std::cell::RefCell;
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::rc::Rc;
 
-use crate::parser::ast;
-use crate::types::context;
-use context::Context;
+use crate::compiler::CompiledInstructions;
 
 #[derive(Clone, Debug)]
 pub struct Subroutine {
-    pub parameters: Vec<ast::ExpressionKind>,
-    pub body: ast::BlockStatement,
     pub name: String,
-    pub context: Rc<RefCell<Context>>,
+    pub bytecode: CompiledInstructions,
+    pub num_locals: usize,
+    pub num_parameters: usize,
 }
 
 impl Subroutine {
-    fn describe(&self) -> String {
+    pub fn get_name(&self) -> &String {
+        return &self.name;
+    }
+
+    pub fn get_bytecode(&self) -> &CompiledInstructions {
+        return &self.bytecode;
+    }
+
+    pub fn get_n_locals(&self) -> usize {
+        return self.num_locals;
+    }
+
+    pub fn gen_n_parameters(&self) -> usize {
+        return self.num_parameters;
+    }
+
+    pub fn describe(&self) -> String {
         return format!("Function<{}>", self.name);
     }
 }

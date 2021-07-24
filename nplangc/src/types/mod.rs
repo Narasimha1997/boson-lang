@@ -1,4 +1,4 @@
-pub mod context;
+pub mod closure;
 pub mod subroutine;
 pub mod object;
 pub mod hash;
