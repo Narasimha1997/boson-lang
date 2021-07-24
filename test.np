@@ -12,4 +12,5 @@ if (x > 10) {
     x++;
 } else {
     x--;
+    assert x > 10, "Assertion Failure";
 }

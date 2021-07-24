@@ -214,9 +214,38 @@ impl BytecodeCompiler {
         return None;
     }
 
+    fn compile_assert_statement(&mut self, node: &ast::AssertType) -> Option<errors::CompileError> {
+        let assert_expr = &node.target_expr;
+        let mut error = self.compile_expression(&assert_expr);
+        if error.is_some() {
+            return error;
+        }
+
+        let not_jmp_pos = self.save(isa::InstructionKind::INotJump, &vec![0]);
+
+        // load panic expression:
+        error = self.compile_expression(&node.fail_expr);
+        if error.is_some() {
+            return error;
+        }
+
+        self.save(isa::InstructionKind::IVMPanic, &vec![]);
+
+        let no_op_pos = self.save(isa::InstructionKind::INoOp, &vec![]);
+
+        // replace expression:
+        error = self.replace_instruction_operands(
+            self.scope_index,
+            isa::InstructionKind::INotJump,
+            &vec![no_op_pos],
+            &not_jmp_pos,
+        );
+
+        return error;
+    }
+
     fn compile_if_statement(&mut self, node: &ast::IfElseType) -> Option<errors::CompileError> {
         let if_expr = &node.condition;
-        
         // compile the if expr:
         let mut error = self.compile_expression(&if_expr);
         if error.is_some() {
@@ -235,13 +264,13 @@ impl BytecodeCompiler {
         // check if there is an else block:
         if node.alternate_block.is_none() {
             // no else block, add a NoOp and replace INotJump Pos:
-            let no_op_pos = self.save(
-                isa::InstructionKind::INoOp, &vec![]
-            );
+            let no_op_pos = self.save(isa::InstructionKind::INoOp, &vec![]);
 
             error = self.replace_instruction_operands(
-                self.scope_index, isa::InstructionKind::INotJump,
-                &vec![no_op_pos], &jump_instr_pos
+                self.scope_index,
+                isa::InstructionKind::INotJump,
+                &vec![no_op_pos],
+                &jump_instr_pos,
             );
 
             if error.is_some() {
@@ -254,8 +283,10 @@ impl BytecodeCompiler {
         // it has an else statement:
         let else_pos = self.save(isa::InstructionKind::INoOp, &vec![]);
         error = self.replace_instruction_operands(
-            self.scope_index, isa::InstructionKind::INotJump,
-            &vec![else_pos], &jump_instr_pos
+            self.scope_index,
+            isa::InstructionKind::INotJump,
+            &vec![else_pos],
+            &jump_instr_pos,
         );
 
         if error.is_some() {
@@ -263,9 +294,7 @@ impl BytecodeCompiler {
         }
 
         // compile the else block
-        error = self.compile_block_statement(
-            &node.alternate_block.as_ref().unwrap()
-        );
+        error = self.compile_block_statement(&node.alternate_block.as_ref().unwrap());
         if error.is_some() {
             return error;
         }
@@ -827,6 +856,7 @@ impl BytecodeCompiler {
             ast::StatementKind::Break => self.compile_break_stmt(),
             ast::StatementKind::Continue => self.compile_continue_stmt(),
             ast::StatementKind::If(node) => self.compile_if_statement(&node),
+            ast::StatementKind::Assert(node) => self.compile_assert_statement(&node),
             _ => {
                 return Some(errors::CompileError::new(
                     "Not yet implemented".to_string(),
@@ -885,7 +915,6 @@ impl BytecodeCompiler {
 pub struct BytecodeDecompiler {}
 
 impl BytecodeDecompiler {
-
     pub fn disassemble_instructions(bytecode: &CompiledBytecode) -> String {
         let instructions = &bytecode.instructions;
         let length = instructions.len();
@@ -909,17 +938,13 @@ impl BytecodeDecompiler {
     }
 
     pub fn disassemble_constants(bytecode: &CompiledBytecode) -> String {
-
         // constant pool:
         let constant_pool = &bytecode.constant_pool;
         let mut decoded_string = String::new();
-        
         let mut idx = 0;
         for item in &constant_pool.objects {
             let repr = item.describe();
-            decoded_string.push_str(&format!(
-               "{:0>8x} {}\n", idx, repr
-            ));
+            decoded_string.push_str(&format!("{:0>8x} {}\n", idx, repr));
             idx = idx + 1;
         }
 
@@ -927,20 +952,15 @@ impl BytecodeDecompiler {
     }
 
     pub fn disassemble(bytecode: &CompiledBytecode) -> String {
-
         let mut decoded_string = String::new();
 
         decoded_string.push_str("Instructions: \n");
 
-        decoded_string.push_str(
-            &BytecodeDecompiler::disassemble_instructions(&bytecode)
-        );
+        decoded_string.push_str(&BytecodeDecompiler::disassemble_instructions(&bytecode));
 
         decoded_string.push_str("\nConstants: \n");
 
-        decoded_string.push_str(
-            &BytecodeDecompiler::disassemble_constants(&bytecode)
-        );
+        decoded_string.push_str(&BytecodeDecompiler::disassemble_constants(&bytecode));
 
         return decoded_string;
     }
