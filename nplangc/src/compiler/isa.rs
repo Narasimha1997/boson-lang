@@ -102,4 +102,8 @@ pub enum InstructionKind {
     // Block start and end instructions:
     IBlockStart,
     IBlockEnd,
+
+    // Array and Hash
+    IArray,
+    IHash
 }

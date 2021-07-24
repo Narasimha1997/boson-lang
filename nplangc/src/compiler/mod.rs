@@ -208,7 +208,18 @@ impl BytecodeCompiler {
                 let idx = self.register_constant(Object::Bool(b.clone()));
                 self.save(isa::InstructionKind::IConstant, &vec![idx]);
             }
-            _ => return None,
+            ast::LiteralKind::Array(arr) => {
+                let error = self.compile_array(&arr);
+                if error.is_some() {
+                    return error;
+                }
+            }
+            ast::LiteralKind::HashTable(ht) => {
+                let error = self.compile_hash(&ht);
+                if error.is_some() {
+                    return error;
+                }
+            }
         }
 
         return None;
@@ -779,6 +790,49 @@ impl BytecodeCompiler {
 
         return None;
     }
+
+    fn compile_array(&mut self, arr: &ast::ArrayType) -> Option<errors::CompileError> {
+        let elements = &arr.array_values;
+
+        let mut error: Option<errors::CompileError>;
+        for idx in 0..elements.len() {
+            let expr = elements[idx].clone();
+            error = self.compile_expression(&expr);
+            if error.is_some() {
+                return error;
+            }
+        }
+
+        // save the array:
+        self.save(isa::InstructionKind::IArray, &vec![arr.length]);
+        return None;
+    }
+
+    fn compile_hash(&mut self, ht: &ast::HashTableType) -> Option<errors::CompileError> {
+        let pairs = &ht.pairs;
+
+        let mut error: Option<errors::CompileError>;
+        for idx in 0..pairs.len() {
+            let pair = pairs[idx].clone();
+            let (key_expr, value_expr) = pair;
+
+            error = self.compile_expression(&key_expr);
+            if error.is_some() {
+                return error;
+            }
+
+            error = self.compile_expression(&value_expr);
+            if error.is_some() {
+                return error;
+            }
+        }
+
+        // set hash:
+        let scope_length = pairs.len() * 2;
+        self.save(isa::InstructionKind::IHash, &vec![scope_length]);
+        return None;
+    }
+
 
     fn compile_variable_declr(&mut self, stmt: &ast::LetType) -> Option<errors::CompileError> {
         let var_name = &stmt.identifier.name;

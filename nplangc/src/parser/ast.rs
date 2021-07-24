@@ -126,6 +126,11 @@ pub struct SuffixType {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct HashTableType {
+   pub pairs: Vec<(ExpressionKind, ExpressionKind)>
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct InfixType {
     pub infix: InfixExpKind,
     pub expression_left: Box<ExpressionKind>,
@@ -140,7 +145,7 @@ pub enum LiteralKind {
     Str(String),
     Bool(bool),
     Array(ArrayType),
-    HashTable(Vec<(ExpressionKind, ExpressionKind)>),
+    HashTable(HashTableType),
 }
 
 #[derive(Debug, PartialEq, Clone)]

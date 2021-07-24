@@ -15,8 +15,6 @@ if (x > 10) {
     assert x > 10, "Assertion Failure";
 }
 
-for x in y {
-    for a in x {
-        a++;
-    }
+for i in {"age": 20, "sex": "male", "name": "Prasanna"} {
+    i++;
 }

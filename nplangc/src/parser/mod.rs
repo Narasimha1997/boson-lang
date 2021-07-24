@@ -513,7 +513,7 @@ impl Parser {
         if self.next_symbol_is(SymbolKind::SRBrace) {
             self.lexer.iterate();
             return Ok(ast::ExpressionKind::Literal(ast::LiteralKind::HashTable(
-                h_pairs,
+                ast::HashTableType{pairs: h_pairs},
             )));
         }
 
@@ -542,7 +542,7 @@ impl Parser {
         }
         self.lexer.iterate();
         return Ok(ast::ExpressionKind::Literal(ast::LiteralKind::HashTable(
-            h_pairs,
+            ast::HashTableType{pairs: h_pairs},
         )));
     }
 

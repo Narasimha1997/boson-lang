@@ -111,6 +111,8 @@ impl InstructionKind {
             InstructionKind::IIter => "IIter".to_string(),
             InstructionKind::IBlockEnd => "IBlockEnd".to_string(),
             InstructionKind::IBlockStart => "IBlockStart".to_string(),
+            InstructionKind::IArray => "IArray".to_string(),
+            InstructionKind::IHash => "IHash".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -123,7 +125,9 @@ impl InstructionKind {
             | InstructionKind::IConstant
             | InstructionKind::IJump
             | InstructionKind::INotJump
-            | InstructionKind::IIter => vec![2],
+            | InstructionKind::IIter
+            | InstructionKind::IHash
+            | InstructionKind::IArray => vec![2],
 
             InstructionKind::IAdd
             | InstructionKind::ISub
