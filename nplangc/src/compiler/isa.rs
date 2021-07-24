@@ -94,5 +94,12 @@ pub enum InstructionKind {
 
     // panic instructions will panic the VM, panic
     // instruction will take the top of stack for printing.
-    IVMPanic
+    IVMPanic,
+
+    // Iterator:
+    IIter,
+
+    // Block start and end instructions:
+    IBlockStart,
+    IBlockEnd,
 }

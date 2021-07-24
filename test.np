@@ -14,3 +14,9 @@ if (x > 10) {
     x--;
     assert x > 10, "Assertion Failure";
 }
+
+for x in y {
+    for a in x {
+        a++;
+    }
+}

@@ -108,6 +108,9 @@ impl InstructionKind {
             InstructionKind::ILOr => "ILOr".to_string(),
             InstructionKind::ILAnd => "ILAnd".to_string(),
             InstructionKind::IVMPanic => "IVMPanic".to_string(),
+            InstructionKind::IIter => "IIter".to_string(),
+            InstructionKind::IBlockEnd => "IBlockEnd".to_string(),
+            InstructionKind::IBlockStart => "IBlockStart".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -119,7 +122,8 @@ impl InstructionKind {
             | InstructionKind::ILoadGlobal
             | InstructionKind::IConstant
             | InstructionKind::IJump
-            | InstructionKind::INotJump => vec![2],
+            | InstructionKind::INotJump
+            | InstructionKind::IIter => vec![2],
 
             InstructionKind::IAdd
             | InstructionKind::ISub
@@ -143,7 +147,10 @@ impl InstructionKind {
             | InstructionKind::ILNe
             | InstructionKind::ILOr
             | InstructionKind::ILAnd
-            | InstructionKind::IVMPanic => vec![],
+            | InstructionKind::IVMPanic
+            | InstructionKind::IBlockEnd
+            | InstructionKind::IBlockStart => vec![],
+
 
             InstructionKind::IStoreLocal
             | InstructionKind::ILoadLocal => vec![1],
