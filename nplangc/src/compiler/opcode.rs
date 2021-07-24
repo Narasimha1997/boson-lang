@@ -107,6 +107,7 @@ impl InstructionKind {
             InstructionKind::ILNot => "ILNot".to_string(),
             InstructionKind::ILOr => "ILOr".to_string(),
             InstructionKind::ILAnd => "ILAnd".to_string(),
+            InstructionKind::IVMPanic => "IVMPanic".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -141,7 +142,8 @@ impl InstructionKind {
             | InstructionKind::ILEq
             | InstructionKind::ILNe
             | InstructionKind::ILOr
-            | InstructionKind::ILAnd => vec![],
+            | InstructionKind::ILAnd
+            | InstructionKind::IVMPanic => vec![],
 
             InstructionKind::IStoreLocal
             | InstructionKind::ILoadLocal => vec![1],

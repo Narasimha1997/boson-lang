@@ -91,4 +91,8 @@ pub enum InstructionKind {
 
     // NoneType
     INoData,
+
+    // panic instructions will panic the VM, panic
+    // instruction will take the top of stack for printing.
+    IVMPanic
 }
