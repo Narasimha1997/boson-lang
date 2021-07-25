@@ -9,7 +9,8 @@ use crate::types::object::Object;
 #[derive(Clone, Debug)]
 pub struct ClosureContext {
     pub compiled_fn: Rc<Subroutine>,
-    pub free_objects: Vec<Rc<Object>>
+    pub free_objects: Vec<Rc<Object>>,
+    pub bytecode_size: usize,
 }
 
 impl ClosureContext {

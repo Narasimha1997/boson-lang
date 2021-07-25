@@ -1,14 +1,16 @@
 use std::rc::Rc;
 
 pub mod errors;
-pub mod isa;
 pub mod loader;
-pub mod opcode;
 pub mod symtab;
 
+use crate::isa;
 use crate::parser::ast;
 use crate::parser::exp;
 use crate::types::object::Object;
+
+use isa::Operands;
+use isa::InstructionPacker;
 
 use symtab::ConstantPool;
 
@@ -148,8 +150,8 @@ impl BytecodeCompiler {
         self.constant_pool.set_object(Rc::new(obj))
     }
 
-    fn save(&mut self, inst: isa::InstructionKind, operands: &opcode::Operands) -> usize {
-        let coded_stmt = opcode::InstructionPacker::encode_instruction(inst.clone(), operands);
+    fn save(&mut self, inst: isa::InstructionKind, operands: &Operands) -> usize {
+        let coded_stmt = InstructionPacker::encode_instruction(inst.clone(), operands);
         let current_pos = self.scopes[self.scope_index].get_size();
         self.scopes[self.scope_index].push_compiled_instructions(&coded_stmt);
         self.scopes[self.scope_index].set_last(inst, current_pos);
@@ -882,7 +884,7 @@ impl BytecodeCompiler {
         &mut self,
         scope_idx: usize,
         inst: isa::InstructionKind,
-        operands: &opcode::Operands,
+        operands: &Operands,
         pos: &usize,
     ) -> Option<errors::CompileError> {
         if self.scopes.len() <= scope_idx {
@@ -903,7 +905,7 @@ impl BytecodeCompiler {
         }
 
         // substitute:
-        let compiled_opcode = opcode::InstructionPacker::encode_instruction(inst, &operands);
+        let compiled_opcode = InstructionPacker::encode_instruction(inst, &operands);
 
         for idx in 0..compiled_opcode.len() {
             self.scopes[scope_idx].instructions[*pos + idx] = compiled_opcode[idx];
@@ -1095,7 +1097,7 @@ impl BytecodeDecompiler {
             let op = instructions[idx];
             let op_kind: isa::InstructionKind = unsafe { ::std::mem::transmute(op) };
             let (operands, next_offset) =
-                opcode::InstructionPacker::decode_instruction(&op_kind, &instructions[idx + 1..]);
+                InstructionPacker::decode_instruction(&op_kind, &instructions[idx + 1..]);
             decoded_string.push_str(&format!("{:0>8x} ", idx));
             decoded_string.push_str(&op_kind.disasm_instruction(&operands));
             decoded_string.push('\n');

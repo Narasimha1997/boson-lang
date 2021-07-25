@@ -3,6 +3,8 @@ pub mod lexer;
 pub mod compiler;
 pub mod types;
 pub mod config;
+pub mod vm;
+pub mod isa;
 
 fn main() {
    let lexer_api = lexer::LexerAPI::new_from_file(
@@ -26,11 +28,7 @@ fn main() {
       } else {
 
          println!("Compilation success.");
-         let disasm = compiler::BytecodeDecompiler::disassemble(
-            &bytecode_result.unwrap()
-         );
-
-         println!("{}", disasm);
+         vm::test_reading(&bytecode_result.unwrap());
       }
    }
    
