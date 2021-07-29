@@ -253,8 +253,11 @@ impl Bitwise {
                 let l_type = left.get_type();
                 let r_type = right.get_type();
                 return Err(ISAError::new(
-                    format!("Operation And is not applicable between {} and {}", l_type, r_type),
-                    ISAErrorKind::TypeError
+                    format!(
+                        "Operation And is not applicable between {} and {}",
+                        l_type, r_type
+                    ),
+                    ISAErrorKind::TypeError,
                 ));
             }
         }
@@ -270,8 +273,11 @@ impl Bitwise {
                 let l_type = left.get_type();
                 let r_type = right.get_type();
                 return Err(ISAError::new(
-                    format!("Operation Or is not applicable between {} and {}", l_type, r_type),
-                    ISAErrorKind::TypeError
+                    format!(
+                        "Operation Or is not applicable between {} and {}",
+                        l_type, r_type
+                    ),
+                    ISAErrorKind::TypeError,
                 ));
             }
         }
@@ -286,19 +292,17 @@ impl Bitwise {
             _ => {
                 let val_type = obj.get_type();
                 return Err(ISAError::new(
-                   format!("Operation Negate is not applicable for {}", val_type) ,
-                   ISAErrorKind::TypeError
+                    format!("Operation Negate is not applicable for {}", val_type),
+                    ISAErrorKind::TypeError,
                 ));
             }
         }
     }
 }
 
-
 pub struct Logical {}
 
 impl Logical {
-
     pub fn or(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         let result = left.is_true() || right.is_true();
         return Ok(Rc::new(Object::Bool(result)));
@@ -310,7 +314,193 @@ impl Logical {
     }
 
     pub fn not(obj: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
-        let result = ! obj.is_true();
+        let result = !obj.is_true();
         return Ok(Rc::new(Object::Bool(result)));
+    }
+}
+
+pub struct Comparision {}
+
+impl Comparision {
+    pub fn gt(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
+        match (left.as_ref(), right.as_ref()) {
+            (Object::Char(lval), Object::Char(rval)) => {
+                let result = lval > rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Int(lval), Object::Int(rval)) => {
+                let result = lval > rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Float(lval), Object::Float(rval)) => {
+                let result = lval > rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            _ => {
+                let l_type = left.get_type();
+                let r_type = right.get_type();
+
+                return Err(ISAError::new(
+                    format!(
+                        "Comparision operation Greater Than is not applicable between {} {}",
+                        l_type, r_type
+                    ),
+                    ISAErrorKind::TypeError,
+                ));
+            }
+        }
+    }
+
+    pub fn gte(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
+        match (left.as_ref(), right.as_ref()) {
+            (Object::Char(lval), Object::Char(rval)) => {
+                let result = lval >= rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Int(lval), Object::Int(rval)) => {
+                let result = lval >= rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Float(lval), Object::Float(rval)) => {
+                let result = lval >= rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            _ => {
+                let l_type = left.get_type();
+                let r_type = right.get_type();
+
+                return Err(ISAError::new(
+                    format!(
+                        "Comparision operation Greater Than or Equal is not applicable between {} {}",
+                        l_type, r_type
+                    ),
+                    ISAErrorKind::TypeError,
+                ));
+            }
+        }
+    }
+
+    pub fn lt(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
+        match (left.as_ref(), right.as_ref()) {
+            (Object::Char(lval), Object::Char(rval)) => {
+                let result = lval < rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Int(lval), Object::Int(rval)) => {
+                let result = lval < rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Float(lval), Object::Float(rval)) => {
+                let result = lval < rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            _ => {
+                let l_type = left.get_type();
+                let r_type = right.get_type();
+
+                return Err(ISAError::new(
+                    format!(
+                        "Comparision operation Lesser Than is not applicable between {} {}",
+                        l_type, r_type
+                    ),
+                    ISAErrorKind::TypeError,
+                ));
+            }
+        }
+    }
+
+    pub fn lte(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
+        match (left.as_ref(), right.as_ref()) {
+            (Object::Char(lval), Object::Char(rval)) => {
+                let result = lval <= rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Int(lval), Object::Int(rval)) => {
+                let result = lval <= rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Float(lval), Object::Float(rval)) => {
+                let result = lval <= rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            _ => {
+                let l_type = left.get_type();
+                let r_type = right.get_type();
+
+                return Err(ISAError::new(
+                    format!(
+                        "Comparision operation Lesser or Equal is not applicable between {} {}",
+                        l_type, r_type
+                    ),
+                    ISAErrorKind::TypeError,
+                ));
+            }
+        }
+    }
+
+    pub fn eq(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
+        match (left.as_ref(), right.as_ref()) {
+            (Object::Char(lval), Object::Char(rval)) => {
+                let result = lval == rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Int(lval), Object::Int(rval)) => {
+                let result = lval == rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Float(lval), Object::Float(rval)) => {
+                let result = lval == rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Str(lval), Object::Str(rval)) => {
+                let result = lval == rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            _ => {
+                let l_type = left.get_type();
+                let r_type = right.get_type();
+
+                return Err(ISAError::new(
+                    format!(
+                        "Comparision operation Equals is not applicable between {} {}",
+                        l_type, r_type
+                    ),
+                    ISAErrorKind::TypeError,
+                ));
+            }
+        }
+    }
+
+    pub fn neq(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
+        match (left.as_ref(), right.as_ref()) {
+            (Object::Char(lval), Object::Char(rval)) => {
+                let result = lval != rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Int(lval), Object::Int(rval)) => {
+                let result = lval != rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Float(lval), Object::Float(rval)) => {
+                let result = lval != rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Str(lval), Object::Str(rval)) => {
+                let result = lval != rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            _ => {
+                let l_type = left.get_type();
+                let r_type = right.get_type();
+
+                return Err(ISAError::new(
+                    format!(
+                        "Comparision operation Not Equals is not applicable between {} {}",
+                        l_type, r_type
+                    ),
+                    ISAErrorKind::TypeError,
+                ));
+            }
+        }
     }
 }

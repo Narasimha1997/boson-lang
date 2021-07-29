@@ -1,21 +1,25 @@
+use crate::compiler;
 use crate::isa;
 use crate::types::closure;
+use crate::types::subroutine;
 use crate::vm::errors;
 
 use std::rc::Rc;
 
 use closure::ClosureContext;
+use compiler::CompiledBytecode;
+use errors::VMError;
+use errors::VMErrorKind;
 use isa::InstructionKind;
 use isa::InstructionPacker;
 use isa::Operands;
-use errors::VMError;
-use errors::VMErrorKind;
+use subroutine::Subroutine;
 
 pub struct ExecutionFrame {
     pub context: Rc<ClosureContext>,
     pub instruction_pointer: usize,
     pub base_pointer: usize,
-    pub bytecode_size: usize
+    pub bytecode_size: usize,
 }
 
 impl ExecutionFrame {
@@ -28,6 +32,27 @@ impl ExecutionFrame {
             base_pointer: 0,
             bytecode_size: bytecode_size,
         };
+    }
+
+    pub fn new_from_bytecode(
+        bytecode: &CompiledBytecode,
+        fn_name: String,
+        n_locals: usize,
+        n_params: usize,
+    ) -> ExecutionFrame {
+        let closure = ClosureContext {
+            compiled_fn: Rc::new(Subroutine {
+                name: fn_name,
+                bytecode: bytecode.instructions.clone(),
+                num_locals: n_locals,
+                num_parameters: n_params,
+            }),
+            free_objects: vec![],
+            bytecode_size: bytecode.instructions.len(),
+        };
+
+        let frame = ExecutionFrame::new(Rc::new(closure));
+        return frame;
     }
 
     pub fn get_ip(&self) -> usize {

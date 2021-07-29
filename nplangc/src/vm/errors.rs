@@ -16,6 +16,8 @@ pub enum VMErrorKind {
     StackCorruption,
     IllegalOperation,
     InvalidOperandTypes,
+    CallStackUnderflow,
+    DataStackUnderflow,
 }
 
 pub struct VMError {
