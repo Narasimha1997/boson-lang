@@ -69,6 +69,19 @@ impl Object {
             _ => "unknown".to_string()
         }
     }
+
+    pub fn is_true(&self) -> bool {
+        match self {
+            Object::Bool(val) => *val,
+            Object::Noval => false,
+            Object::Str(str) => *str != "",
+            Object::Int(i) => *i != 0,
+            Object::Char(c) => *c != '\0',
+            Object::Array(a) => a.as_ref().elements.len() != 0,
+            Object::HashTable(h) => h.as_ref().entries.len() != 0,
+            _ => true
+        }
+    }
 }
 
 impl fmt::Display for Object {

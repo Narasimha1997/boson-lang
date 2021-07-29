@@ -295,4 +295,22 @@ impl Bitwise {
 }
 
 
+pub struct Logical {}
 
+impl Logical {
+
+    pub fn or(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
+        let result = left.is_true() || right.is_true();
+        return Ok(Rc::new(Object::Bool(result)));
+    }
+
+    pub fn and(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
+        let result = left.is_true() && right.is_true();
+        return Ok(Rc::new(Object::Bool(result)));
+    }
+
+    pub fn not(obj: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
+        let result = ! obj.is_true();
+        return Ok(Rc::new(Object::Bool(result)));
+    }
+}
