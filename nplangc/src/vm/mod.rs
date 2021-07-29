@@ -1,7 +1,7 @@
 pub mod frames;
 pub mod errors;
 pub mod stack;
-pub mod golbals;
+pub mod global;
 
 use crate::compiler::CompiledBytecode;
 use crate::types::closure::ClosureContext;

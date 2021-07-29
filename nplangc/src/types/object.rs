@@ -55,6 +55,20 @@ impl Object {
             _ => String::from("undef"),
         }
     }
+
+    pub fn get_type(&self) -> String {
+        match self {
+            Object::Int(_) => "int".to_string(),
+            Object::Char(_) => "char".to_string(),
+            Object::Str(_) => "string".to_string(),
+            Object::Float(_) => "float".to_string(),
+            Object::Bool(_) => "bool".to_string(),
+            Object::Array(_) => "array".to_string(),
+            Object::HashTable(_) => "hashmap".to_string(),
+            Object::Subroutine(_) => "func".to_string(),
+            _ => "unknown".to_string()
+        }
+    }
 }
 
 impl fmt::Display for Object {

@@ -1118,7 +1118,7 @@ impl BytecodeDecompiler {
             decoded_string.push_str(&format!("{:0>8x} {}\n", idx, repr));
             idx = idx + 1;
         }
-
+    
         return decoded_string;
     }
 
