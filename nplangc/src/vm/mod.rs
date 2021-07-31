@@ -8,6 +8,7 @@ pub mod stack;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use alu::Arithmetic;
 use controls::Controls;
 use errors::VMError;
 use errors::VMErrorKind;
@@ -101,6 +102,31 @@ impl BosonVM {
 
                     if result.is_err() {
                         return Err(result.unwrap_err());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
+                // Binary operations:
+                InstructionKind::IAdd
+                | InstructionKind::ISub
+                | InstructionKind::IMul
+                | InstructionKind::IDiv
+                | InstructionKind::IMod
+                | InstructionKind::IAnd
+                | InstructionKind::IOr
+                | InstructionKind::ILAnd
+                | InstructionKind::ILOr
+                | InstructionKind::ILGt
+                | InstructionKind::ILGte
+                | InstructionKind::ILLTe
+                | InstructionKind::ILLt
+                | InstructionKind::ILEq
+                | InstructionKind::ILNe => {
+
+                    let error = Controls::execute_binary_op(&inst, &mut self.data_stack);
+                    if error.is_some() {
+                        return Err(error.unwrap());
                     }
 
                     frame.farword_ip(next);

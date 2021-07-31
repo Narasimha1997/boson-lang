@@ -18,6 +18,8 @@ pub enum VMErrorKind {
     DataStackUnderflow,
     GlobalPoolSizeExceeded,
     InstructionNotImplemented,
+    DivideByZeroError,
+    TypeError,
 }
 
 #[derive(Debug)]
@@ -42,14 +44,34 @@ impl VMError {
             pos: pos,
         };
     }
+
+    pub fn new_from_isa_error(isa_error: &ISAError, inst: InstructionKind) -> VMError {
+        if isa_error.t == ISAErrorKind::TypeError {
+            return VMError {
+                message: isa_error.message.clone(),
+                t: VMErrorKind::TypeError,
+                instruction: Some(inst),
+                pos: 0,
+            };
+        } else {
+            return VMError {
+                message: isa_error.message.clone(),
+                t: VMErrorKind::DivideByZeroError,
+                instruction: Some(inst),
+                pos: 0,
+            };
+        }
+    }
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub enum ISAErrorKind {
     DivideByZeroError,
     TypeError,
+    InvalidOperation,
 }
 
+#[derive(Debug)]
 pub struct ISAError {
     pub message: String,
     pub t: ISAErrorKind,
