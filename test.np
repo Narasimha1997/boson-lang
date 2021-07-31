@@ -1,4 +1,5 @@
 const x= 10;
-const y= 20;
+const y= 0;
 
-const z = x + y;
+const z = x / y;
+z > x;

@@ -91,7 +91,7 @@ impl Controls {
             return Err(right_pop.unwrap_err());
         }
 
-        return Ok((right_pop.unwrap(), left_pop.unwrap()));
+        return Ok((left_pop.unwrap(), right_pop.unwrap()));
     }
 
     pub fn execute_binary_op(inst: &InstructionKind, ds: &mut DataStack) -> Option<VMError> {
