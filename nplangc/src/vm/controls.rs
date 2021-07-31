@@ -142,4 +142,38 @@ impl Controls {
         }
         return None;
     }
+
+    pub fn execute_unary_op(inst: &InstructionKind, ds: &mut DataStack) -> Option<VMError> {
+        let pop_result = ds.pop_object(inst.clone());
+        if pop_result.is_err() {
+            return Some(pop_result.unwrap_err());
+        }
+
+        let obj = pop_result.unwrap();
+
+        let result = match inst {
+            InstructionKind::INeg => Bitwise::not(&obj),
+            InstructionKind::ILNot => Logical::not(&obj),
+            _ => Err(ISAError::new(
+                format!("{} is not a unary op", inst.as_string()),
+                ISAErrorKind::InvalidOperation,
+            )),
+        };
+
+        if result.is_err() {
+            return Some(VMError::new_from_isa_error(
+                &result.unwrap_err(),
+                inst.clone(),
+            ));
+        }
+
+        let result_obj = result.unwrap();
+
+        // push result to stack:
+        let result_push = ds.push_object(result_obj, inst.clone());
+        if result_push.is_err() {
+            return Some(result_push.unwrap_err());
+        }
+        return None;
+    }
 }

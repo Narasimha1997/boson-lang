@@ -8,7 +8,6 @@ pub mod stack;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use alu::Arithmetic;
 use controls::Controls;
 use errors::VMError;
 use errors::VMErrorKind;
@@ -125,6 +124,16 @@ impl BosonVM {
                 | InstructionKind::ILNe => {
 
                     let error = Controls::execute_binary_op(&inst, &mut self.data_stack);
+                    if error.is_some() {
+                        return Err(error.unwrap());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
+                // unary operators:
+                InstructionKind::ILNot | InstructionKind::INeg => {
+                    let error = Controls::execute_unary_op(&inst, &mut self.data_stack);
                     if error.is_some() {
                         return Err(error.unwrap());
                     }

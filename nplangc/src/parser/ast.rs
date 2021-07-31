@@ -150,6 +150,7 @@ pub enum LiteralKind {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ExpressionKind {
+    Noval,
     Identifier(IdentifierType),
     Literal(LiteralKind),
     Index(IndexType),
@@ -159,7 +160,6 @@ pub enum ExpressionKind {
     Suffix(SuffixType),
     Lambda(LambdaExpType),
     Boolean(bool),
-    Noval,
 }
 
 #[derive(Debug, PartialEq, Clone)]

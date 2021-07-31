@@ -2,4 +2,7 @@ const x= 10;
 const y= 20;
 
 const z = x / y;
-z > 0.1;
+const i = z > x;
+
+const l = none;
+!l

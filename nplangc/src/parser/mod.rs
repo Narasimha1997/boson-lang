@@ -597,10 +597,10 @@ impl Parser {
         match current_token.token {
             TokenKind::Operator(sym) => {
                 let matched_prefix = match sym {
-                    SymbolKind::SExcl => exp::PrefixExpKind::Neg,
+                    SymbolKind::SExcl => exp::PrefixExpKind::Not,
                     SymbolKind::SIncr => exp::PrefixExpKind::PreIncrement,
                     SymbolKind::SDecr => exp::PrefixExpKind::PreDecrement,
-                    SymbolKind::SNeg => exp::PrefixExpKind::Not,
+                    SymbolKind::SNeg => exp::PrefixExpKind::Neg,
                     _ => {
                         return Err(self.new_invalid_token_err(format!("Invalid prefix {:?}", sym)))
                     }

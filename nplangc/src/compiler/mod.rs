@@ -714,6 +714,10 @@ impl BytecodeCompiler {
         expression: &ast::ExpressionKind,
     ) -> Option<errors::CompileError> {
         match expression {
+            ast::ExpressionKind::Noval => {
+                let reg_constant = self.register_constant(Object::Noval);
+                self.save(isa::InstructionKind::IConstant, &vec![reg_constant]);
+            }
             ast::ExpressionKind::Literal(lt) => {
                 let result = self.compile_literal(&lt);
                 if result.is_some() {
