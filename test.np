@@ -1,20 +1,4 @@
-var x = 30;
-var y = 20;
-x = x + (y / 2) * 3 + (y++);
+const x= 10;
+const y= 20;
 
-const z = "Hello, world!";
-
-while ((x < y) || (x > 30)) {
-    x++;
-}
-
-if (x > 10) {
-    x++;
-} else {
-    x--;
-    assert x > 10, "Assertion Failure";
-}
-
-for i in {"age": 20, "sex": "male", "name": "Prasanna"} {
-    i++;
-}
+const z = x + y;

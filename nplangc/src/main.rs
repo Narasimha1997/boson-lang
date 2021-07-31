@@ -26,9 +26,16 @@ fn main() {
          let err = bytecode_result.unwrap_err();
          println!("Compilation Error: {:?}", err);
       } else {
+         let mut boson_vm = vm::BosonVM::new(&bytecode_result.unwrap());
+         let result = boson_vm.eval_bytecode();
+         if result.is_err() {
+            println!("{:?}", result);
+         }
 
-         println!("Compilation success.");
-         vm::test_reading(&bytecode_result.unwrap());
+         let globals = boson_vm.dump_globals();
+         let ds = boson_vm.dump_ds();
+         println!("Globals:\n{}", globals);
+         println!("Data Stack:\n{}", ds);
       }
    }
    

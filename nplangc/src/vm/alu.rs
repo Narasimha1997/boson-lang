@@ -1,10 +1,10 @@
 use std::rc::Rc;
 
-use crate::isa;
 use crate::types::object;
+use crate::vm::errors;
 
-use isa::errors::ISAError;
-use isa::errors::ISAErrorKind;
+use errors::ISAError;
+use errors::ISAErrorKind;
 
 use object::Object;
 

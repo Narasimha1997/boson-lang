@@ -1,8 +1,6 @@
 use crate::isa;
 
-
 use isa::InstructionKind;
-
 
 // VM runtime Error
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -18,8 +16,11 @@ pub enum VMErrorKind {
     InvalidOperandTypes,
     CallStackUnderflow,
     DataStackUnderflow,
+    GlobalPoolSizeExceeded,
+    InstructionNotImplemented,
 }
 
+#[derive(Debug)]
 pub struct VMError {
     pub message: String,
     pub t: VMErrorKind,
@@ -40,5 +41,22 @@ impl VMError {
             instruction: instruction,
             pos: pos,
         };
+    }
+}
+
+#[derive(Eq, PartialEq, Debug, Clone)]
+pub enum ISAErrorKind {
+    DivideByZeroError,
+    TypeError,
+}
+
+pub struct ISAError {
+    pub message: String,
+    pub t: ISAErrorKind,
+}
+
+impl ISAError {
+    pub fn new(msg: String, t: ISAErrorKind) -> ISAError {
+        return ISAError { message: msg, t: t };
     }
 }

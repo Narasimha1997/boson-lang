@@ -2,8 +2,6 @@
     Defines the instruction types and opcode formatting
     for NP Lang.
 */
-pub mod alu;
-pub mod errors;
 
 use crate::config::BYTE_ENDIAN;
 
