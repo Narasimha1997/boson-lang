@@ -336,6 +336,14 @@ impl Comparision {
                 let result = lval > rval;
                 return Ok(Rc::new(Object::Bool(result)));
             }
+            (Object::Float(lval), Object::Int(rval)) => {
+                let result = *lval > (*rval as f64);
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Int(lval), Object::Float(rval)) => {
+                let result = (*lval as f64) > *rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
             _ => {
                 let l_type = left.get_type();
                 let r_type = right.get_type();
@@ -363,6 +371,14 @@ impl Comparision {
             }
             (Object::Float(lval), Object::Float(rval)) => {
                 let result = lval >= rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Float(lval), Object::Int(rval)) => {
+                let result = *lval >= (*rval as f64);
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Int(lval), Object::Float(rval)) => {
+                let result = (*lval as f64) >= *rval;
                 return Ok(Rc::new(Object::Bool(result)));
             }
             _ => {
@@ -394,6 +410,14 @@ impl Comparision {
                 let result = lval < rval;
                 return Ok(Rc::new(Object::Bool(result)));
             }
+            (Object::Float(lval), Object::Int(rval)) => {
+                let result = *lval < (*rval as f64);
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Int(lval), Object::Float(rval)) => {
+                let result = (*lval as f64) < *rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
             _ => {
                 let l_type = left.get_type();
                 let r_type = right.get_type();
@@ -421,6 +445,14 @@ impl Comparision {
             }
             (Object::Float(lval), Object::Float(rval)) => {
                 let result = lval <= rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Float(lval), Object::Int(rval)) => {
+                let result = *lval <= (*rval as f64);
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Int(lval), Object::Float(rval)) => {
+                let result = (*lval as f64) <= *rval;
                 return Ok(Rc::new(Object::Bool(result)));
             }
             _ => {
@@ -456,6 +488,14 @@ impl Comparision {
                 let result = lval == rval;
                 return Ok(Rc::new(Object::Bool(result)));
             }
+            (Object::Float(lval), Object::Int(rval)) => {
+                let result = *lval == (*rval as f64);
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Int(lval), Object::Float(rval)) => {
+                let result = (*lval as f64) == *rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
             _ => {
                 let l_type = left.get_type();
                 let r_type = right.get_type();
@@ -487,6 +527,14 @@ impl Comparision {
             }
             (Object::Str(lval), Object::Str(rval)) => {
                 let result = lval != rval;
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Float(lval), Object::Int(rval)) => {
+                let result = *lval != (*rval as f64);
+                return Ok(Rc::new(Object::Bool(result)));
+            }
+            (Object::Int(lval), Object::Float(rval)) => {
+                let result = (*lval as f64) != *rval;
                 return Ok(Rc::new(Object::Bool(result)));
             }
             _ => {
