@@ -129,8 +129,8 @@ impl Arithmetic {
                     ));
                 }
 
-                let result = lval / rval;
-                return Ok(Rc::new(Object::Int(result)));
+                let result = *lval as f64 / *rval as f64;
+                return Ok(Rc::new(Object::Float(result)));
             }
             (Object::Int(lval), Object::Float(rval)) => {
                 if *rval == 0.0 {
