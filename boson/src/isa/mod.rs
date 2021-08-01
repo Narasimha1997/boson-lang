@@ -80,6 +80,9 @@ pub enum InstructionKind {
     // Call
     ICall,
 
+    // Call builtin
+    ILoadBuiltIn,
+
     // Closure
     IClosure,
 
@@ -221,6 +224,8 @@ impl InstructionKind {
             InstructionKind::IBlockStart => "IBlockStart".to_string(),
             InstructionKind::IArray => "IArray".to_string(),
             InstructionKind::IHash => "IHash".to_string(),
+            InstructionKind::ILoadBuiltIn => "ILoadBuiltIn".to_string(),
+            InstructionKind::ICall => "ICall".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -235,7 +240,9 @@ impl InstructionKind {
             | InstructionKind::INotJump
             | InstructionKind::IIter
             | InstructionKind::IHash
-            | InstructionKind::IArray => vec![2],
+            | InstructionKind::IArray
+            | InstructionKind::ILoadBuiltIn
+            | InstructionKind::ICall => vec![2],
 
             InstructionKind::IAdd
             | InstructionKind::ISub
@@ -266,6 +273,7 @@ impl InstructionKind {
 
             InstructionKind::IStoreLocal
             | InstructionKind::ILoadLocal => vec![1],
+
             _ => vec![],
         }
     }

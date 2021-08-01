@@ -9,8 +9,8 @@ use crate::parser::ast;
 use crate::parser::exp;
 use crate::types::object::Object;
 
-use isa::Operands;
 use isa::InstructionPacker;
+use isa::Operands;
 
 use symtab::ConstantPool;
 
@@ -117,7 +117,8 @@ struct LoopControl {
 
 impl BytecodeCompiler {
     pub fn new() -> BytecodeCompiler {
-        let symbol_table = symtab::SymbolTable::create_new_root();
+        let mut symbol_table = symtab::SymbolTable::create_new_root();
+        symbol_table.insert_builtins();
 
         let root_scope = ProgramScope::new_scope();
 
@@ -437,7 +438,10 @@ impl BytecodeCompiler {
         let resolved_symbol = resolve_result.unwrap();
         match resolved_symbol.scope {
             symtab::ScopeKind::Builtin => {
-                return None; // as of now
+                self.save(
+                    isa::InstructionKind::ILoadBuiltIn,
+                    &vec![resolved_symbol.pos],
+                );
             }
             symtab::ScopeKind::Free => {
                 return None;
@@ -748,6 +752,12 @@ impl BytecodeCompiler {
                     return Some(result.unwrap());
                 }
             }
+            ast::ExpressionKind::Call(ct) => {
+                let result = self.compile_call(&ct);
+                if result.is_some() {
+                    return Some(result.unwrap());
+                }
+            }
             _ => return None,
         }
         return None;
@@ -839,7 +849,6 @@ impl BytecodeCompiler {
         return None;
     }
 
-
     fn compile_variable_declr(&mut self, stmt: &ast::LetType) -> Option<errors::CompileError> {
         let var_name = &stmt.identifier.name;
         // resolve the name:
@@ -914,6 +923,33 @@ impl BytecodeCompiler {
         for idx in 0..compiled_opcode.len() {
             self.scopes[scope_idx].instructions[*pos + idx] = compiled_opcode[idx];
         }
+
+        return None;
+    }
+
+    fn compile_call(&mut self, node: &ast::CallType) -> Option<errors::CompileError> {
+        let args = &node.arguments;
+
+        // compile all arguments:
+        for idx in 0..args.len() {
+            let expr = &args[idx];
+
+            // compile the expression:
+            let error = self.compile_expression(expr);
+            if error.is_some() {
+                return error;
+            }
+        }
+
+        // resolve function name:
+        let fn_expr = &node.function;
+        let error = self.compile_expression(fn_expr);
+        if error.is_some() {
+            return error;
+        }
+
+        // place the call instruction:
+        self.save(isa::InstructionKind::ICall, &vec![args.len()]);
 
         return None;
     }
@@ -1048,7 +1084,6 @@ impl BytecodeCompiler {
         &mut self,
         node: &ast::BlockStatement,
     ) -> Option<errors::CompileError> {
-
         self.save(isa::InstructionKind::IBlockStart, &vec![]);
 
         for stmt in &node.statements {
@@ -1122,7 +1157,6 @@ impl BytecodeDecompiler {
             decoded_string.push_str(&format!("{:0>8x} {}\n", idx, repr));
             idx = idx + 1;
         }
-    
         return decoded_string;
     }
 

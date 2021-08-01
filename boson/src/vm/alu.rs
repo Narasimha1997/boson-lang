@@ -151,7 +151,7 @@ impl Arithmetic {
                     ));
                 }
 
-                let result = lval * rval.clone() as f64;
+                let result = lval / rval.clone() as f64;
                 return Ok(Rc::new(Object::Float(result)));
             }
             (Object::Float(lval), Object::Float(rval)) => {

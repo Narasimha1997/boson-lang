@@ -661,7 +661,6 @@ impl Parser {
         self.lexer.iterate();
 
         // parse the expression:
-        println!("{:?}", self.lexer.get_current_token());
         let parsed_exp_result = self.parse_expression(ExpOrder::Zero);
         if parsed_exp_result.is_err() {
             return Err(parsed_exp_result.unwrap_err());
@@ -1012,8 +1011,6 @@ impl Parser {
         &mut self,
         caller_expr: ast::ExpressionKind,
     ) -> Result<ast::ExpressionKind, ParserError> {
-
-        println!("{:?}", self.lexer.get_current_token());
 
         if self.next_symbol_is(SymbolKind::SRparen) {
             self.lexer.iterate();

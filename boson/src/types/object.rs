@@ -6,6 +6,7 @@ use crate::types::array::Array;
 use crate::types::closure::ClosureContext;
 use crate::types::hash::HashTable;
 use crate::types::subroutine::Subroutine;
+use crate::types::builtins::BuiltinKind;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Object {
@@ -19,6 +20,7 @@ pub enum Object {
     ClosureContext(Rc<ClosureContext>),
     Array(Rc<Array>),
     HashTable(Rc<HashTable>),
+    Builtins(BuiltinKind)
 }
 
 impl Eq for Object {}

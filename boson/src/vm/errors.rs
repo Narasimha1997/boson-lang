@@ -19,6 +19,8 @@ pub enum VMErrorKind {
     GlobalPoolSizeExceeded,
     InstructionNotImplemented,
     DivideByZeroError,
+    UnresolvedBuiltinFunction,
+    BuiltinFunctionError,
     TypeError,
 }
 

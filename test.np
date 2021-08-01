@@ -1,8 +1,12 @@
-const x= 10;
-const y= 20;
+println("Hello World!!");
 
-const z = x / y;
-const i = z > x;
+const radius = 10;
 
-const l = none;
-!l
+const area = 3.14*radius*radius;
+const circumference = 2 * area / radius;
+
+println("Area of circle is: ", area);
+
+println(
+    "Circumference of the circle is :", circumference
+);

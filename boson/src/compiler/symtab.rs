@@ -1,6 +1,10 @@
-use crate::types::object::Object;
+use crate::types::object;
+use crate::types::builtins;
 use std::collections::HashMap;
 use std::rc::Rc;
+
+use object::Object;
+use builtins::BuiltinKind;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ScopeKind {
@@ -67,6 +71,21 @@ impl SymbolTable {
         self.symbols
             .insert(symbol.name.clone(), Rc::clone(&ref_c_new_symbol));
         return ref_c_new_symbol;
+    }
+
+    pub fn insert_builtins(&mut self) {
+        let names = BuiltinKind::get_names();
+        for name in names {
+            let builtin_symbol = Symbol {
+                name: name.clone(),
+                pos: self.n_items,
+                is_const: true,
+                scope: ScopeKind::Builtin
+            };
+
+            self.symbols.insert(name.clone(), Rc::new(builtin_symbol));
+            self.n_items += 1;
+        }
     }
 
     pub fn get_symbol(&self, name: &String) -> Option<Rc<Symbol>> {

@@ -141,6 +141,29 @@ impl BosonVM {
                     frame.farword_ip(next);
                 }
 
+
+                // built-ins
+                InstructionKind::ILoadBuiltIn => {
+                    let builtin_idx = operands[0];
+                    let result = Controls::load_builtin(&mut self.data_stack, builtin_idx);
+                    if result.is_err() {
+                        return Err(result.unwrap_err());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
+                // function call:
+                InstructionKind::ICall => {
+                    let args_len = operands[0];
+                    let error = Controls::execute_call(&inst, &mut self.data_stack, args_len);
+                    if error.is_some() {
+                        return Err(error.unwrap());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
                 _ => {
                     return Err(VMError::new(
                         format!("{} not yet implemented", inst.as_string()),

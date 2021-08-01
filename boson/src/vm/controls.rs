@@ -1,5 +1,6 @@
 use crate::compiler::symtab::ConstantPool;
 use crate::isa;
+use crate::types::builtins;
 use crate::types::object;
 use crate::vm::alu;
 use crate::vm::errors;
@@ -13,6 +14,7 @@ use alu::Arithmetic;
 use alu::Bitwise;
 use alu::Comparision;
 use alu::Logical;
+use builtins::BuiltinKind;
 use errors::ISAError;
 use errors::ISAErrorKind;
 use errors::VMError;
@@ -141,6 +143,105 @@ impl Controls {
             return Some(result_push.unwrap_err());
         }
         return None;
+    }
+
+    fn pop_n(
+        ds: &mut DataStack,
+        n: usize,
+        inst: &InstructionKind,
+    ) -> Result<Vec<Rc<Object>>, VMError> {
+        let mut objs = vec![];
+
+        for _ in 0..n {
+            let popped = ds.pop_object(inst.clone());
+            if popped.is_err() {
+                return Err(popped.unwrap_err());
+            }
+
+            let obj = popped.unwrap();
+            objs.push(obj);
+        }
+
+        return Ok(objs);
+    }
+
+    pub fn load_builtin(ds: &mut DataStack, idx: usize) -> Result<i64, VMError> {
+        let builtin_kind = BuiltinKind::get_by_index(idx);
+        if builtin_kind.is_none() {
+            return Err(VMError::new(
+                format!("Unresolved built-in function with index {}", idx),
+                VMErrorKind::UnresolvedBuiltinFunction,
+                Some(InstructionKind::ILoadBuiltIn),
+                0
+            ));
+        }
+
+        // push to the stack
+        let obj = Rc::new(Object::Builtins(builtin_kind.unwrap()));
+        let push_res = ds.push_object(obj, InstructionKind::ILoadBuiltIn);
+        if push_res.is_err() {
+            return Err(push_res.unwrap_err());
+        }
+
+        return Ok(push_res.unwrap());
+    }
+
+    pub fn execute_call(
+        inst: &InstructionKind,
+        ds: &mut DataStack,
+        n_args: usize,
+    ) -> Option<VMError> {
+        // pop the function:
+
+
+        let popped = ds.pop_object(inst.clone());
+        if popped.is_err() {
+            return Some(popped.unwrap_err());
+        }
+
+        let popped_obj = popped.unwrap();
+        match popped_obj.as_ref() {
+            Object::Builtins(func) => {
+                // pop the arguments:
+                let popped_args = Controls::pop_n(ds, n_args, inst);
+                if popped_args.is_err() {
+                    return Some(popped_args.unwrap_err());
+                }
+
+                let mut args = popped_args.unwrap();
+                args.reverse();
+                // call the builtin:
+                let exec_result = func.exec(args);
+                if exec_result.is_err() {
+                    return Some(VMError::new(
+                        exec_result.unwrap_err(),
+                        VMErrorKind::BuiltinFunctionError,
+                        Some(inst.clone()),
+                        0,
+                    ));
+                }
+
+                let result_obj = exec_result.unwrap();
+                if result_obj.is_true() {
+                    let push_res = ds.push_object(result_obj, inst.clone());
+                    if push_res.is_err() {
+                        return Some(push_res.unwrap_err());
+                    }
+                }
+
+                return None;
+            }
+            _ => {
+                // TODO: Implement the capability to call custom functions.
+
+                return Some(VMError::new(
+                    format!("Cannot call {}", popped_obj.as_ref().describe()),
+                    VMErrorKind::StackCorruption,
+                    Some(inst.clone()),
+                    0,
+                ));
+            }
+        }
     }
 
     pub fn execute_unary_op(inst: &InstructionKind, ds: &mut DataStack) -> Option<VMError> {

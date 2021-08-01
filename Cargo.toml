@@ -1,4 +1,4 @@
 
 [workspace]
 
-members = [ "nplangc", "nplangvm"]
+members = ["boson"]
