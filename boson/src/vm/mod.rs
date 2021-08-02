@@ -212,6 +212,21 @@ impl BosonVM {
                     frame.farword_ip(next);
                 }
 
+                InstructionKind::IClosure => {
+                    let error = Controls::create_closure(
+                        &mut self.data_stack,
+                        &self.constants,
+                        operands[1],
+                        operands[0],
+                    );
+
+                    if error.is_some() {
+                        return Err(error.unwrap());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
                 _ => {
                     return Err(VMError::new(
                         format!("{} not yet implemented", inst.as_string()),

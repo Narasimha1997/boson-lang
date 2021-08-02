@@ -351,14 +351,13 @@ impl BytecodeCompiler {
     }
 
     fn compile_function(&mut self, node: &ast::FunctionType) -> Option<errors::CompileError> {
-
         // check function name:
         let resolve_result = self.symbol_table.resolve_symbol(&node.name);
         if resolve_result.is_some() {
             return Some(errors::CompileError::new(
                 format!("Name {} already defined", &node.name),
                 errors::CompilerErrorKind::SymbolAlreadyExist,
-                0
+                0,
             ));
         }
 
@@ -371,16 +370,14 @@ impl BytecodeCompiler {
         for arg in args {
             match arg {
                 ast::ExpressionKind::Identifier(id) => {
-                    let sym = self.symbol_table.insert_new_symbol(
-                        &id.name, false
-                    );
+                    let sym = self.symbol_table.insert_new_symbol(&id.name, false);
                     self.save(isa::InstructionKind::ILoadLocal, &vec![sym.pos]);
-                } 
+                }
                 _ => {
                     return Some(errors::CompileError::new(
                         "Function parameter is a non identifier".to_string(),
                         errors::CompilerErrorKind::InvalidOperand,
-                        0
+                        0,
                     ))
                 }
             }
@@ -445,8 +442,8 @@ impl BytecodeCompiler {
             symtab::ScopeKind::Local => {
                 self.save(isa::InstructionKind::IStoreLocal, &vec![sym_res.pos]);
             }
-           _ => {}
-        }        
+            _ => {}
+        }
 
         return None;
     }

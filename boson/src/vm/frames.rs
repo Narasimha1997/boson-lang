@@ -3,6 +3,7 @@ use crate::isa;
 use crate::types::closure;
 use crate::types::subroutine;
 use crate::vm::errors;
+use crate::types::object;
 
 use std::rc::Rc;
 
@@ -14,6 +15,7 @@ use isa::InstructionKind;
 use isa::InstructionPacker;
 use isa::Operands;
 use subroutine::Subroutine;
+use object::Object;
 
 pub struct ExecutionFrame {
     pub context: Rc<ClosureContext>,
@@ -32,6 +34,23 @@ impl ExecutionFrame {
             base_pointer: 0,
             bytecode_size: bytecode_size,
         };
+    }
+
+    pub fn new_closure(
+        func: Rc<Subroutine>,
+        free_objects: Vec<Rc<Object>>,
+    ) -> Rc<Object> {
+
+        let b_size = func.as_ref().bytecode.len();
+
+        return Rc::new(Object::ClosureContext(
+            Rc::new(ClosureContext {
+                compiled_fn: func,
+                bytecode_size: b_size,
+                free_objects: free_objects
+            })
+        ))
+
     }
 
     pub fn new_from_bytecode(

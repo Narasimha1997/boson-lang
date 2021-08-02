@@ -10,9 +10,9 @@ use crate::vm::frames;
 use crate::vm::global;
 use crate::vm::stack;
 
+use std::cell::RefMut;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::cell::RefMut;
 
 use alu::Arithmetic;
 use alu::Bitwise;
@@ -47,12 +47,10 @@ impl Controls {
         ds: &mut DataStack,
         pos: usize,
     ) -> Result<bool, VMError> {
-
         let popped_res = ds.pop_object(InstructionKind::INotJump);
         if popped_res.is_err() {
             return Err(popped_res.unwrap_err());
         }
-
 
         let popped_obj = popped_res.unwrap();
         if !popped_obj.as_ref().is_true() {
@@ -373,5 +371,58 @@ impl Controls {
         }
 
         return Ok(push_res.unwrap());
+    }
+
+    pub fn create_closure(
+        ds: &mut DataStack,
+        constants: &ConstantPool,
+        n_free: usize,
+        func_idx: usize,
+    ) -> Option<VMError> {
+        // pop off the free objects
+        let popped_res = Controls::pop_n(ds, n_free, &InstructionKind::IClosure);
+        if popped_res.is_err() {
+            return Some(popped_res.unwrap_err());
+        }
+        // get free objects:
+        let free_objects = popped_res.unwrap();
+
+        // retrive  the function from constant pool:
+        let function_res = constants.get_object(func_idx);
+        if function_res.is_none() {
+            return Some(VMError::new(
+                "Error fetching unknown constant".to_string(),
+                VMErrorKind::InvalidGlobalIndex,
+                Some(InstructionKind::IClosure),
+                0,
+            ));
+        }
+
+        let function = function_res.unwrap();
+
+        match function.as_ref() {
+            Object::Subroutine(sub) => {
+                // create a closure:
+                let closure_obj = ExecutionFrame::new_closure(sub.clone(), free_objects);
+                // load the closure on data-stack:
+                let push_res = ds.push_object(closure_obj, InstructionKind::IClosure);
+                if push_res.is_err() {
+                    return Some(push_res.unwrap_err());
+                }
+            },
+            _ => {
+                return Some(VMError::new(
+                    format!(
+                        "Only functions can be loaded as closure not {}",
+                        function.as_ref().get_type()
+                    ),
+                    VMErrorKind::InvalidGlobalIndex,
+                    Some(InstructionKind::IClosure),
+                    0,
+                ));
+            }
+        }
+
+        return None;
     }
 }
