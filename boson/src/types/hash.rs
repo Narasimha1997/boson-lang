@@ -20,7 +20,7 @@ impl HashTable {
             .map(|(key, value)| format!("{}: {}", key.describe(), value.describe()))
             .collect();
 
-        return format!("HashTable<{}>{{{}}}", self.name, combined_pairs.join(", "));
+        return format!("HashTable({{{}}})", combined_pairs.join(", "));
     }
 
     pub fn keys(&self) -> Vec<Rc<Object>> {

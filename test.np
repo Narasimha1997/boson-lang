@@ -2,3 +2,5 @@ println("Hello World!!");
 
 const arr = [1,2,3,4, 5];
 println(arr);
+
+println(builtins());

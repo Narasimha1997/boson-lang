@@ -16,7 +16,7 @@ impl Array {
             .into_iter()
             .map(|e| e.to_string())
             .collect();
-        return format!("Array<{}>[{}]", self.name, values.join(", "));
+        return format!("Array([{}])", values.join(", "));
     }
 
     pub fn get_values_ref(&self) -> &Vec<Rc<Object>> {
