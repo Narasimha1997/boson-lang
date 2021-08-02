@@ -20,4 +20,4 @@ if (z == 1) {
     println("No, z is not one");
 }
 
-println("Hey there!");
+println("Hey there!", len(arr));

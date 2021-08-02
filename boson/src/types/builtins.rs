@@ -12,6 +12,7 @@ pub enum BuiltinKind {
     Print,
     Truthy,
     Println,
+    Length,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -26,6 +27,7 @@ impl BuiltinKind {
             BuiltinKind::Print => "print".to_string(),
             BuiltinKind::Truthy => "is_true".to_string(),
             BuiltinKind::Println => "println".to_string(),
+            BuiltinKind::Length => "len".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -62,6 +64,25 @@ impl BuiltinKind {
 
                 return Ok(Rc::new(Object::Bool(args[0].as_ref().is_true())));
             }
+
+            BuiltinKind::Length => {
+                if args.len() == 0 {
+                    return Err("Builtin len takes one argument, zero provided".to_string());
+                }
+
+                let obj = args[0].as_ref();
+                match obj {
+                    Object::Str(st) => Ok(Rc::new(Object::Int(st.len() as i64))),
+                    Object::Array(arr) => {
+                        Ok(Rc::new(Object::Int(arr.as_ref().elements.len() as i64)))
+                    }
+                    Object::HashTable(ht) => {
+                        Ok(Rc::new(Object::Int(ht.as_ref().entries.len() as i64)))
+                    }
+                    _ => Err(format!("len() cannot be applied on {}", obj.get_type())),
+                }
+            }
+
             _ => return Err("Trying to invoke invalid builtin".to_string()),
         }
     }
