@@ -2,8 +2,10 @@ use std::hash::Hash;
 use std::hash::Hasher;
 use std::rc::Rc;
 
+use crate::types::array;
 use crate::types::object;
 
+use array::Array;
 use object::Object;
 
 #[repr(u8)]
@@ -13,6 +15,7 @@ pub enum BuiltinKind {
     Truthy,
     Println,
     Length,
+    Builtins,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -28,6 +31,7 @@ impl BuiltinKind {
             BuiltinKind::Truthy => "is_true".to_string(),
             BuiltinKind::Println => "println".to_string(),
             BuiltinKind::Length => "len".to_string(),
+            BuiltinKind::Builtins => "builtins".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -58,16 +62,19 @@ impl BuiltinKind {
 
             BuiltinKind::Truthy => {
                 // is_true functions
-                if args.len() == 0 {
-                    return Err("Builtin is_true takes one argument, zero provided.".to_string());
+                if args.len() != 0 {
+                    return Err(format!(
+                        "is_true() takes one argument, {} provided.",
+                        args.len()
+                    ));
                 }
 
                 return Ok(Rc::new(Object::Bool(args[0].as_ref().is_true())));
             }
 
             BuiltinKind::Length => {
-                if args.len() == 0 {
-                    return Err("Builtin len takes one argument, zero provided".to_string());
+                if args.len() != 0 {
+                    return Err(format!("len() takes one argument, {} provided", args.len()));
                 }
 
                 let obj = args[0].as_ref();
@@ -81,6 +88,26 @@ impl BuiltinKind {
                     }
                     _ => Err(format!("len() cannot be applied on {}", obj.get_type())),
                 }
+            }
+
+            BuiltinKind::Builtins => {
+                if args.len() != 0 {
+                    return Err(format!(
+                        "builtins() takes zero arguments, {} provided",
+                        args.len()
+                    ));
+                }
+
+                let all_builtins = BuiltinKind::get_names();
+                let mut strings = vec![];
+                for name in all_builtins {
+                    strings.push(Rc::new(Object::Str(name.clone())));
+                }
+
+                return Ok(Rc::new(Object::Array(Rc::new(Array {
+                    name: "todo".to_string(),
+                    elements: strings,
+                }))));
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),

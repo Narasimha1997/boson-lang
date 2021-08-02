@@ -2,22 +2,3 @@ println("Hello World!!");
 
 const arr = [1,2,3,4, 5];
 println(arr);
-
-const ht = {
-    "name": "Prasanna",
-    "age": 23,
-    "ratings": 8.1,
-    "peaks": [12, 41.1, 44.52]
-}
-
-println(ht);
-
-var z = 1;
-
-if (z == 1) {
-    println("Hey, z is one");
-} else {
-    println("No, z is not one");
-}
-
-println("Hey there!", len(arr));

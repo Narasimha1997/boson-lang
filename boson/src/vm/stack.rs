@@ -11,9 +11,9 @@ use errors::VMErrorKind;
 use frames::ExecutionFrame;
 use isa::InstructionKind;
 use object::Object;
-use std::rc::Rc;
-use std::cell::RefMut;
 use std::cell::RefCell;
+use std::cell::RefMut;
+use std::rc::Rc;
 
 pub struct CallStack {
     pub stack: Vec<RefCell<ExecutionFrame>>,
@@ -72,9 +72,11 @@ impl CallStack {
     }
 
     pub fn top(&mut self) -> RefMut<ExecutionFrame> {
-        return self.stack.get_mut(
-            self.stack_pointer as usize
-        ).unwrap().borrow_mut();
+        return self
+            .stack
+            .get_mut(self.stack_pointer as usize)
+            .unwrap()
+            .borrow_mut();
     }
 }
 
@@ -88,7 +90,6 @@ impl DataStack {
     }
 
     pub fn push_object(&mut self, obj: Rc<Object>, inst: InstructionKind) -> Result<i64, VMError> {
-
         if (self.stack_pointer + 1) as usize >= self.max_size {
             return Err(VMError::new(
                 "Stack Overflow!".to_string(),
