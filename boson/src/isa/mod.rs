@@ -87,7 +87,7 @@ pub enum InstructionKind {
     IClosure,
 
     // Free
-    IGetFree,
+    ILoadFree,
 
     // Data ops:
     IRegArray,
@@ -226,6 +226,10 @@ impl InstructionKind {
             InstructionKind::IHash => "IHash".to_string(),
             InstructionKind::ILoadBuiltIn => "ILoadBuiltIn".to_string(),
             InstructionKind::ICall => "ICall".to_string(),
+            InstructionKind::ILoadFree => "ILoadFree".to_string(),
+            InstructionKind::IClosure => "IClosure".to_string(),
+            InstructionKind::IRet => "IRet".to_string(),
+            InstructionKind::IRetVal => "IRetVal".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -242,7 +246,8 @@ impl InstructionKind {
             | InstructionKind::IHash
             | InstructionKind::IArray
             | InstructionKind::ILoadBuiltIn
-            | InstructionKind::ICall => vec![2],
+            | InstructionKind::ICall
+            | InstructionKind::ILoadFree => vec![2],
 
             InstructionKind::IAdd
             | InstructionKind::ISub
@@ -268,7 +273,11 @@ impl InstructionKind {
             | InstructionKind::ILAnd
             | InstructionKind::IVMPanic
             | InstructionKind::IBlockEnd
-            | InstructionKind::IBlockStart => vec![],
+            | InstructionKind::IBlockStart
+            | InstructionKind::IRetVal
+            | InstructionKind::IRet => vec![],
+
+            InstructionKind::IClosure => vec![2, 2],
 
 
             InstructionKind::IStoreLocal

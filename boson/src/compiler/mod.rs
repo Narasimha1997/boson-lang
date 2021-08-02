@@ -8,6 +8,7 @@ use crate::isa;
 use crate::parser::ast;
 use crate::parser::exp;
 use crate::types::object::Object;
+use crate::types::subroutine::Subroutine;
 
 use isa::InstructionPacker;
 use isa::Operands;
@@ -321,12 +322,131 @@ impl BytecodeCompiler {
             self.scope_index,
             isa::InstructionKind::IJump,
             &vec![after_else],
-            &after_if_pos
+            &after_if_pos,
         );
 
         if error.is_some() {
             return error;
         }
+
+        return None;
+    }
+
+    fn compile_return_stmt(&mut self, node: &ast::ReturnType) -> Option<errors::CompileError> {
+        if node.expression.is_some() {
+            // compile the return expression
+            let exp = &node.expression.as_ref().unwrap();
+            let error = self.compile_expression(exp);
+
+            if error.is_some() {
+                return error;
+            }
+
+            self.save(isa::InstructionKind::IRetVal, &vec![]);
+            return None;
+        } else {
+            self.save(isa::InstructionKind::IRet, &vec![]);
+            return None;
+        }
+    }
+
+    fn compile_function(&mut self, node: &ast::FunctionType) -> Option<errors::CompileError> {
+
+        // check function name:
+        let resolve_result = self.symbol_table.resolve_symbol(&node.name);
+        if resolve_result.is_some() {
+            return Some(errors::CompileError::new(
+                format!("Name {} already defined", &node.name),
+                errors::CompilerErrorKind::SymbolAlreadyExist,
+                0
+            ));
+        }
+
+        // enter the scope:
+        self.enter_scope();
+
+        let args = &node.parameters;
+        let error: Option<errors::CompileError>;
+
+        for arg in args {
+            match arg {
+                ast::ExpressionKind::Identifier(id) => {
+                    let sym = self.symbol_table.insert_new_symbol(
+                        &id.name, false
+                    );
+                    self.save(isa::InstructionKind::ILoadLocal, &vec![sym.pos]);
+                } 
+                _ => {
+                    return Some(errors::CompileError::new(
+                        "Function parameter is a non identifier".to_string(),
+                        errors::CompilerErrorKind::InvalidOperand,
+                        0
+                    ))
+                }
+            }
+        }
+
+        let func_block = &node.body;
+        error = self.compile_block_statement(func_block);
+        if error.is_some() {
+            return error;
+        }
+
+        // check if there is a return statement at last:
+        let n_statements = func_block.statements.len();
+        let last_stmt = &func_block.statements[n_statements - 1];
+
+        match last_stmt {
+            ast::StatementKind::Return(_) => {}
+            _ => {
+                // append a return void statement
+                self.save(isa::InstructionKind::IRet, &vec![]);
+            }
+        }
+
+        let free_symbols = self.symbol_table.get_free_symbols();
+        let n_locals = self.symbol_table.n_items;
+
+        let compiled_result = self.exit_scope();
+        if compiled_result.is_err() {
+            return Some(compiled_result.unwrap_err());
+        }
+
+        let compiled_func = compiled_result.unwrap();
+
+        for sym in &free_symbols {
+            self.save(isa::InstructionKind::ILoadFree, &vec![sym.pos]);
+        }
+
+        let compiled_func_type = Subroutine {
+            name: node.name.clone(),
+            bytecode: compiled_func,
+            num_locals: n_locals,
+            num_parameters: args.len(),
+        };
+
+        let func_object = Object::Subroutine(Rc::new(compiled_func_type));
+
+        // register the sub-routine:
+        let func_idx = self.register_constant(func_object);
+
+        // create a closure instruction:
+        self.save(
+            isa::InstructionKind::IClosure,
+            &vec![func_idx, free_symbols.len()],
+        );
+
+        // store
+        let sym_res = self.symbol_table.insert_new_symbol(&node.name, true);
+        match sym_res.scope {
+            symtab::ScopeKind::Global => {
+                self.save(isa::InstructionKind::IStoreGlobal, &vec![sym_res.pos]);
+            }
+            symtab::ScopeKind::Local => {
+                self.save(isa::InstructionKind::IStoreLocal, &vec![sym_res.pos]);
+            }
+           _ => {}
+        }        
 
         return None;
     }
@@ -1077,6 +1197,8 @@ impl BytecodeCompiler {
             ast::StatementKind::If(node) => self.compile_if_statement(&node),
             ast::StatementKind::Assert(node) => self.compile_assert_statement(&node),
             ast::StatementKind::For(node) => self.compile_for_loop(&node),
+            ast::StatementKind::Function(node) => self.compile_function(&node),
+            ast::StatementKind::Return(node) => self.compile_return_stmt(&node),
             _ => {
                 return Some(errors::CompileError::new(
                     "Not yet implemented".to_string(),

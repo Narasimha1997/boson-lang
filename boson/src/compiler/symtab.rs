@@ -1,10 +1,10 @@
-use crate::types::object;
 use crate::types::builtins;
+use crate::types::object;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use object::Object;
 use builtins::BuiltinKind;
+use object::Object;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ScopeKind {
@@ -80,7 +80,7 @@ impl SymbolTable {
                 name: name.clone(),
                 pos: self.n_items,
                 is_const: true,
-                scope: ScopeKind::Builtin
+                scope: ScopeKind::Builtin,
             };
 
             self.symbols.insert(name.clone(), Rc::new(builtin_symbol));
@@ -121,7 +121,12 @@ impl SymbolTable {
         let result = self.__resolve(name);
 
         if result.is_some() {
-            let unwrapped_sym = result.unwrap();
+            let (unwrapped_sym, is_parent) = result.unwrap();
+
+            if !is_parent {
+                return Some(Rc::clone(&unwrapped_sym));
+            }
+
             match unwrapped_sym.scope {
                 ScopeKind::Global | ScopeKind::Builtin => return Some(Rc::clone(&unwrapped_sym)),
                 ScopeKind::Local | ScopeKind::Free => {
@@ -134,16 +139,28 @@ impl SymbolTable {
         return None;
     }
 
-    fn __resolve(&self, name: &str) -> Option<Rc<Symbol>> {
+    fn __resolve(&self, name: &str) -> Option<(Rc<Symbol>, bool)> {
         let sym_key = name.to_string();
         let mut current_symtab = self;
+
+        let mut is_parent_level = false;
 
         let mut symbol_res = current_symtab.get_symbol(&sym_key);
         while symbol_res.is_none() && current_symtab.level != 0 {
             current_symtab = current_symtab.parent.as_ref().unwrap();
             symbol_res = current_symtab.get_symbol(&sym_key);
+            is_parent_level = true;
         }
-        return symbol_res;
+
+        if symbol_res.is_some() {
+            return Some((symbol_res.unwrap(), is_parent_level));
+        }
+
+        return None;
+    }
+
+    pub fn get_free_symbols(&self) -> Vec<Rc<Symbol>> {
+        return self.free_symbols.clone();
     }
 }
 
