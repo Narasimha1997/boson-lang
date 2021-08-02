@@ -60,6 +60,7 @@ impl BosonVM {
                 InstructionKind::INoOp => {
                     frame.farword_ip(next);
                 }
+
                 InstructionKind::IIllegal => {
                     return Err(VMError::new(
                         "VM encountered illegal instruction".to_string(),
@@ -67,6 +68,32 @@ impl BosonVM {
                         Some(InstructionKind::IIllegal),
                         0,
                     ));
+                }
+
+                InstructionKind::IBlockStart | InstructionKind::IBlockEnd => {
+                    frame.farword_ip(next);
+                }
+
+                // jump and not jump
+                InstructionKind::IJump => {
+                    let pos = operands[0];
+                    let result = Controls::jump(&mut frame, pos);
+                    if result.is_err() {
+                        return Err(result.unwrap_err());
+                    }
+                }
+
+                InstructionKind::INotJump => {
+                    let pos = operands[0];
+                    let result = Controls::jump_not_truthy(&mut frame, &mut self.data_stack, pos);
+                    if result.is_err() {
+                        return Err(result.unwrap_err());
+                    }
+
+                    let has_jumped = result.unwrap();
+                    if !has_jumped {
+                        frame.farword_ip(next);
+                    }
                 }
 
                 // data load and store instructions:
@@ -159,6 +186,27 @@ impl BosonVM {
                     let error = Controls::execute_call(&inst, &mut self.data_stack, args_len);
                     if error.is_some() {
                         return Err(error.unwrap());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
+                // build Array and Hash:
+                InstructionKind::IArray => {
+                    let length = operands[0];
+                    let result = Controls::build_array(&inst, &mut self.data_stack, length);
+                    if result.is_err() {
+                        return Err(result.unwrap_err());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
+                InstructionKind::IHash => {
+                    let length = operands[0];
+                    let result = Controls::build_hash(&inst, &mut self.data_stack, length);
+                    if result.is_err() {
+                        return Err(result.unwrap_err());
                     }
 
                     frame.farword_ip(next);

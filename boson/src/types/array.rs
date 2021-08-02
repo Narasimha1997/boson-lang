@@ -18,6 +18,43 @@ impl Array {
             .collect();
         return format!("Array<{}>[{}]", self.name, values.join(", "));
     }
+
+    pub fn get_values_ref(&self) -> &Vec<Rc<Object>> {
+        return &self.elements;
+    }
+
+    pub fn get_values(&self) -> Vec<Rc<Object>> {
+        return self.elements.clone();
+    }
+
+    pub fn get_sliced(&self, start: usize, end: usize) -> Vec<Rc<Object>> {
+        return self.elements[start..end].to_vec();
+    }
+
+    pub fn set_object(&mut self, pos: usize, obj: Rc<Object>) -> Option<String> {
+        if pos >= self.elements.len() {
+            return Some(format!("Array index out of range for position {}", pos));
+        }
+
+        self.elements[pos] = obj;
+        return None;
+    }
+
+    pub fn get_object(&self, pos: usize) -> Result<Rc<Object>, String> {
+        if pos >= self.elements.len() {
+            return Err(format!("Array index out of range for position {}", pos));
+        }
+
+        return Ok(self.elements[pos].clone());
+    }
+
+    pub fn get_object_ref(&self, pos: usize) -> Result<&Rc<Object>, String> {
+        if pos >= self.elements.len() {
+            return Err(format!("Array index out of range for position {}", pos));
+        }
+
+        return Ok(&self.elements[pos]);
+    }
 }
 
 impl PartialEq for Array {

@@ -1,6 +1,8 @@
 use crate::compiler::symtab::ConstantPool;
 use crate::isa;
+use crate::types::array;
 use crate::types::builtins;
+use crate::types::hash;
 use crate::types::object;
 use crate::vm::alu;
 use crate::vm::errors;
@@ -8,12 +10,15 @@ use crate::vm::frames;
 use crate::vm::global;
 use crate::vm::stack;
 
+use std::collections::HashMap;
 use std::rc::Rc;
+use std::cell::RefMut;
 
 use alu::Arithmetic;
 use alu::Bitwise;
 use alu::Comparision;
 use alu::Logical;
+use array::Array;
 use builtins::BuiltinKind;
 use errors::ISAError;
 use errors::ISAErrorKind;
@@ -21,6 +26,7 @@ use errors::VMError;
 use errors::VMErrorKind;
 use frames::ExecutionFrame;
 use global::GlobalPool;
+use hash::HashTable;
 use isa::InstructionKind;
 use object::Object;
 use stack::DataStack;
@@ -28,12 +34,37 @@ use stack::DataStack;
 pub struct Controls {}
 
 impl Controls {
-    pub fn jump(cf: &mut ExecutionFrame, pos: usize) -> Result<usize, VMError> {
+    pub fn jump(cf: &mut RefMut<ExecutionFrame>, pos: usize) -> Result<usize, VMError> {
         let error = cf.set_ip(pos);
         if error.is_some() {
             return Err(error.unwrap());
         }
         return Ok(pos);
+    }
+
+    pub fn jump_not_truthy(
+        cf: &mut RefMut<ExecutionFrame>,
+        ds: &mut DataStack,
+        pos: usize,
+    ) -> Result<bool, VMError> {
+
+        let popped_res = ds.pop_object(InstructionKind::INotJump);
+        if popped_res.is_err() {
+            return Err(popped_res.unwrap_err());
+        }
+
+
+        let popped_obj = popped_res.unwrap();
+        if !popped_obj.as_ref().is_true() {
+            let jmp_result = Controls::jump(cf, pos);
+            if jmp_result.is_err() {
+                return Err(jmp_result.unwrap_err());
+            }
+
+            return Ok(true);
+        }
+
+        return Ok(false);
     }
 
     pub fn store_global(
@@ -172,7 +203,7 @@ impl Controls {
                 format!("Unresolved built-in function with index {}", idx),
                 VMErrorKind::UnresolvedBuiltinFunction,
                 Some(InstructionKind::ILoadBuiltIn),
-                0
+                0,
             ));
         }
 
@@ -192,7 +223,6 @@ impl Controls {
         n_args: usize,
     ) -> Option<VMError> {
         // pop the function:
-
 
         let popped = ds.pop_object(inst.clone());
         if popped.is_err() {
@@ -276,5 +306,72 @@ impl Controls {
             return Some(result_push.unwrap_err());
         }
         return None;
+    }
+
+    pub fn build_array(
+        inst: &InstructionKind,
+        ds: &mut DataStack,
+        length: usize,
+    ) -> Result<i64, VMError> {
+        let popped_res = Controls::pop_n(ds, length, inst);
+        if popped_res.is_err() {
+            return Err(popped_res.unwrap_err());
+        }
+
+        let mut popped = popped_res.unwrap();
+        popped.reverse();
+
+        let array = Array {
+            name: "todo".to_string(),
+            elements: popped,
+        };
+
+        let array_obj = Rc::new(Object::Array(Rc::new(array)));
+
+        // push the array on to the stack:
+        let push_res = ds.push_object(array_obj, inst.clone());
+        if push_res.is_err() {
+            return Err(push_res.unwrap_err());
+        }
+
+        return Ok(push_res.unwrap());
+    }
+
+    pub fn build_hash(
+        inst: &InstructionKind,
+        ds: &mut DataStack,
+        length: usize,
+    ) -> Result<i64, VMError> {
+        let popped_res = Controls::pop_n(ds, length, inst);
+        if popped_res.is_err() {
+            return Err(popped_res.unwrap_err());
+        }
+
+        let mut hash_table = HashMap::new();
+        let mut popped = popped_res.unwrap();
+        popped.reverse();
+
+        let mut idx = 0;
+        while idx < length {
+            let key = popped[idx].clone();
+            idx += 1;
+            let value = popped[idx].clone();
+            idx += 1;
+            hash_table.insert(key, value);
+        }
+
+        let ht = HashTable {
+            name: "todo".to_string(),
+            entries: hash_table,
+        };
+
+        let ht_obj = Rc::new(Object::HashTable(Rc::new(ht)));
+        let push_res = ds.push_object(ht_obj, inst.clone());
+
+        if push_res.is_err() {
+            return Err(push_res.unwrap_err());
+        }
+
+        return Ok(push_res.unwrap());
     }
 }

@@ -1,12 +1,23 @@
 println("Hello World!!");
 
-const radius = 10;
+const arr = [1,2,3,4, 5];
+println(arr);
 
-const area = 3.14*radius*radius;
-const circumference = 2 * area / radius;
+const ht = {
+    "name": "Prasanna",
+    "age": 23,
+    "ratings": 8.1,
+    "peaks": [12, 41.1, 44.52]
+}
 
-println("Area of circle is: ", area);
+println(ht);
 
-println(
-    "Circumference of the circle is :", circumference
-);
+var z = 1;
+
+if (z == 1) {
+    println("Hey, z is one");
+} else {
+    println("No, z is not one");
+}
+
+println("Hey there!");

@@ -43,7 +43,7 @@ impl GlobalPool {
             ));
         }
 
-        self.pool.insert(idx, object);
+        self.pool[idx] = object;
         return None;
     }
 

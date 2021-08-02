@@ -295,6 +295,9 @@ impl BytecodeCompiler {
         }
 
         // it has an else statement:
+        // add a JUMP in if statement:
+        let after_if_pos = self.save(isa::InstructionKind::IJump, &vec![0]);
+
         let else_pos = self.save(isa::InstructionKind::INoOp, &vec![]);
         error = self.replace_instruction_operands(
             self.scope_index,
@@ -313,7 +316,18 @@ impl BytecodeCompiler {
             return error;
         }
 
-        self.save(isa::InstructionKind::INoOp, &vec![]);
+        let after_else = self.save(isa::InstructionKind::INoOp, &vec![]);
+        error = self.replace_instruction_operands(
+            self.scope_index,
+            isa::InstructionKind::IJump,
+            &vec![after_else],
+            &after_if_pos
+        );
+
+        if error.is_some() {
+            return error;
+        }
+
         return None;
     }
 
