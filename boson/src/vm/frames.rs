@@ -17,6 +17,7 @@ use isa::Operands;
 use subroutine::Subroutine;
 use object::Object;
 
+#[derive(Debug, Clone)]
 pub struct ExecutionFrame {
     pub context: Rc<ClosureContext>,
     pub instruction_pointer: usize,
@@ -25,13 +26,13 @@ pub struct ExecutionFrame {
 }
 
 impl ExecutionFrame {
-    pub fn new(context: Rc<ClosureContext>) -> ExecutionFrame {
+    pub fn new(context: Rc<ClosureContext>, base_pointer: usize) -> ExecutionFrame {
         let bytecode_size = context.as_ref().bytecode_size.clone();
 
         return ExecutionFrame {
             context: context,
             instruction_pointer: 0,
-            base_pointer: 0,
+            base_pointer: base_pointer,
             bytecode_size: bytecode_size,
         };
     }
@@ -70,7 +71,7 @@ impl ExecutionFrame {
             bytecode_size: bytecode.instructions.len(),
         };
 
-        let frame = ExecutionFrame::new(Rc::new(closure));
+        let frame = ExecutionFrame::new(Rc::new(closure), 0);
         return frame;
     }
 

@@ -49,8 +49,17 @@ impl BosonVM {
         };
     }
 
+    pub fn push_new_frame(&mut self, frame: RefCell<ExecutionFrame>) -> Option<VMError> {
+        let push_result = self.call_stack.push_frame(frame);
+        if push_result.is_err() {
+            return Some(push_result.unwrap_err());
+        }
+
+        return None;
+    }
+
     pub fn eval_bytecode(&mut self) -> Result<Rc<Object>, VMError> {
-        while self.call_stack.top().has_instructions() {
+        while self.call_stack.top_ref().has_instructions() {
             let mut frame = self.call_stack.top();
 
             let (inst, operands, next) = frame.read_current_instruction();
@@ -149,7 +158,6 @@ impl BosonVM {
                 | InstructionKind::ILLt
                 | InstructionKind::ILEq
                 | InstructionKind::ILNe => {
-
                     let error = Controls::execute_binary_op(&inst, &mut self.data_stack);
                     if error.is_some() {
                         return Err(error.unwrap());
@@ -168,7 +176,6 @@ impl BosonVM {
                     frame.farword_ip(next);
                 }
 
-
                 // built-ins
                 InstructionKind::ILoadBuiltIn => {
                     let builtin_idx = operands[0];
@@ -183,12 +190,22 @@ impl BosonVM {
                 // function call:
                 InstructionKind::ICall => {
                     let args_len = operands[0];
-                    let error = Controls::execute_call(&inst, &mut self.data_stack, args_len);
-                    if error.is_some() {
-                        return Err(error.unwrap());
+
+                    let result = Controls::execute_call(&inst, &mut self.data_stack, args_len);
+
+                    if result.is_err() {
+                        return Err(result.unwrap_err());
                     }
 
-                    frame.farword_ip(next);
+                    let new_frame = result.unwrap();
+                    if new_frame.is_some() {
+                        // Looking for better way to handle this:
+                        std::mem::drop(frame);
+                        // -------------------------------------
+                        self.push_new_frame(new_frame.unwrap());
+                    } else {
+                        frame.farword_ip(next);
+                    }
                 }
 
                 // build Array and Hash:

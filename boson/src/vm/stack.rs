@@ -14,6 +14,7 @@ use object::Object;
 use std::cell::RefCell;
 use std::cell::RefMut;
 use std::rc::Rc;
+use std::cell::Ref;
 
 pub struct CallStack {
     pub stack: Vec<RefCell<ExecutionFrame>>,
@@ -74,9 +75,13 @@ impl CallStack {
     pub fn top(&mut self) -> RefMut<ExecutionFrame> {
         return self
             .stack
-            .get_mut(self.stack_pointer as usize)
+            .get(self.stack_pointer as usize)
             .unwrap()
             .borrow_mut();
+    }
+
+    pub fn top_ref(&self) -> Ref<ExecutionFrame> {
+        return self.stack.get(self.stack_pointer as usize).unwrap().borrow();
     }
 }
 
@@ -101,6 +106,24 @@ impl DataStack {
 
         self.stack.push(obj);
         self.stack_pointer += 1;
+        return Ok(self.stack_pointer);
+    }
+
+    pub fn push_objects(&mut self, inst: InstructionKind, objects: Vec<Rc<Object>>) -> Result<i64, VMError> {
+
+        let n_objects = objects.len();
+
+        if self.stack_pointer as usize + n_objects >= self.max_size {
+            return Err(VMError::new(
+                "Stack Overflow!".to_string(),
+                VMErrorKind::DataStackOverflow,
+                Some(inst),
+                0,
+            ));
+        }
+
+        self.stack.extend(objects);
+        self.stack_pointer += n_objects as i64;
         return Ok(self.stack_pointer);
     }
 

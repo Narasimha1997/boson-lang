@@ -10,6 +10,7 @@ use crate::vm::frames;
 use crate::vm::global;
 use crate::vm::stack;
 
+use std::cell::RefCell;
 use std::cell::RefMut;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -219,12 +220,12 @@ impl Controls {
         inst: &InstructionKind,
         ds: &mut DataStack,
         n_args: usize,
-    ) -> Option<VMError> {
+    ) -> Result<Option<RefCell<ExecutionFrame>>, VMError> {
         // pop the function:
 
         let popped = ds.pop_object(inst.clone());
         if popped.is_err() {
-            return Some(popped.unwrap_err());
+            return Err(popped.unwrap_err());
         }
 
         let popped_obj = popped.unwrap();
@@ -233,7 +234,7 @@ impl Controls {
                 // pop the arguments:
                 let popped_args = Controls::pop_n(ds, n_args, inst);
                 if popped_args.is_err() {
-                    return Some(popped_args.unwrap_err());
+                    return Err(popped_args.unwrap_err());
                 }
 
                 let mut args = popped_args.unwrap();
@@ -241,7 +242,7 @@ impl Controls {
                 // call the builtin:
                 let exec_result = func.exec(args);
                 if exec_result.is_err() {
-                    return Some(VMError::new(
+                    return Err(VMError::new(
                         exec_result.unwrap_err(),
                         VMErrorKind::BuiltinFunctionError,
                         Some(inst.clone()),
@@ -253,16 +254,52 @@ impl Controls {
                 if result_obj.is_true() {
                     let push_res = ds.push_object(result_obj, inst.clone());
                     if push_res.is_err() {
-                        return Some(push_res.unwrap_err());
+                        return Err(push_res.unwrap_err());
                     }
                 }
 
-                return None;
+                return Ok(None);
+            }
+            Object::ClosureContext(ctx) => {
+                let closure = ctx.as_ref();
+                let subroutine = closure.compiled_fn.as_ref();
+
+                if subroutine.num_parameters != n_args {
+                    return Err(VMError::new(
+                        format!(
+                            "Function {} expects {} arguments, given {}",
+                            subroutine.name, subroutine.num_parameters, n_args
+                        ),
+                        VMErrorKind::FunctionArgumentsError,
+                        Some(InstructionKind::ICall),
+                        0,
+                    ));
+                }
+
+                // allocate the stack for local variables and frame:
+
+                let new_frame = ExecutionFrame::new(
+                    Rc::new(closure.clone()),
+                    ds.stack_pointer as usize - n_args,
+                );
+
+                let n_locals = closure.compiled_fn.num_locals;
+
+                let mut local_space = vec![];
+                local_space.resize(n_locals, Rc::new(Object::Noval));
+
+                // push the local space on to the stack
+                let push_res = ds.push_objects(InstructionKind::ICall, local_space);
+                if push_res.is_err() {
+                    return Err(push_res.unwrap_err());
+                }
+
+                // set the new stack pointer:
+                ds.stack_pointer = (new_frame.base_pointer + n_locals) as i64;
+                return Ok(Some(RefCell::new(new_frame)));
             }
             _ => {
-                // TODO: Implement the capability to call custom functions.
-
-                return Some(VMError::new(
+                return Err(VMError::new(
                     format!("Cannot call {}", popped_obj.as_ref().describe()),
                     VMErrorKind::StackCorruption,
                     Some(inst.clone()),
@@ -409,7 +446,7 @@ impl Controls {
                 if push_res.is_err() {
                     return Some(push_res.unwrap_err());
                 }
-            },
+            }
             _ => {
                 return Some(VMError::new(
                     format!(

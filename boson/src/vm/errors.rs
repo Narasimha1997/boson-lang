@@ -22,6 +22,7 @@ pub enum VMErrorKind {
     UnresolvedBuiltinFunction,
     BuiltinFunctionError,
     TypeError,
+    FunctionArgumentsError,
 }
 
 #[derive(Debug)]
