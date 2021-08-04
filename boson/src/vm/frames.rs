@@ -1,9 +1,9 @@
 use crate::compiler;
 use crate::isa;
 use crate::types::closure;
+use crate::types::object;
 use crate::types::subroutine;
 use crate::vm::errors;
-use crate::types::object;
 
 use std::rc::Rc;
 
@@ -14,8 +14,8 @@ use errors::VMErrorKind;
 use isa::InstructionKind;
 use isa::InstructionPacker;
 use isa::Operands;
-use subroutine::Subroutine;
 use object::Object;
+use subroutine::Subroutine;
 
 #[derive(Debug, Clone)]
 pub struct ExecutionFrame {
@@ -37,21 +37,28 @@ impl ExecutionFrame {
         };
     }
 
-    pub fn new_closure(
-        func: Rc<Subroutine>,
-        free_objects: Vec<Rc<Object>>,
-    ) -> Rc<Object> {
-
+    pub fn new_closure(func: Rc<Subroutine>, free_objects: Vec<Rc<Object>>) -> Rc<Object> {
         let b_size = func.as_ref().bytecode.len();
 
-        return Rc::new(Object::ClosureContext(
-            Rc::new(ClosureContext {
-                compiled_fn: func,
-                bytecode_size: b_size,
-                free_objects: free_objects
-            })
-        ))
+        return Rc::new(Object::ClosureContext(Rc::new(ClosureContext {
+            compiled_fn: func,
+            bytecode_size: b_size,
+            free_objects: free_objects,
+        })));
+    }
 
+    pub fn get_free(&mut self, idx: usize, inst: InstructionKind) -> Result<Rc<Object>, VMError> {
+        let free_object = self.context.free_objects.get(idx);
+        if free_object.is_some() {
+            return Ok(free_object.unwrap().clone());
+        }
+
+        return Err(VMError::new(
+            format!("Free variable fetch out of bounds for index {}", idx),
+            VMErrorKind::UnknownFreeVariable,
+            Some(inst),
+            0,
+        ));
     }
 
     pub fn new_from_bytecode(

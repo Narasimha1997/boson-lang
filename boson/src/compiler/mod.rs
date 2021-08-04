@@ -108,6 +108,7 @@ pub struct BytecodeCompiler {
     scopes: ProgramScopes,
     scope_index: usize,
     loop_ctls: Vec<LoopControl>,
+    n_lambdas: usize
 }
 
 struct LoopControl {
@@ -129,6 +130,7 @@ impl BytecodeCompiler {
             scopes: vec![root_scope],
             scope_index: 0,
             loop_ctls: vec![],
+            n_lambdas: 0
         };
     }
 
@@ -144,6 +146,7 @@ impl BytecodeCompiler {
             scopes: vec![root_scope],
             scope_index: 0,
             loop_ctls: vec![],
+            n_lambdas: 0,
         };
     }
 
@@ -350,7 +353,7 @@ impl BytecodeCompiler {
         }
     }
 
-    fn compile_function(&mut self, node: &ast::FunctionType) -> Option<errors::CompileError> {
+    fn compile_function(&mut self, node: &ast::FunctionType, is_lambda: bool) -> Option<errors::CompileError> {
         // check function name:
         let resolve_result = self.symbol_table.resolve_symbol(&node.name);
         if resolve_result.is_some() {
@@ -370,8 +373,8 @@ impl BytecodeCompiler {
         for arg in args {
             match arg {
                 ast::ExpressionKind::Identifier(id) => {
-                    let sym = self.symbol_table.insert_new_symbol(&id.name, false);
-                    self.save(isa::InstructionKind::ILoadLocal, &vec![sym.pos]);
+                    self.symbol_table.insert_new_symbol(&id.name, false);
+                    //self.save(isa::InstructionKind::ILoadLocal, &vec![sym.pos]);
                 }
                 _ => {
                     return Some(errors::CompileError::new(
@@ -393,12 +396,16 @@ impl BytecodeCompiler {
         let n_statements = func_block.statements.len();
         let last_stmt = &func_block.statements[n_statements - 1];
 
-        match last_stmt {
-            ast::StatementKind::Return(_) => {}
-            _ => {
-                // append a return void statement
-                self.save(isa::InstructionKind::IRet, &vec![]);
+        if !is_lambda {
+            match last_stmt {
+                ast::StatementKind::Return(_) => {}
+                _ => {
+                    // append a return void statement
+                    self.save(isa::InstructionKind::IRet, &vec![]);
+                }
             }
+        } else {
+            self.save(isa::InstructionKind::IRetVal, &vec![]);
         }
 
         let free_symbols = self.symbol_table.get_free_symbols();
@@ -434,17 +441,44 @@ impl BytecodeCompiler {
         );
 
         // store
-        let sym_res = self.symbol_table.insert_new_symbol(&node.name, true);
-        match sym_res.scope {
-            symtab::ScopeKind::Global => {
-                self.save(isa::InstructionKind::IStoreGlobal, &vec![sym_res.pos]);
+        if !is_lambda {
+            let sym_res = self.symbol_table.insert_new_symbol(&node.name, true);
+            match sym_res.scope {
+                symtab::ScopeKind::Global => {
+                    self.save(isa::InstructionKind::IStoreGlobal, &vec![sym_res.pos]);
+                }
+                symtab::ScopeKind::Local => {
+                    self.save(isa::InstructionKind::IStoreLocal, &vec![sym_res.pos]);
+                }
+                _   => {}
             }
-            symtab::ScopeKind::Local => {
-                self.save(isa::InstructionKind::IStoreLocal, &vec![sym_res.pos]);
-            }
-            _ => {}
         }
 
+        return None;
+    }
+
+    fn compile_lambda(&mut self, node: &ast::LambdaExpType) -> Option<errors::CompileError> {
+        //convert lambda to function, find better method soon
+        let func_type = ast::FunctionType {
+            name: format!("lambda_{}", self.n_lambdas),
+            parameters: node.parameters.clone(),
+            body: ast::BlockStatement{
+                statements: vec![
+                    ast::StatementKind::Expression(
+                        node.expression.as_ref().clone()
+                    )
+                ],
+            },
+            return_type: None
+        };
+
+        // compile the function:
+        let error = self.compile_function(&func_type, true);
+        if error.is_some() {
+            return error;
+        }
+
+        self.n_lambdas += 1;
         return None;
     }
 
@@ -889,6 +923,12 @@ impl BytecodeCompiler {
                     return Some(result.unwrap());
                 }
             }
+            ast::ExpressionKind::Lambda(lm) => {
+                let result = self.compile_lambda(&lm);
+                if result.is_some() {
+                    return Some(result.unwrap());
+                }
+            }
             _ => return None,
         }
         return None;
@@ -1194,7 +1234,7 @@ impl BytecodeCompiler {
             ast::StatementKind::If(node) => self.compile_if_statement(&node),
             ast::StatementKind::Assert(node) => self.compile_assert_statement(&node),
             ast::StatementKind::For(node) => self.compile_for_loop(&node),
-            ast::StatementKind::Function(node) => self.compile_function(&node),
+            ast::StatementKind::Function(node) => self.compile_function(&node, false),
             ast::StatementKind::Return(node) => self.compile_return_stmt(&node),
             _ => {
                 return Some(errors::CompileError::new(
@@ -1258,8 +1298,7 @@ impl BytecodeCompiler {
 pub struct BytecodeDecompiler {}
 
 impl BytecodeDecompiler {
-    pub fn disassemble_instructions(bytecode: &CompiledBytecode) -> String {
-        let instructions = &bytecode.instructions;
+    pub fn disassemble_function(instructions: &CompiledInstructions) -> String {
         let length = instructions.len();
 
         let mut decoded_string = String::new();
@@ -1280,16 +1319,41 @@ impl BytecodeDecompiler {
         return decoded_string;
     }
 
+    pub fn disassemble_instructions(bytecode: &CompiledBytecode) -> String {
+        let instructions = &bytecode.instructions;
+        let decoded_string = BytecodeDecompiler::disassemble_function(instructions);
+        return decoded_string;
+    }
+
     pub fn disassemble_constants(bytecode: &CompiledBytecode) -> String {
         // constant pool:
         let constant_pool = &bytecode.constant_pool;
         let mut decoded_string = String::new();
         let mut idx = 0;
         for item in &constant_pool.objects {
-            let repr = item.describe();
-            decoded_string.push_str(&format!("{:0>8x} {}\n", idx, repr));
-            idx = idx + 1;
+
+            match item.as_ref() {
+
+                Object::Subroutine(sub) => {
+                    decoded_string.push_str(
+                        &format!("{:0>8x} {}\n", idx, sub.describe())
+                    );
+                    let repr = BytecodeDecompiler::disassemble_function(
+                        sub.as_ref().get_bytecode()
+                    );
+                    decoded_string.push_str("Subroutine Start:\n");
+                    decoded_string.push_str(&repr);
+                    decoded_string.push_str("Subroutine End\n");
+                    idx = idx + 1;
+                }
+                _ => {
+                    let repr = item.describe();
+                    decoded_string.push_str(&format!("{:0>8x} {}\n", idx, repr));
+                    idx = idx + 1;
+                }
+            }
         }
+
         return decoded_string;
     }
 

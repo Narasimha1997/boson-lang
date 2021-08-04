@@ -11,10 +11,10 @@ use errors::VMErrorKind;
 use frames::ExecutionFrame;
 use isa::InstructionKind;
 use object::Object;
+use std::cell::Ref;
 use std::cell::RefCell;
 use std::cell::RefMut;
 use std::rc::Rc;
-use std::cell::Ref;
 
 pub struct CallStack {
     pub stack: Vec<RefCell<ExecutionFrame>>,
@@ -81,7 +81,11 @@ impl CallStack {
     }
 
     pub fn top_ref(&self) -> Ref<ExecutionFrame> {
-        return self.stack.get(self.stack_pointer as usize).unwrap().borrow();
+        return self
+            .stack
+            .get(self.stack_pointer as usize)
+            .unwrap()
+            .borrow();
     }
 }
 
@@ -109,8 +113,11 @@ impl DataStack {
         return Ok(self.stack_pointer);
     }
 
-    pub fn push_objects(&mut self, inst: InstructionKind, objects: Vec<Rc<Object>>) -> Result<i64, VMError> {
-
+    pub fn push_objects(
+        &mut self,
+        inst: InstructionKind,
+        objects: Vec<Rc<Object>>,
+    ) -> Result<i64, VMError> {
         let n_objects = objects.len();
 
         if self.stack_pointer as usize + n_objects >= self.max_size {

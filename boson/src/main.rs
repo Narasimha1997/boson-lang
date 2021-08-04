@@ -33,13 +33,9 @@ fn main() {
             println!("Compilation Error: {:?}", err);
          } else {
             let bytecode = bytecode_result.unwrap();
-            // println!("{}", compiler::BytecodeDecompiler::disassemble(&bytecode));
+            println!("{}", compiler::BytecodeDecompiler::disassemble(&bytecode));
             let mut boson_vm = vm::BosonVM::new(&bytecode);
             let result = boson_vm.eval_bytecode();
-            let globals = boson_vm.dump_globals();
-            let ds = boson_vm.dump_ds();
-            println!("Globals:\n{}", globals);
-            println!("Data Stack:\n{}", ds);
 
             if result.is_err() {
                println!("{:?}", result);
@@ -47,6 +43,7 @@ fn main() {
                let ds = boson_vm.dump_ds();
                println!("Globals:\n{}", globals);
                println!("Data Stack:\n{}", ds);
+               println!("Stack Pointer:\n{}", boson_vm.data_stack.stack_pointer);
             }
          }
       }

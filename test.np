@@ -5,6 +5,8 @@ println(arr);
 
 println(builtins());
 
-func x(a, b, c) {
-    return;
-}
+var part_a = lambda x, m => x * m;
+var y_intercept = lambda x, m, c => part_a(x, m) + c;
+
+var result = y_intercept(10, 0.5, 1);
+println(result);

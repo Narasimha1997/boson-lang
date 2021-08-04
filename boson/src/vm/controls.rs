@@ -10,6 +10,7 @@ use crate::vm::frames;
 use crate::vm::global;
 use crate::vm::stack;
 
+use std::cell::Ref;
 use std::cell::RefCell;
 use std::cell::RefMut;
 use std::collections::HashMap;
@@ -82,6 +83,69 @@ impl Controls {
         }
 
         return Ok(pos);
+    }
+
+    pub fn load_free(
+        ds: &mut DataStack,
+        frame: &mut RefMut<ExecutionFrame>,
+        idx: usize,
+    ) -> Option<VMError> {
+        let free_obj_result = frame.get_free(idx, InstructionKind::ILoadFree);
+        if free_obj_result.is_err() {
+            return Some(free_obj_result.unwrap_err());
+        }
+
+        let free_object = free_obj_result.unwrap();
+        // push it to the stack:
+        let push_result = ds.push_object(free_object, InstructionKind::ILoadFree);
+
+        if push_result.is_err() {
+            return Some(push_result.unwrap_err());
+        }
+
+        return None;
+    }
+
+    pub fn store_local(
+        ds: &mut DataStack,
+        pos: usize,
+        f: &RefMut<ExecutionFrame>,
+    ) -> Result<i64, VMError> {
+        let popped_result = ds.pop_object(InstructionKind::IStoreLocal);
+        if popped_result.is_err() {
+            return Err(popped_result.unwrap_err());
+        }
+
+        let bp = f.get_bp();
+        ds.stack[bp + pos] = popped_result.unwrap();
+
+        return Ok((bp + pos) as i64);
+    }
+
+    pub fn load_local(
+        ds: &mut DataStack,
+        pos: usize,
+        f: &RefMut<ExecutionFrame>,
+    ) -> Result<i64, VMError> {
+        let bp = f.get_bp();
+        let local_object_res = ds.stack.get(bp + pos);
+        if local_object_res.is_none() {
+            return Err(VMError::new(
+                "Stack overflow!".to_string(),
+                VMErrorKind::DataStackOverflow,
+                Some(InstructionKind::ILoadLocal),
+                0,
+            ));
+        }
+
+        let local_object = local_object_res.unwrap().clone();
+        // push the object to stack:
+        let push_result = ds.push_object(local_object, InstructionKind::ILoadLocal);
+        if push_result.is_err() {
+            return Err(push_result.unwrap_err());
+        }
+
+        return Ok(push_result.unwrap());
     }
 
     pub fn load_global(gp: &GlobalPool, ds: &mut DataStack, pos: usize) -> Result<i64, VMError> {
@@ -216,6 +280,33 @@ impl Controls {
         return Ok(push_res.unwrap());
     }
 
+    pub fn execute_return(
+        ds: &mut DataStack,
+        frame: &Ref<ExecutionFrame>,
+        has_val: bool,
+    ) -> Option<VMError> {
+        let mut returned_obj: Rc<Object> = Rc::new(Object::Noval);
+        if has_val {
+            let returned_obj_res = ds.pop_object(InstructionKind::IRetVal);
+            if returned_obj_res.is_err() {
+                return Some(returned_obj_res.unwrap_err());
+            }
+
+            returned_obj = returned_obj_res.unwrap();
+        }
+
+        let local_boundary = frame.get_bp();
+        // clear off the stack till this point:
+        ds.stack.truncate(local_boundary);
+        ds.stack_pointer = local_boundary as i64;
+        let push_res = ds.push_object(returned_obj, InstructionKind::IRetVal);
+        if push_res.is_err() {
+            return Some(push_res.unwrap_err());
+        }
+
+        return None;
+    }
+
     pub fn execute_call(
         inst: &InstructionKind,
         ds: &mut DataStack,
@@ -276,17 +367,19 @@ impl Controls {
                     ));
                 }
 
-                // allocate the stack for local variables and frame:
+                let frame_bp = if ds.stack_pointer < n_args as i64 {
+                    (ds.stack_pointer + 1) as usize - n_args
+                } else {
+                    (ds.stack_pointer) as usize - n_args
+                };
 
-                let new_frame = ExecutionFrame::new(
-                    Rc::new(closure.clone()),
-                    ds.stack_pointer as usize - n_args,
-                );
+                // allocate the stack for local variables and frame:
+                let new_frame = ExecutionFrame::new(Rc::new(closure.clone()), frame_bp);
 
                 let n_locals = closure.compiled_fn.num_locals;
-
+                let n_params = closure.compiled_fn.num_parameters;
                 let mut local_space = vec![];
-                local_space.resize(n_locals, Rc::new(Object::Noval));
+                local_space.resize(n_locals - n_params, Rc::new(Object::Noval));
 
                 // push the local space on to the stack
                 let push_res = ds.push_objects(InstructionKind::ICall, local_space);

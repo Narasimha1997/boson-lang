@@ -22,6 +22,7 @@ pub enum VMErrorKind {
     UnresolvedBuiltinFunction,
     BuiltinFunctionError,
     TypeError,
+    UnknownFreeVariable,
     FunctionArgumentsError,
 }
 

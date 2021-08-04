@@ -142,6 +142,39 @@ impl BosonVM {
                     frame.farword_ip(next);
                 }
 
+                InstructionKind::ILoadFree => {
+                    let store_pos = operands[0];
+                    let error = Controls::load_free(&mut self.data_stack, &mut frame, store_pos);
+
+                    if error.is_some() {
+                        return Err(error.unwrap());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
+                InstructionKind::ILoadLocal => {
+                    let store_pos = operands[0];
+                    let result = Controls::load_local(&mut self.data_stack, store_pos, &mut frame);
+
+                    if result.is_err() {
+                        return Err(result.unwrap_err());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
+                InstructionKind::IStoreLocal => {
+                    let store_pos = operands[0];
+                    let result = Controls::store_local(&mut self.data_stack, store_pos, &mut frame);
+
+                    if result.is_err() {
+                        return Err(result.unwrap_err());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
                 // Binary operations:
                 InstructionKind::IAdd
                 | InstructionKind::ISub
@@ -199,6 +232,9 @@ impl BosonVM {
 
                     let new_frame = result.unwrap();
                     if new_frame.is_some() {
+                        // the previous frame should point to the
+                        // next instruction after call
+                        frame.farword_ip(next);
                         // Looking for better way to handle this:
                         std::mem::drop(frame);
                         // -------------------------------------
@@ -242,6 +278,46 @@ impl BosonVM {
                     }
 
                     frame.farword_ip(next);
+                }
+
+                InstructionKind::IRet => {
+                    std::mem::drop(frame);
+                    let current_frame_res = self.call_stack.pop_frame();
+                    if current_frame_res.is_err() {
+                        return Err(current_frame_res.unwrap_err());
+                    }
+
+                    // execute return: This function cleans up the subroutine's data
+                    // on stack
+                    let error = Controls::execute_return(
+                        &mut self.data_stack,
+                        &current_frame_res.unwrap().borrow(),
+                        false
+                    );
+
+                    if error.is_some() {
+                        return Err(error.unwrap());
+                    }
+                }
+
+                InstructionKind::IRetVal => {
+                    std::mem::drop(frame);
+                    let current_frame_res = self.call_stack.pop_frame();
+                    if current_frame_res.is_err() {
+                        return Err(current_frame_res.unwrap_err());
+                    }
+
+                    // execute return: This function cleans up the subroutine's data
+                    // on stack
+                    let error = Controls::execute_return(
+                        &mut self.data_stack,
+                        &current_frame_res.unwrap().borrow(),
+                        true
+                    );
+
+                    if error.is_some() {
+                        return Err(error.unwrap());
+                    }
                 }
 
                 _ => {
