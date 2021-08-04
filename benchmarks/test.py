@@ -7,7 +7,7 @@ adder = lambda a,b: a + b
 
 st = time.time()
 
-while idx != 100:
+while idx != 1000000:
     x = adder(30, 10)
     print(x)
     idx = idx + 1

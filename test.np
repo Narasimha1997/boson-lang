@@ -4,7 +4,7 @@ var adder = lambda a, b => a + b;
 var times = 0;
 
 const t1 = unix_time();
-while (times != 100) {
+while (times != 5000) {
     var result = adder(10, 30);
     println(result);
     times = times + 1;
