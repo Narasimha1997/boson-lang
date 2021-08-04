@@ -1,6 +1,8 @@
 use std::hash::Hash;
 use std::hash::Hasher;
 use std::rc::Rc;
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
 use crate::types::array;
 use crate::types::object;
@@ -16,6 +18,7 @@ pub enum BuiltinKind {
     Println,
     Length,
     Builtins,
+    TimeUnix,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -32,6 +35,7 @@ impl BuiltinKind {
             BuiltinKind::Println => "println".to_string(),
             BuiltinKind::Length => "len".to_string(),
             BuiltinKind::Builtins => "builtins".to_string(),
+            BuiltinKind::TimeUnix => "unix_time".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -39,6 +43,13 @@ impl BuiltinKind {
     pub fn exec(&self, args: Vec<Rc<Object>>) -> Result<Rc<Object>, String> {
         match self {
             BuiltinKind::Print => {
+
+                if args.len() == 0 {
+                    return Err(
+                        "print() takes atleast one argument, 0 provided".to_string()
+                    );
+                }
+
                 // print function:
                 let length = args.len();
                 for idx in 0..length - 1 {
@@ -52,17 +63,22 @@ impl BuiltinKind {
             BuiltinKind::Println => {
                 // println function:
                 let length = args.len();
-                for idx in 0..length - 1 {
-                    print!("{} ", args[idx].describe());
-                }
 
-                print!("{}\n", args[length - 1].describe());
+                if length == 0 {
+                    println!();
+                } else {
+                    for idx in 0..length - 1 {
+                        print!("{} ", args[idx].describe());
+                    }
+
+                    print!("{}\n", args[length - 1].describe());
+                }
                 return Ok(Rc::new(Object::Noval));
             }
 
             BuiltinKind::Truthy => {
                 // is_true functions
-                if args.len() != 0 {
+                if args.len() != 1 {
                     return Err(format!(
                         "is_true() takes one argument, {} provided.",
                         args.len()
@@ -73,7 +89,7 @@ impl BuiltinKind {
             }
 
             BuiltinKind::Length => {
-                if args.len() != 0 {
+                if args.len() != 1 {
                     return Err(format!("len() takes one argument, {} provided", args.len()));
                 }
 
@@ -108,6 +124,26 @@ impl BuiltinKind {
                     name: "todo".to_string(),
                     elements: strings,
                 }))));
+            }
+
+            BuiltinKind::TimeUnix => {
+                if args.len() != 0 {
+                    return Err(format!(
+                        "epoch_time() takes zero arguments, {} provided",
+                        args.len()
+                    ));
+                }
+
+                let epoch_time_res = SystemTime::now().duration_since(UNIX_EPOCH);
+                if epoch_time_res.is_err() {
+                    return Err("Failed to fetch UNIX epoch time.".to_string());
+                }
+
+                let epoch_time = epoch_time_res.unwrap();
+
+                return Ok(Rc::new(
+                    Object::Float(epoch_time.as_secs_f64())
+                ));
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),

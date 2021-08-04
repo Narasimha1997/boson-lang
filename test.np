@@ -1,12 +1,15 @@
-println("Hello World!!");
 
-const arr = [1,2,3,4, 5];
-println(arr);
+var adder = lambda a, b => a + b;
 
-println(builtins());
+var times = 0;
 
-var part_a = lambda x, m => x * m;
-var y_intercept = lambda x, m, c => part_a(x, m) + c;
+const t1 = unix_time();
+while (times != 100) {
+    var result = adder(10, 30);
+    println(result);
+    times = times + 1;
+}
+const t2 = unix_time();
 
-var result = y_intercept(10, 0.5, 1);
-println(result);
+
+println("Function Eval time", t2 - t1);
