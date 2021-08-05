@@ -10,3 +10,12 @@ while (idx < len(array)) {
 }
 
 println(sum);
+array[3] = 10;
+println(array);
+
+var ht = {
+    "test": "Test-123"
+}
+
+ht["test"] = "Test-444";
+println(ht);

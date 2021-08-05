@@ -108,7 +108,7 @@ pub struct BytecodeCompiler {
     scopes: ProgramScopes,
     scope_index: usize,
     loop_ctls: Vec<LoopControl>,
-    n_lambdas: usize
+    n_lambdas: usize,
 }
 
 struct LoopControl {
@@ -130,7 +130,7 @@ impl BytecodeCompiler {
             scopes: vec![root_scope],
             scope_index: 0,
             loop_ctls: vec![],
-            n_lambdas: 0
+            n_lambdas: 0,
         };
     }
 
@@ -370,7 +370,11 @@ impl BytecodeCompiler {
         }
     }
 
-    fn compile_function(&mut self, node: &ast::FunctionType, is_lambda: bool) -> Option<errors::CompileError> {
+    fn compile_function(
+        &mut self,
+        node: &ast::FunctionType,
+        is_lambda: bool,
+    ) -> Option<errors::CompileError> {
         // check function name:
         let resolve_result = self.symbol_table.resolve_symbol(&node.name);
         if resolve_result.is_some() {
@@ -467,7 +471,7 @@ impl BytecodeCompiler {
                 symtab::ScopeKind::Local => {
                     self.save(isa::InstructionKind::IStoreLocal, &vec![sym_res.pos]);
                 }
-                _   => {}
+                _ => {}
             }
         }
 
@@ -479,14 +483,12 @@ impl BytecodeCompiler {
         let func_type = ast::FunctionType {
             name: format!("lambda_{}", self.n_lambdas),
             parameters: node.parameters.clone(),
-            body: ast::BlockStatement{
-                statements: vec![
-                    ast::StatementKind::Expression(
-                        node.expression.as_ref().clone()
-                    )
-                ],
+            body: ast::BlockStatement {
+                statements: vec![ast::StatementKind::Expression(
+                    node.expression.as_ref().clone(),
+                )],
             },
-            return_type: None
+            return_type: None,
         };
 
         // compile the function:
@@ -605,7 +607,11 @@ impl BytecodeCompiler {
         return None;
     }
 
-    fn compile_identifier(&mut self, idt: &ast::IdentifierType) -> Option<errors::CompileError> {
+    fn compile_identifier(
+        &mut self,
+        idt: &ast::IdentifierType,
+        check_const: bool,
+    ) -> Option<errors::CompileError> {
         let id_name = &idt.name;
         // resolve it
         let resolve_result = self.symbol_table.resolve_symbol(id_name);
@@ -618,6 +624,15 @@ impl BytecodeCompiler {
         }
 
         let resolved_symbol = resolve_result.unwrap();
+
+        if check_const && resolved_symbol.is_const {
+            return Some(errors::CompileError::new(
+                format!("Cannot assign to constant symbol {}", resolved_symbol.name),
+                errors::CompilerErrorKind::InvalidAssignment,
+                0,
+            ));
+        }
+
         match resolved_symbol.scope {
             symtab::ScopeKind::Builtin => {
                 self.save(
@@ -669,8 +684,9 @@ impl BytecodeCompiler {
                     ));
                 }
 
-                // compile the identifier:
-                let res = self.compile_identifier(&id);
+                // compile the identifier, with constant assignment
+                // check
+                let res = self.compile_identifier(&id, true);
                 if res.is_some() {
                     return res;
                 }
@@ -769,6 +785,54 @@ impl BytecodeCompiler {
         return None;
     }
 
+    fn compile_item_assignment(
+        &mut self,
+        id: &ast::IdentifierType,
+    ) -> Option<errors::CompileError> {
+        let resolve_result = self.symbol_table.resolve_symbol(&id.name);
+        if resolve_result.is_none() {
+            return Some(errors::CompileError::new(
+                format!("Unresolved symbol {}", id.name),
+                errors::CompilerErrorKind::InvalidAssignment,
+                0,
+            ));
+        }
+
+        let resolved_symbol = resolve_result.unwrap();
+        if resolved_symbol.is_const {
+            return Some(errors::CompileError::new(
+                format!("Cannot assign to constant symbol {}", id.name),
+                errors::CompilerErrorKind::InvalidAssignment,
+                0,
+            ));
+        }
+
+        // the symbol is resolved without any errors, store it back:
+        match resolved_symbol.scope {
+            symtab::ScopeKind::Global => {
+                self.save(
+                    isa::InstructionKind::IStoreGlobal,
+                    &vec![resolved_symbol.pos],
+                );
+            }
+            symtab::ScopeKind::Local => {
+                self.save(
+                    isa::InstructionKind::IStoreLocal,
+                    &vec![resolved_symbol.pos],
+                );
+            }
+            _ => {
+                return Some(errors::CompileError::new(
+                    format!("Invalid assignment {}", id.name),
+                    errors::CompilerErrorKind::InvalidAssignment,
+                    0,
+                ))
+            }
+        }
+
+        return None;
+    }
+
     fn compile_infix_expression(&mut self, expr: &ast::InfixType) -> Option<errors::CompileError> {
         // parse the expression:
         if expr.infix != exp::InfixExpKind::Equal {
@@ -788,44 +852,43 @@ impl BytecodeCompiler {
             let left = &expr.expression_left;
             match left.as_ref() {
                 ast::ExpressionKind::Identifier(id) => {
-                    let resolve_result = self.symbol_table.resolve_symbol(&id.name);
-                    if resolve_result.is_none() {
-                        return Some(errors::CompileError::new(
-                            format!("Unresolved symbol {}", id.name),
-                            errors::CompilerErrorKind::InvalidAssignment,
-                            0,
-                        ));
+                    let error = self.compile_item_assignment(&id);
+                    if error.is_some() {
+                        return error;
                     }
+                }
+                ast::ExpressionKind::Index(idx_type) => {
+                    // get the index variable name:
+                    let expr_left = &idx_type.expression_left;
+                    // compile the left expression:
+                    match expr_left.as_ref() {
+                        ast::ExpressionKind::Identifier(id) => {
+                            // compile the identifier:
+                            let mut error = self.compile_identifier(&id, false);
+                            if error.is_some() {
+                                return error;
+                            }
 
-                    let resolved_symbol = resolve_result.unwrap();
-                    if resolved_symbol.is_const {
-                        return Some(errors::CompileError::new(
-                            format!("Cannot assign to constant symbol {}", id.name),
-                            errors::CompilerErrorKind::InvalidAssignment,
-                            0,
-                        ));
-                    }
+                            // compile the index expression:
+                            error = self.compile_expression(&idx_type.index);
+                            if error.is_some() {
+                                return error;
+                            }
 
-                    // the symbol is resolved without any errors, store it back:
-                    match resolved_symbol.scope {
-                        symtab::ScopeKind::Global => {
-                            self.save(
-                                isa::InstructionKind::IStoreGlobal,
-                                &vec![resolved_symbol.pos],
-                            );
-                        }
-                        symtab::ScopeKind::Local => {
-                            self.save(
-                                isa::InstructionKind::IStoreLocal,
-                                &vec![resolved_symbol.pos],
-                            );
+                            // since both are loaded on to the stack, call ISetIndex:
+                            self.save(isa::InstructionKind::ISetIndex, &vec![]);
+
+                            error = self.compile_item_assignment(&id);
+                            if error.is_some() {
+                                return error;
+                            }
                         }
                         _ => {
                             return Some(errors::CompileError::new(
-                                format!("Invalid assignment {}", id.name),
-                                errors::CompilerErrorKind::InvalidAssignment,
+                                "Assignment not possible".to_string(),
+                                errors::CompilerErrorKind::InvalidOperand,
                                 0,
-                            ))
+                            ));
                         }
                     }
                 }
@@ -911,7 +974,7 @@ impl BytecodeCompiler {
                 }
             }
             ast::ExpressionKind::Identifier(id) => {
-                let result = self.compile_identifier(&id);
+                let result = self.compile_identifier(&id, false);
                 if result.is_some() {
                     return Some(result.unwrap());
                 }
@@ -1354,16 +1417,11 @@ impl BytecodeDecompiler {
         let mut decoded_string = String::new();
         let mut idx = 0;
         for item in &constant_pool.objects {
-
             match item.as_ref() {
-
                 Object::Subroutine(sub) => {
-                    decoded_string.push_str(
-                        &format!("{:0>8x} {}\n", idx, sub.describe())
-                    );
-                    let repr = BytecodeDecompiler::disassemble_function(
-                        sub.as_ref().get_bytecode()
-                    );
+                    decoded_string.push_str(&format!("{:0>8x} {}\n", idx, sub.describe()));
+                    let repr =
+                        BytecodeDecompiler::disassemble_function(sub.as_ref().get_bytecode());
                     decoded_string.push_str("Subroutine Start:\n");
                     decoded_string.push_str(&repr);
                     decoded_string.push_str("Subroutine End\n");

@@ -1,6 +1,7 @@
 use std::hash::Hash;
 use std::hash::Hasher;
 use std::rc::Rc;
+use std::cell::RefCell;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
@@ -97,10 +98,10 @@ impl BuiltinKind {
                 match obj {
                     Object::Str(st) => Ok(Rc::new(Object::Int(st.len() as i64))),
                     Object::Array(arr) => {
-                        Ok(Rc::new(Object::Int(arr.as_ref().elements.len() as i64)))
+                        Ok(Rc::new(Object::Int(arr.borrow().elements.len() as i64)))
                     }
                     Object::HashTable(ht) => {
-                        Ok(Rc::new(Object::Int(ht.as_ref().entries.len() as i64)))
+                        Ok(Rc::new(Object::Int(ht.borrow().entries.len() as i64)))
                     }
                     _ => Err(format!("len() cannot be applied on {}", obj.get_type())),
                 }
@@ -120,7 +121,7 @@ impl BuiltinKind {
                     strings.push(Rc::new(Object::Str(name.clone())));
                 }
 
-                return Ok(Rc::new(Object::Array(Rc::new(Array {
+                return Ok(Rc::new(Object::Array(RefCell::new(Array {
                     name: "todo".to_string(),
                     elements: strings,
                 }))));

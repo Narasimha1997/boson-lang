@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
@@ -18,8 +19,8 @@ pub enum Object {
     Float(f64),
     Subroutine(Rc<Subroutine>),
     ClosureContext(Rc<ClosureContext>),
-    Array(Rc<Array>),
-    HashTable(Rc<HashTable>),
+    Array(RefCell<Array>),
+    HashTable(RefCell<HashTable>),
     Builtins(BuiltinKind),
 }
 
@@ -33,8 +34,8 @@ impl Hash for Object {
             Object::Char(c) => c.hash(state),
             Object::Str(st) => st.hash(state),
             Object::Float(f) => f.to_string().hash(state),
-            Object::Array(arr) => arr.hash(state),
-            Object::HashTable(ht) => ht.hash(state),
+            Object::Array(arr) => arr.borrow().hash(state),
+            Object::HashTable(ht) => ht.borrow().hash(state),
             Object::Subroutine(sub) => sub.hash(state),
             Object::ClosureContext(ctx) => ctx.hash(state),
             _ => "undef".hash(state),
@@ -50,8 +51,8 @@ impl Object {
             Object::Str(st) => st.clone(),
             Object::Float(f) => f.to_string(),
             Object::Bool(b) => b.to_string(),
-            Object::Array(arr) => arr.describe(),
-            Object::HashTable(ht) => ht.describe(),
+            Object::Array(arr) => arr.borrow().describe(),
+            Object::HashTable(ht) => ht.borrow().describe(),
             Object::Subroutine(sub) => sub.describe(),
             Object::ClosureContext(ctx) => ctx.describe(),
             Object::Builtins(_) => "builtin".to_string(),
@@ -81,8 +82,8 @@ impl Object {
             Object::Str(str) => *str != "",
             Object::Int(i) => *i != 0,
             Object::Char(c) => *c != '\0',
-            Object::Array(a) => a.as_ref().elements.len() != 0,
-            Object::HashTable(h) => h.as_ref().entries.len() != 0,
+            Object::Array(a) => a.borrow().elements.len() != 0,
+            Object::HashTable(h) => h.borrow().entries.len() != 0,
             _ => true,
         }
     }
@@ -93,7 +94,7 @@ impl Object {
                 if *i < 0 {
                     return Err(format!("Index {} must be greater than or equal to zero", i));
                 }
-                let result = arr.get_object(*i as usize);
+                let result = arr.borrow().get_object(*i as usize);
                 if result.is_err() {
                     return Err(result.unwrap_err());
                 }
@@ -101,7 +102,7 @@ impl Object {
                 return Ok(result.unwrap());
             }
             (Object::HashTable(ht), _) => {
-                let result = ht.get(idx);
+                let result = ht.borrow().get(idx);
                 if result.is_err() {
                     return Err(result.unwrap_err());
                 }
@@ -126,6 +127,31 @@ impl Object {
                     self.get_type(),
                     idx.get_type()
                 ));
+            }
+        }
+    }
+
+    pub fn set_indexed(&mut self, idx: &Rc<Object>, data: Rc<Object>) -> Option<String> {
+        match (&self, idx.as_ref()) {
+            (Object::Array(arr), Object::Int(i)) => {
+                if *i < 0 {
+                    return Some(format!("Index {} must be greater than or equal to zero", i));
+                }
+
+                // set object at index:
+                arr.borrow_mut().set_object(*i as usize, data);
+                return None;
+            }
+            (Object::HashTable(ht), _) => {
+                ht.borrow_mut().set(idx.clone(), data);
+                return None;
+            }
+            _ => {
+                return Some(format!(
+                    "Object of type {} does not support index assignment of type {}",
+                    self.get_type(),
+                    idx.get_type()
+                ))
             }
         }
     }

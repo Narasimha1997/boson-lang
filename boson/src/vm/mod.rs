@@ -193,6 +193,15 @@ impl BosonVM {
                     frame.farword_ip(next);
                 }
 
+                InstructionKind::ISetIndex => {
+                    let error = Controls::set_indexed(&mut self.data_stack);
+                    if error.is_some() {
+                        return Err(error.unwrap());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
                 // Binary operations:
                 InstructionKind::IAdd
                 | InstructionKind::ISub

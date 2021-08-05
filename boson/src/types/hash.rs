@@ -27,6 +27,10 @@ impl HashTable {
         return Vec::from_iter(self.entries.keys().cloned());
     }
 
+    pub fn set(&mut self, key: Rc<Object>, value: Rc<Object>) {
+        self.entries.insert(key, value);
+    }
+
     pub fn values(&self) -> Vec<Rc<Object>> {
         return Vec::from_iter(self.entries.values().cloned());
     }

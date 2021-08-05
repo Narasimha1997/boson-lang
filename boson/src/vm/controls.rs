@@ -54,7 +54,6 @@ impl Controls {
             return Err(popped_res.unwrap_err());
         }
 
-
         let popped_obj = popped_res.unwrap();
         if !popped_obj.as_ref().is_true() {
             let jmp_result = Controls::jump(cf, pos);
@@ -281,7 +280,7 @@ impl Controls {
                 index_result.unwrap_err(),
                 VMErrorKind::IndexError,
                 Some(InstructionKind::IGetIndex),
-                0
+                0,
             ));
         }
 
@@ -488,7 +487,7 @@ impl Controls {
             elements: popped,
         };
 
-        let array_obj = Rc::new(Object::Array(Rc::new(array)));
+        let array_obj = Rc::new(Object::Array(RefCell::new(array)));
 
         // push the array on to the stack:
         let push_res = ds.push_object(array_obj, inst.clone());
@@ -527,7 +526,7 @@ impl Controls {
             entries: hash_table,
         };
 
-        let ht_obj = Rc::new(Object::HashTable(Rc::new(ht)));
+        let ht_obj = Rc::new(Object::HashTable(RefCell::new(ht)));
         let push_res = ds.push_object(ht_obj, inst.clone());
 
         if push_res.is_err() {
@@ -598,15 +597,47 @@ impl Controls {
 
         let assert_obj = popped_result.unwrap();
 
-        let assert_fail_str = format!(
-            "Assertion Failed: {}", assert_obj.describe()
-        );
+        let assert_fail_str = format!("Assertion Failed: {}", assert_obj.describe());
 
         return Some(VMError::new(
             assert_fail_str,
             VMErrorKind::AssertionError,
             Some(InstructionKind::IAssertFail),
-            0
+            0,
         ));
+    }
+
+    pub fn set_indexed(ds: &mut DataStack) -> Option<VMError> {
+        let pop_result = Controls::pop_n(ds, 3, &InstructionKind::ISetIndex);
+
+        if pop_result.is_err() {
+            return Some(pop_result.unwrap_err());
+        }
+
+        // get objects:
+        let popped_objects = pop_result.unwrap();
+        let popped_right = popped_objects.get(2).unwrap().clone();
+
+        let obj_target = popped_objects.get(1).unwrap();
+        let index_target = popped_objects.get(0).unwrap();
+
+        // call set on the object
+        let mut new_object = obj_target.as_ref().clone();
+        let error = new_object.set_indexed(index_target, popped_right);
+        if error.is_some() {
+            return Some(VMError::new(
+                error.unwrap(),
+                VMErrorKind::IndexError,
+                Some(InstructionKind::ISetIndex),
+                0,
+            ));
+        }
+
+        // push the object back to stack:
+        let push_result = ds.push_object(Rc::new(new_object), InstructionKind::ISetIndex);
+        if push_result.is_err() {
+            return Some(push_result.unwrap_err());
+        }
+        return None;
     }
 }
