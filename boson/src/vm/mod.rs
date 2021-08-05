@@ -175,6 +175,24 @@ impl BosonVM {
                     frame.farword_ip(next);
                 }
 
+                InstructionKind::IAssertFail => {
+                    let error = Controls::raise_assertion_error(&mut self.data_stack);
+                    if error.is_some() {
+                        return Err(error.unwrap());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
+                InstructionKind::IGetIndex => {
+                    let error = Controls::get_index_value(&mut self.data_stack);
+                    if error.is_some() {
+                        return Err(error.unwrap());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
                 // Binary operations:
                 InstructionKind::IAdd
                 | InstructionKind::ISub

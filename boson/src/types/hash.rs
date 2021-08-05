@@ -35,12 +35,22 @@ impl HashTable {
         return self.entries.len();
     }
 
-    pub fn get(&self, key: &Rc<Object>) -> Option<Rc<Object>> {
-        return self.entries.get(key).cloned();
+    pub fn get(&self, key: &Rc<Object>) -> Result<Rc<Object>, String> {
+        let result = self.entries.get(key);
+        if result.is_none() {
+            return Err(format!("Key {} not found.", key.describe()));
+        }
+
+        return Ok(result.unwrap().clone());
     }
 
-    pub fn get_ref(&self, key: &Rc<Object>) -> Option<&Rc<Object>> {
-        return self.entries.get(key);
+    pub fn get_ref(&self, key: &Rc<Object>) -> Result<&Rc<Object>, String> {
+        let result = self.entries.get(key);
+        if result.is_none() {
+            return Err(format!("Key {} not found.", key.describe()));
+        }
+
+        return Ok(result.unwrap());
     }
 }
 

@@ -232,6 +232,22 @@ impl BytecodeCompiler {
         return None;
     }
 
+    fn compile_index(&mut self, node: &ast::IndexType) -> Option<errors::CompileError> {
+        // compile left expression:
+        let mut error = self.compile_expression(&node.expression_left);
+        if error.is_some() {
+            return error;
+        }
+
+        error = self.compile_expression(&node.index);
+        if error.is_some() {
+            return error;
+        }
+
+        self.save(isa::InstructionKind::IGetIndex, &vec![]);
+        return None;
+    }
+
     fn compile_assert_statement(&mut self, node: &ast::AssertType) -> Option<errors::CompileError> {
         let assert_expr = &node.target_expr;
         let mut error = self.compile_expression(&assert_expr);
@@ -239,6 +255,7 @@ impl BytecodeCompiler {
             return error;
         }
 
+        self.save(isa::InstructionKind::ILNot, &vec![]);
         let not_jmp_pos = self.save(isa::InstructionKind::INotJump, &vec![0]);
 
         // load panic expression:
@@ -247,7 +264,7 @@ impl BytecodeCompiler {
             return error;
         }
 
-        self.save(isa::InstructionKind::IVMPanic, &vec![]);
+        self.save(isa::InstructionKind::IAssertFail, &vec![]);
 
         let no_op_pos = self.save(isa::InstructionKind::INoOp, &vec![]);
 
@@ -925,6 +942,12 @@ impl BytecodeCompiler {
             }
             ast::ExpressionKind::Lambda(lm) => {
                 let result = self.compile_lambda(&lm);
+                if result.is_some() {
+                    return Some(result.unwrap());
+                }
+            }
+            ast::ExpressionKind::Index(idx) => {
+                let result = self.compile_index(&idx);
                 if result.is_some() {
                     return Some(result.unwrap());
                 }

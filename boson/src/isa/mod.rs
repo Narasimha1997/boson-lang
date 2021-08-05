@@ -99,7 +99,7 @@ pub enum InstructionKind {
 
     // panic instructions will panic the VM, panic
     // instruction will take the top of stack for printing.
-    IVMPanic,
+    IAssertFail,
 
     // Iterator:
     IIter,
@@ -110,7 +110,10 @@ pub enum InstructionKind {
 
     // Array and Hash
     IArray,
-    IHash
+    IHash,
+
+    // indexing
+    IGetIndex
 }
 
 
@@ -218,7 +221,7 @@ impl InstructionKind {
             InstructionKind::ILNot => "ILNot".to_string(),
             InstructionKind::ILOr => "ILOr".to_string(),
             InstructionKind::ILAnd => "ILAnd".to_string(),
-            InstructionKind::IVMPanic => "IVMPanic".to_string(),
+            InstructionKind::IAssertFail => "IAssertFail".to_string(),
             InstructionKind::IIter => "IIter".to_string(),
             InstructionKind::IBlockEnd => "IBlockEnd".to_string(),
             InstructionKind::IBlockStart => "IBlockStart".to_string(),
@@ -230,6 +233,7 @@ impl InstructionKind {
             InstructionKind::IClosure => "IClosure".to_string(),
             InstructionKind::IRet => "IRet".to_string(),
             InstructionKind::IRetVal => "IRetVal".to_string(),
+            InstructionKind::IGetIndex => "IGetIndex".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -271,14 +275,14 @@ impl InstructionKind {
             | InstructionKind::ILNe
             | InstructionKind::ILOr
             | InstructionKind::ILAnd
-            | InstructionKind::IVMPanic
+            | InstructionKind::IAssertFail
             | InstructionKind::IBlockEnd
             | InstructionKind::IBlockStart
             | InstructionKind::IRetVal
             | InstructionKind::IRet => vec![],
+            | InstructionKind::IGetIndex => vec![],
 
             InstructionKind::IClosure => vec![2, 2],
-
 
             InstructionKind::IStoreLocal
             | InstructionKind::ILoadLocal => vec![1],

@@ -24,6 +24,8 @@ pub enum VMErrorKind {
     TypeError,
     UnknownFreeVariable,
     FunctionArgumentsError,
+    AssertionError,
+    IndexError,
 }
 
 #[derive(Debug)]

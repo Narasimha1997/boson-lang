@@ -33,7 +33,7 @@ fn main() {
             println!("Compilation Error: {:?}", err);
          } else {
             let bytecode = bytecode_result.unwrap();
-            println!("{}", compiler::BytecodeDecompiler::disassemble(&bytecode));
+            // println!("{}", compiler::BytecodeDecompiler::disassemble(&bytecode));
             let mut boson_vm = vm::BosonVM::new(&bytecode);
             let result = boson_vm.eval_bytecode();
 

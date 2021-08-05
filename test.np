@@ -1,15 +1,17 @@
+var array = [1, 2, 3, 4, 5, 6, 7];
+println(array[1]);
 
-var adder = lambda a, b => a + b;
-
-var times = 0;
-
-const t1 = unix_time();
-while (times != 5000) {
-    var result = adder(10, 30);
-    println(result);
-    times = times + 1;
+var ht = {
+    "name": "Prasanna",
+    "age": 23,
+    "sex": "Male",
+    "company": "cognitif.ai",
+    "df": {
+        "location": [12.441, 72.122],
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "country": "India"
+    }
 }
-const t2 = unix_time();
 
-
-println("Function Eval time", t2 - t1);
+println(ht["df"]["state"]);

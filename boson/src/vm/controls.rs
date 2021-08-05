@@ -54,6 +54,7 @@ impl Controls {
             return Err(popped_res.unwrap_err());
         }
 
+
         let popped_obj = popped_res.unwrap();
         if !popped_obj.as_ref().is_true() {
             let jmp_result = Controls::jump(cf, pos);
@@ -257,6 +258,39 @@ impl Controls {
         }
 
         return Ok(objs);
+    }
+
+    pub fn get_index_value(ds: &mut DataStack) -> Option<VMError> {
+        let popped_idx_result = ds.pop_object(InstructionKind::IGetIndex);
+        if popped_idx_result.is_err() {
+            return Some(popped_idx_result.unwrap_err());
+        }
+
+        let popped_left_result = ds.pop_object(InstructionKind::IGetIndex);
+        if popped_idx_result.is_err() {
+            return Some(popped_left_result.unwrap_err());
+        }
+
+        let index_obj = popped_idx_result.unwrap();
+        let left_obj = popped_left_result.unwrap();
+
+        // perform indexing:
+        let index_result = left_obj.get_indexed(&index_obj);
+        if index_result.is_err() {
+            return Some(VMError::new(
+                index_result.unwrap_err(),
+                VMErrorKind::IndexError,
+                Some(InstructionKind::IGetIndex),
+                0
+            ));
+        }
+
+        let push_result = ds.push_object(index_result.unwrap(), InstructionKind::IGetIndex);
+        if push_result.is_err() {
+            return Some(push_result.unwrap_err());
+        }
+
+        return None;
     }
 
     pub fn load_builtin(ds: &mut DataStack, idx: usize) -> Result<i64, VMError> {
@@ -554,5 +588,25 @@ impl Controls {
         }
 
         return None;
+    }
+
+    pub fn raise_assertion_error(ds: &mut DataStack) -> Option<VMError> {
+        let popped_result = ds.pop_object(InstructionKind::IAssertFail);
+        if popped_result.is_err() {
+            return Some(popped_result.unwrap_err());
+        }
+
+        let assert_obj = popped_result.unwrap();
+
+        let assert_fail_str = format!(
+            "Assertion Failed: {}", assert_obj.describe()
+        );
+
+        return Some(VMError::new(
+            assert_fail_str,
+            VMErrorKind::AssertionError,
+            Some(InstructionKind::IAssertFail),
+            0
+        ));
     }
 }

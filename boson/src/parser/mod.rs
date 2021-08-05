@@ -925,7 +925,7 @@ impl Parser {
                         Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Bool(true)))
                     }
                     KeywordKind::KFalse => {
-                        Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Bool(true)))
+                        Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Bool(false)))
                     }
                     KeywordKind::KLambda => self.parse_lambda_exp(),
                     KeywordKind::KNone => Ok(ast::ExpressionKind::Noval),
