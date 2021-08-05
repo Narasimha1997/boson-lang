@@ -113,7 +113,8 @@ pub enum InstructionKind {
     IHash,
 
     // indexing
-    IGetIndex
+    IGetIndex,
+    ISetIndex
 }
 
 
@@ -234,6 +235,7 @@ impl InstructionKind {
             InstructionKind::IRet => "IRet".to_string(),
             InstructionKind::IRetVal => "IRetVal".to_string(),
             InstructionKind::IGetIndex => "IGetIndex".to_string(),
+            InstructionKind::ISetIndex => "ISetIndex".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -281,6 +283,7 @@ impl InstructionKind {
             | InstructionKind::IRetVal
             | InstructionKind::IRet => vec![],
             | InstructionKind::IGetIndex => vec![],
+            | InstructionKind::ISetIndex => vec![],
 
             InstructionKind::IClosure => vec![2, 2],
 
