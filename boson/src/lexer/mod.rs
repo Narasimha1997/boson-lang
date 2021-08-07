@@ -747,11 +747,6 @@ impl LexerAPI {
         }
     }
 
-    pub fn set_buffer(&mut self, buffer: Vec<u8>) {
-        self.lexer.reset();
-        self.lexer.buffer = ProgramBuffer::new_from_buffer(buffer);
-    }
-
     pub fn iterate(&mut self) {
         self.current_token = self.next_token.clone();
         self.next_token = self.lexer.next_lexed_token().clone();

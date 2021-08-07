@@ -1379,6 +1379,10 @@ impl BytecodeCompiler {
 
         return Ok(self.get_bytecode());
     }
+
+    pub fn clear_previous(&mut self){
+        self.scopes[self.scope_index].instructions.clear();
+    }
 }
 
 pub struct BytecodeDecompiler {}

@@ -7,8 +7,8 @@ fname=$2
 
 if [[ "$arg" == "eval" ]]; then
     cargo build --release --bin boson-eval
-elif [[ "$arg" == "debug" ]]; then 
-    cargo build
+elif [[ "$arg" == "repl" ]]; then 
+    cargo build --release --bin boson --features=repl --manifest-path=boson/Cargo.toml
 else
     cargo run --bin boson $fname
 fi

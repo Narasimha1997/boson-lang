@@ -10,6 +10,7 @@ use types::object::Object;
 
 use crate::config::GLOBAL_POOL_SIZE;
 
+#[derive(Clone)]
 pub struct GlobalPool {
     pub pool: Vec<Rc<Object>>,
     pub max_size: usize,

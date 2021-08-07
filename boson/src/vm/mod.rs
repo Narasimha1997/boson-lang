@@ -49,6 +49,22 @@ impl BosonVM {
         };
     }
 
+    pub fn new_state(bytecode: &CompiledBytecode, globals: GlobalPool) -> BosonVM {
+        let main_frame = ExecutionFrame::new_from_bytecode(bytecode, "main".to_string(), 0, 0);
+
+        let mut call_stack = CallStack::new();
+        let data_stack = DataStack::new();
+
+        let _ = call_stack.push_frame(RefCell::new(main_frame));
+
+        return BosonVM {
+            constants: bytecode.constant_pool.clone(),
+            call_stack: call_stack,
+            data_stack: data_stack,
+            globals: globals,
+        };   
+    }
+
     pub fn push_new_frame(&mut self, frame: RefCell<ExecutionFrame>) -> Option<VMError> {
         let push_result = self.call_stack.push_frame(frame);
         if push_result.is_err() {
@@ -58,7 +74,7 @@ impl BosonVM {
         return None;
     }
 
-    pub fn eval_bytecode(&mut self) -> Result<Rc<Object>, VMError> {
+    pub fn eval_bytecode(&mut self, pop_last: bool) -> Result<Rc<Object>, VMError> {
         while self.call_stack.top_ref().has_instructions() {
             let mut frame = self.call_stack.top();
 
@@ -356,6 +372,15 @@ impl BosonVM {
                     ));
                 }
             }
+        }
+
+        if pop_last {
+            let popped_result = self.data_stack.pop_object(InstructionKind::IBlockEnd);
+            if popped_result.is_err() {
+                return Ok(Rc::new(Object::Noval));
+            }
+            
+            return Ok(popped_result.unwrap());
         }
 
         return Ok(Rc::new(Object::Noval));

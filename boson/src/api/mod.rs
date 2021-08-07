@@ -14,6 +14,7 @@ use std::rc::Rc;
 pub struct BosonLang {
     pub parser: Parser,
     pub compiler: BytecodeCompiler,
+    pub vm: Option<BosonVM>
 }
 
 #[derive(Debug)]
@@ -32,6 +33,7 @@ impl BosonLang {
         return BosonLang {
             parser: parser,
             compiler: compiler,
+            vm: None,
         };
     }
 
@@ -43,6 +45,7 @@ impl BosonLang {
         return BosonLang {
             parser: parser,
             compiler: compiler,
+            vm: None
         };
     }
 
@@ -53,6 +56,7 @@ impl BosonLang {
         }
 
         let ast = parsed_res.unwrap();
+        self.compiler.clear_previous();
         let compiler_result = self.compiler.compile(&ast);
         if compiler_result.is_err() {
             return Err(ErrorKind::CompileError(compiler_result.unwrap_err()));
@@ -86,7 +90,7 @@ impl BosonLang {
     }
 
     pub fn update(&mut self, new_buffer: Vec<u8>) {
-        self.parser.lexer.set_buffer(new_buffer);
+        self.parser.lexer = LexerAPI::new_from_buffer(new_buffer);
     }
 
     pub fn eval_buffer(buffer: Vec<u8>) -> Option<Rc<Object>> {
@@ -120,14 +124,22 @@ impl BosonLang {
             return None;
         }
 
-        let mut vm = BosonVM::new(&bytecode.unwrap());
-        let result = vm.eval_bytecode();
+        if self.vm.is_none() {
+            self.vm = Some(BosonVM::new(&bytecode.unwrap()));
+        } else {
+            self.vm = Some(
+                BosonVM::new_state(&bytecode.unwrap(),
+                self.vm.as_mut().unwrap().globals.clone()
+            ));
+        }
+        
+        let result = self.vm.as_mut().unwrap().eval_bytecode(true);
         if result.is_err() {
             self.__display_error(ErrorKind::VMError(result.unwrap_err()));
             return None;
         }
 
-        return None;
+        return Some(result.unwrap());
     }
 
     pub fn disasm_state(&mut self) -> Option<String> {
