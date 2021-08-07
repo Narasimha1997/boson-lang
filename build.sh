@@ -5,8 +5,8 @@
 arg=$1
 fname=$2
 
-if [[ "$arg" == "prod" ]]; then
-    cargo build --release
+if [[ "$arg" == "eval" ]]; then
+    cargo build --release --bin boson-eval
 elif [[ "$arg" == "debug" ]]; then 
     cargo build
 else

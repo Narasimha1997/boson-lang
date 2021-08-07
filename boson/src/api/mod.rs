@@ -89,25 +89,25 @@ impl BosonLang {
         self.parser.lexer.set_buffer(new_buffer);
     }
 
-    pub fn eval_buffer(&mut self, buffer: Vec<u8>) -> Option<Rc<Object>> {
+    pub fn eval_buffer(buffer: Vec<u8>) -> Option<Rc<Object>> {
         let mut lang = BosonLang::new_from_buffer(buffer);
         let result = lang.eval_state();
         return result;
     }
 
-    pub fn eval_file(&mut self, filename: String) -> Option<Rc<Object>> {
+    pub fn eval_file(filename: String) -> Option<Rc<Object>> {
         let mut lang = BosonLang::new_from_file(filename);
         let result = lang.eval_state();
         return result;
     }
 
-    pub fn disasm_file(&mut self, filename: String) -> Option<String> {
+    pub fn disasm_file(filename: String) -> Option<String> {
         let mut lang = BosonLang::new_from_file(filename);
         let result = lang.disasm_state();
         return result;
     }
 
-    pub fn disasm_buffer(&mut self, buffer: Vec<u8>) -> Option<String> {
+    pub fn disasm_buffer(buffer: Vec<u8>) -> Option<String> {
         let mut lang = BosonLang::new_from_buffer(buffer);
         let result = lang.disasm_state();
         return result;
