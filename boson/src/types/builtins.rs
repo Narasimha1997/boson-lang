@@ -1,12 +1,14 @@
+use std::cell::RefCell;
 use std::hash::Hash;
 use std::hash::Hasher;
 use std::rc::Rc;
-use std::cell::RefCell;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
+
 use crate::types::array;
 use crate::types::object;
+use crate::api::BosonLang;
 
 use array::Array;
 use object::Object;
@@ -20,6 +22,7 @@ pub enum BuiltinKind {
     Length,
     Builtins,
     TimeUnix,
+    Eval,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -37,6 +40,7 @@ impl BuiltinKind {
             BuiltinKind::Length => "len".to_string(),
             BuiltinKind::Builtins => "builtins".to_string(),
             BuiltinKind::TimeUnix => "unix_time".to_string(),
+            BuiltinKind::Eval => "eval".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -44,11 +48,8 @@ impl BuiltinKind {
     pub fn exec(&self, args: Vec<Rc<Object>>) -> Result<Rc<Object>, String> {
         match self {
             BuiltinKind::Print => {
-
                 if args.len() == 0 {
-                    return Err(
-                        "print() takes atleast one argument, 0 provided".to_string()
-                    );
+                    return Err("print() takes atleast one argument, 0 provided".to_string());
                 }
 
                 // print function:
@@ -107,6 +108,31 @@ impl BuiltinKind {
                 }
             }
 
+            BuiltinKind::Eval => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "eval() takes one argument, {} provided",
+                        args.len()
+                    ));
+                }
+
+                let obj = args[0].as_ref();
+                if obj.get_type() != "string" {
+                    return Err(format!(
+                        "eval() takes string as argument, {} provided",
+                        obj.get_type()
+                    ));
+                }
+
+                let buffer = obj.describe().as_bytes().to_vec().clone();
+                let result = BosonLang::eval_buffer(buffer);
+                if result.is_none() {
+                    return Ok(Rc::new(Object::Noval));
+                }
+
+                return Ok(result.unwrap());
+            }
+
             BuiltinKind::Builtins => {
                 if args.len() != 0 {
                     return Err(format!(
@@ -142,9 +168,7 @@ impl BuiltinKind {
 
                 let epoch_time = epoch_time_res.unwrap();
 
-                return Ok(Rc::new(
-                    Object::Float(epoch_time.as_secs_f64())
-                ));
+                return Ok(Rc::new(Object::Float(epoch_time.as_secs_f64())));
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),
