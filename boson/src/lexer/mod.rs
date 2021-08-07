@@ -16,7 +16,7 @@ pub const SYMBOLS: &'static [&'static str] = &[
 pub const KEYWORDS: &'static [&'static str] = &[
     "invalid", "if", "else", "while", "for", "break", "continue", "const", "var", "none", "func",
     "return", "try", "catch", "finally", "rethrow", "throw", "as", "true", "false", "foreach",
-    "in", "indexed", "pure", "lambda", "assert"
+    "in", "indexed", "pure", "lambda", "assert",
 ];
 
 #[allow(dead_code)]
@@ -91,7 +91,7 @@ pub enum KeywordKind {
     KIndexed = 22,
     KPure = 23,
     KLambda = 24,
-    KAssert = 25
+    KAssert = 25,
 }
 
 #[allow(dead_code)]
@@ -747,6 +747,11 @@ impl LexerAPI {
         }
     }
 
+    pub fn set_buffer(&mut self, buffer: Vec<u8>) {
+        self.lexer.reset();
+        self.lexer.buffer = ProgramBuffer::new_from_buffer(buffer);
+    }
+
     pub fn iterate(&mut self) {
         self.current_token = self.next_token.clone();
         self.next_token = self.lexer.next_lexed_token().clone();
@@ -765,15 +770,15 @@ impl LexerAPI {
     }
 
     pub fn tokens_are_equal(&mut self, token1: &TokenKind, token2: TokenKind) -> bool {
-        token1 == (& token2)
+        token1 == (&token2)
     }
 
     pub fn keywords_are_equal(&mut self, kw1: &KeywordKind, kw2: KeywordKind) -> bool {
-        kw1 ==  (& kw2)
+        kw1 == (&kw2)
     }
 
     pub fn symbols_are_equal(&mut self, sym1: &SymbolKind, sym2: SymbolKind) -> bool {
-        sym1 == (& sym2)
+        sym1 == (&sym2)
     }
 
     pub fn get_line_by_pos(&mut self, pos: usize) -> (String, usize, usize) {
@@ -820,6 +825,10 @@ impl LexerAPI {
             }
         }
 
-        (self.lexer.buffer.get_as_string(back_pos, front_pos), back_pos, front_iter)
+        (
+            self.lexer.buffer.get_as_string(back_pos, front_pos),
+            back_pos,
+            front_iter,
+        )
     }
 }
