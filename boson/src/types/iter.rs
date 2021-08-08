@@ -56,7 +56,7 @@ impl ObjectIterator {
         if self.idx >= self.size {
             return None;
         }
-        let object = self.elements[self.idx];
+        let object = self.elements[self.idx].clone();
         self.idx += 1;
         return Some(object);
     }

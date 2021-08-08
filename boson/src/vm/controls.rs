@@ -635,7 +635,11 @@ impl Controls {
         return None;
     }
 
-    pub fn jump_next(ds: &mut DataStack, jmp_pos: usize, frame: &mut RefMut<ExecutionFrame>) -> Result<bool, VMError> {
+    pub fn jump_next(
+        ds: &mut DataStack,
+        jmp_pos: usize,
+        frame: &mut RefMut<ExecutionFrame>,
+    ) -> Result<bool, VMError> {
         let top_ref_res = ds.get_top_ref(InstructionKind::IIterNext);
         if top_ref_res.is_err() {
             return Err(top_ref_res.unwrap_err());
@@ -648,7 +652,7 @@ impl Controls {
                 let obj = iterator.next();
                 if obj.is_none() {
                     // pop the end
-                    drop(top_ref_res);
+                    drop(iterator);
                     let popped_result = ds.pop_object(InstructionKind::IIterNext);
                     if popped_result.is_err() {
                         return Err(popped_result.unwrap_err());
@@ -657,7 +661,15 @@ impl Controls {
                     if result.is_err() {
                         return Err(result.unwrap_err());
                     }
+                    return Ok(true);
+                } else {
+                    drop(iterator);
+                    let push_res = ds.push_object(obj.unwrap(), InstructionKind::IIterNext);
+                    if push_res.is_err() {
+                        return Err(push_res.unwrap_err());
+                    }
 
+                    return Ok(false);
                 }
             }
             _ => {
@@ -669,8 +681,6 @@ impl Controls {
                 ));
             }
         }
-
-        return Ok(true);
     }
 
     pub fn set_indexed(ds: &mut DataStack) -> Option<VMError> {

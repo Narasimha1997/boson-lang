@@ -149,7 +149,7 @@ impl DataStack {
         return Ok(popped.unwrap());
     }
 
-    pub fn get_top_ref(&mut self, inst: InstructionKind) -> Result<&mut Rc<Object>, VMError> {
+    pub fn get_top_ref(&mut self, inst: InstructionKind) -> Result<&Rc<Object>, VMError> {
         if self.stack_pointer == -1 {
             return Err(VMError::new(
                 "Stack underflow".to_string(),
@@ -159,6 +159,6 @@ impl DataStack {
             ));
         }
 
-        return Ok(self.stack.get_mut(self.stack_pointer as usize).unwrap());
+        return Ok(self.stack.get(self.stack_pointer as usize).unwrap());
     }
 }
