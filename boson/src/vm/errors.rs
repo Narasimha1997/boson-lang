@@ -26,6 +26,7 @@ pub enum VMErrorKind {
     FunctionArgumentsError,
     AssertionError,
     IndexError,
+    IterationError,
 }
 
 #[derive(Debug)]

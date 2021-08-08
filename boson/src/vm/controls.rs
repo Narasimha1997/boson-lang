@@ -3,6 +3,7 @@ use crate::isa;
 use crate::types::array;
 use crate::types::builtins;
 use crate::types::hash;
+use crate::types::iter;
 use crate::types::object;
 use crate::vm::alu;
 use crate::vm::errors;
@@ -30,6 +31,7 @@ use frames::ExecutionFrame;
 use global::GlobalPool;
 use hash::HashTable;
 use isa::InstructionKind;
+use iter::ObjectIterator;
 use object::Object;
 use stack::DataStack;
 
@@ -605,6 +607,70 @@ impl Controls {
             Some(InstructionKind::IAssertFail),
             0,
         ));
+    }
+
+    pub fn create_iter(ds: &mut DataStack) -> Option<VMError> {
+        let popped_res = ds.pop_object(InstructionKind::IIter);
+        if popped_res.is_err() {
+            return Some(popped_res.unwrap_err());
+        }
+
+        let popped_object = popped_res.unwrap();
+        let iter_res = ObjectIterator::new(popped_object);
+        if iter_res.is_err() {
+            return Some(VMError::new(
+                iter_res.unwrap_err(),
+                VMErrorKind::IterationError,
+                Some(InstructionKind::IIter),
+                0,
+            ));
+        }
+
+        let iter_object = Rc::new(Object::Iter(RefCell::new(iter_res.unwrap())));
+        let push_res = ds.push_object(iter_object, InstructionKind::IIter);
+        if push_res.is_err() {
+            return Some(push_res.unwrap_err());
+        }
+
+        return None;
+    }
+
+    pub fn jump_next(ds: &mut DataStack, jmp_pos: usize, frame: &mut RefMut<ExecutionFrame>) -> Result<bool, VMError> {
+        let top_ref_res = ds.get_top_ref(InstructionKind::IIterNext);
+        if top_ref_res.is_err() {
+            return Err(top_ref_res.unwrap_err());
+        }
+
+        let top_ref = top_ref_res.unwrap();
+        match top_ref.as_ref() {
+            Object::Iter(iter) => {
+                let mut iterator = iter.borrow_mut();
+                let obj = iterator.next();
+                if obj.is_none() {
+                    // pop the end
+                    drop(top_ref_res);
+                    let popped_result = ds.pop_object(InstructionKind::IIterNext);
+                    if popped_result.is_err() {
+                        return Err(popped_result.unwrap_err());
+                    }
+                    let result = Controls::jump(frame, jmp_pos);
+                    if result.is_err() {
+                        return Err(result.unwrap_err());
+                    }
+
+                }
+            }
+            _ => {
+                return Err(VMError::new(
+                    format!("Cannot iterate over {}", top_ref.get_type()),
+                    VMErrorKind::IterationError,
+                    Some(InstructionKind::IIter),
+                    0,
+                ));
+            }
+        }
+
+        return Ok(true);
     }
 
     pub fn set_indexed(ds: &mut DataStack) -> Option<VMError> {

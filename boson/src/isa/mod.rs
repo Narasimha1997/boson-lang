@@ -103,6 +103,7 @@ pub enum InstructionKind {
 
     // Iterator:
     IIter,
+    IIterNext,
 
     // Block start and end instructions:
     IBlockStart,
@@ -236,6 +237,7 @@ impl InstructionKind {
             InstructionKind::IRetVal => "IRetVal".to_string(),
             InstructionKind::IGetIndex => "IGetIndex".to_string(),
             InstructionKind::ISetIndex => "ISetIndex".to_string(),
+            InstructionKind::IIterNext => "IIterNext".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -248,7 +250,7 @@ impl InstructionKind {
             | InstructionKind::IConstant
             | InstructionKind::IJump
             | InstructionKind::INotJump
-            | InstructionKind::IIter
+            | InstructionKind::IIterNext
             | InstructionKind::IHash
             | InstructionKind::IArray
             | InstructionKind::ILoadBuiltIn
@@ -276,6 +278,7 @@ impl InstructionKind {
             | InstructionKind::ILEq
             | InstructionKind::ILNe
             | InstructionKind::ILOr
+            | InstructionKind::IIter
             | InstructionKind::ILAnd
             | InstructionKind::IAssertFail
             | InstructionKind::IBlockEnd

@@ -7,7 +7,6 @@ use crate::types::array::Array;
 use crate::types::builtins::BuiltinKind;
 use crate::types::closure::ClosureContext;
 use crate::types::hash::HashTable;
-use crate::types::iter::IterItem;
 use crate::types::iter::ObjectIterator;
 use crate::types::subroutine::Subroutine;
 
@@ -24,7 +23,7 @@ pub enum Object {
     Array(RefCell<Array>),
     HashTable(RefCell<HashTable>),
     Builtins(BuiltinKind),
-    Iter(RefCell<ObjectIterator<IterItem>>),
+    Iter(RefCell<ObjectIterator>),
 }
 
 impl Eq for Object {}
@@ -58,6 +57,7 @@ impl Object {
             Object::HashTable(ht) => ht.borrow().describe(),
             Object::Subroutine(sub) => sub.describe(),
             Object::ClosureContext(ctx) => ctx.describe(),
+            Object::Iter(it) => it.borrow().describe(),
             Object::Builtins(_) => "builtin".to_string(),
             _ => String::from("undef"),
         }
@@ -73,6 +73,7 @@ impl Object {
             Object::Array(_) => "array".to_string(),
             Object::HashTable(_) => "hashmap".to_string(),
             Object::Subroutine(_) => "func".to_string(),
+            Object::Iter(_) => "iter".to_string(),
             Object::Builtins(_) => "func".to_string(),
             _ => "unknown".to_string(),
         }
@@ -87,6 +88,7 @@ impl Object {
             Object::Char(c) => *c != '\0',
             Object::Array(a) => a.borrow().elements.len() != 0,
             Object::HashTable(h) => h.borrow().entries.len() != 0,
+            Object::Iter(it) => it.borrow().has_next(),
             _ => true,
         }
     }

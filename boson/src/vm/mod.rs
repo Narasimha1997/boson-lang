@@ -62,7 +62,7 @@ impl BosonVM {
             call_stack: call_stack,
             data_stack: data_stack,
             globals: globals,
-        };   
+        };
     }
 
     pub fn push_new_frame(&mut self, frame: RefCell<ExecutionFrame>) -> Option<VMError> {
@@ -335,7 +335,7 @@ impl BosonVM {
                     let error = Controls::execute_return(
                         &mut self.data_stack,
                         &current_frame_res.unwrap().borrow(),
-                        false
+                        false,
                     );
 
                     if error.is_some() {
@@ -355,12 +355,25 @@ impl BosonVM {
                     let error = Controls::execute_return(
                         &mut self.data_stack,
                         &current_frame_res.unwrap().borrow(),
-                        true
+                        true,
                     );
 
                     if error.is_some() {
                         return Err(error.unwrap());
                     }
+                }
+
+                InstructionKind::IIter => {
+                    let error = Controls::create_iter(&mut self.data_stack);
+                    if error.is_some() {
+                        return Err(error.unwrap());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
+                InstructionKind::IIterNext => {
+                    let jmp_pos = operands[0];
                 }
 
                 _ => {
@@ -379,7 +392,6 @@ impl BosonVM {
             if popped_result.is_err() {
                 return Ok(Rc::new(Object::Noval));
             }
-            
             return Ok(popped_result.unwrap());
         }
 

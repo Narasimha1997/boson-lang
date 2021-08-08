@@ -548,7 +548,8 @@ impl BytecodeCompiler {
         }
 
         // Perform iteration, replace the iterator end later
-        let loop_start = self.save(isa::InstructionKind::IIter, &vec![0]);
+        self.save(isa::InstructionKind::IIter, &vec![]);
+        let loop_start = self.save(isa::InstructionKind::IIterNext, &vec![0]);
         self.loop_ctls[current_loop_ctl].loop_start_pos = loop_start;
 
         // load the iter variable:
@@ -579,7 +580,7 @@ impl BytecodeCompiler {
         // replace the IIter with loop end pos:
         error = self.replace_instruction_operands(
             self.scope_index,
-            isa::InstructionKind::IIter,
+            isa::InstructionKind::IIterNext,
             &vec![loop_end_pos],
             &loop_start,
         );

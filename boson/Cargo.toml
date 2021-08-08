@@ -11,6 +11,10 @@ name = "boson-eval"
 path = "src/bin/boson_eval.rs"
 
 [[bin]]
+name = "boson-dis"
+path = "src/bin/boson_dis.rs"
+
+[[bin]]
 name = "boson"
 path = "src/bin/boson_repl.rs"
 required-features = ["repl"]

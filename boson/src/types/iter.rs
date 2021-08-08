@@ -3,65 +3,69 @@ use crate::types::object;
 use object::Object;
 use std::rc::Rc;
 
-
 /*
-    This is a draft implementation of iterators,
-    This will not give optimal performance yet.
+    This is a dummy iterator, not a real one.
+    Optimal performance not gaurenteed.
 */
 
-#[derive(Debug, Clone)]
-pub struct ObjectIterator<I> {
-    pub _iter: I,
+#[derive(Clone, Debug, PartialEq)]
+pub struct ObjectIterator {
+    pub idx: usize,
+    pub size: usize,
+    pub elements: Vec<Rc<Object>>,
 }
 
-impl<I> Iterator for ObjectIterator<I>
-where
-    I: Iterator,
-{
-    type Item = I::Item;
-
-    fn next(&mut self) -> Option<I::Item> {
-        match self._iter.next() {
-            Some(item) => Some(item),
-            None => None,
-        }
-    }
-}
-
-impl<I> ObjectIterator<I> {
-    pub fn new_wrapped(iter: I) -> ObjectIterator<I> {
-        return ObjectIterator { _iter: iter };
-    }
-}
-
-impl<I> PartialEq for ObjectIterator<I> {
-    fn eq(&self, _: &ObjectIterator<I>) -> bool {
-        // As of now iterators cannot be compared.
-        return false;
-    }
-}
-
-pub type IterItem = Vec<Rc<Object>>;
-
-pub struct IterType {}
-
-impl IterType {
-    pub fn new(obj: Rc<Object>) -> Result<ObjectIterator<IterItem>, String> {
+impl ObjectIterator {
+    pub fn new(obj: Rc<Object>) -> Result<ObjectIterator, String> {
         match obj.as_ref() {
             Object::Array(arr) => {
-                let iterator = arr.borrow().elements.clone();
-                return Ok(ObjectIterator::new_wrapped(iterator));
+                return Ok(ObjectIterator {
+                    idx: 0,
+                    size: arr.borrow().elements.len(),
+                    elements: arr.borrow().elements.clone(),
+                });
             }
             Object::HashTable(ht) => {
-                let iterator = ht.borrow().keys();
-                return Ok(ObjectIterator::new_wrapped(iterator));
+                let table = ht.borrow();
+                let length = table.length();
+                return Ok(ObjectIterator {
+                    idx: 0,
+                    size: length,
+                    elements: table.keys(),
+                });
+            }
+            Object::Str(st) => {
+                let vec_string: Vec<Rc<Object>> =
+                    st.chars().map(|c| Rc::new(Object::Char(c))).collect();
+                return Ok(ObjectIterator {
+                    idx: 0,
+                    size: vec_string.len(),
+                    elements: vec_string,
+                });
             }
             _ => {
                 return Err(format!(
-                    "Type {} does not support iteration.",
+                    "Object of type {} does not support iteration.",
                     obj.get_type()
-                ))
+                ));
             }
         }
+    }
+
+    pub fn next(&mut self) -> Option<Rc<Object>> {
+        if self.idx >= self.size {
+            return None;
+        }
+        let object = self.elements[self.idx];
+        self.idx += 1;
+        return Some(object);
+    }
+
+    pub fn describe(&self) -> String {
+        return format!("Iterator(position={} ,size={})", self.idx, self.size);
+    }
+
+    pub fn has_next(&self) -> bool {
+        return self.idx < self.size;
     }
 }
