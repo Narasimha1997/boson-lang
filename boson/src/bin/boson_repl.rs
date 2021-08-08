@@ -24,7 +24,7 @@ pub fn main() {
     let mut rl = Editor::<()>::new();
 
     let mut lang = BosonLang::new_from_buffer(
-        "println(\"Hello World!\");\n".as_bytes().to_vec().clone()
+        "println(\"VM Check - Passed.\");\n".as_bytes().to_vec().clone()
     );
 
     let result = lang.eval_state();

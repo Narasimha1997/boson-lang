@@ -7,6 +7,8 @@ use crate::types::array::Array;
 use crate::types::builtins::BuiltinKind;
 use crate::types::closure::ClosureContext;
 use crate::types::hash::HashTable;
+use crate::types::iter::IterItem;
+use crate::types::iter::ObjectIterator;
 use crate::types::subroutine::Subroutine;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -22,6 +24,7 @@ pub enum Object {
     Array(RefCell<Array>),
     HashTable(RefCell<HashTable>),
     Builtins(BuiltinKind),
+    Iter(RefCell<ObjectIterator<IterItem>>),
 }
 
 impl Eq for Object {}
