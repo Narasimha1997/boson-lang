@@ -501,6 +501,49 @@ impl BytecodeCompiler {
         return None;
     }
 
+    fn register_loop_var(&mut self, node: &ast::ExpressionKind) -> Option<errors::CompileError> {
+        let registered_element: Rc<symtab::Symbol>;
+
+        match node {
+            ast::ExpressionKind::Identifier(id) => {
+                // check if it's constant:
+                let resolved_sym = self.symbol_table.resolve_symbol(&id.name);
+                if resolved_sym.is_some() && resolved_sym.unwrap().is_const {
+                    return Some(errors::CompileError::new(
+                        format!("Cannot assign to constant {}", id.name),
+                        errors::CompilerErrorKind::ConstantAssignment,
+                        0,
+                    ));
+                }
+
+                registered_element = self.symbol_table.insert_new_symbol(&id.name, false)
+            }
+            _ => {
+                return Some(errors::CompileError::new(
+                    "Invalid expression, loop target must be an identifier".to_string(),
+                    errors::CompilerErrorKind::InvalidOperand,
+                    0,
+                ))
+            }
+        }
+
+        // load the iter variable:
+        match registered_element.scope {
+            symtab::ScopeKind::Global => {
+                self.save(
+                    isa::InstructionKind::IStoreGlobal,
+                    &vec![registered_element.pos],
+                );
+            }
+            symtab::ScopeKind::Local => {
+                self.save(isa::InstructionKind::IStoreLocal, &vec![registered_element.pos]);
+            }
+            _ => {}
+        }
+
+        return None;
+    }
+
     fn compile_for_loop(&mut self, node: &ast::ForLoopType) -> Option<errors::CompileError> {
         let iter_exp = &node.iter;
 
@@ -522,30 +565,6 @@ impl BytecodeCompiler {
 
         // register the target variable
         let target = &node.target;
-        let registered_sym: Rc<symtab::Symbol>;
-
-        match target.as_ref() {
-            ast::ExpressionKind::Identifier(id) => {
-                // check if it's constant:
-                let resolved_sym = self.symbol_table.resolve_symbol(&id.name);
-                if resolved_sym.is_some() && resolved_sym.unwrap().is_const {
-                    return Some(errors::CompileError::new(
-                        format!("Cannot assign to constant {}", id.name),
-                        errors::CompilerErrorKind::ConstantAssignment,
-                        0,
-                    ));
-                }
-
-                registered_sym = self.symbol_table.insert_new_symbol(&id.name, false)
-            }
-            _ => {
-                return Some(errors::CompileError::new(
-                    "Invalid expression, loop target must be an identifier".to_string(),
-                    errors::CompilerErrorKind::InvalidOperand,
-                    0,
-                ))
-            }
-        }
 
         // Perform iteration, replace the iterator end later
         self.save(isa::InstructionKind::IIter, &vec![]);
@@ -553,17 +572,9 @@ impl BytecodeCompiler {
         self.loop_ctls[current_loop_ctl].loop_start_pos = loop_start;
 
         // load the iter variable:
-        match registered_sym.scope {
-            symtab::ScopeKind::Global => {
-                self.save(
-                    isa::InstructionKind::IStoreGlobal,
-                    &vec![registered_sym.pos],
-                );
-            }
-            symtab::ScopeKind::Local => {
-                self.save(isa::InstructionKind::IStoreLocal, &vec![registered_sym.pos]);
-            }
-            _ => {}
+        error = self.register_loop_var(target);
+        if error.is_some() {
+            return error;
         }
 
         // compile the block statement:
@@ -581,6 +592,85 @@ impl BytecodeCompiler {
         error = self.replace_instruction_operands(
             self.scope_index,
             isa::InstructionKind::IIterNext,
+            &vec![loop_end_pos],
+            &loop_start,
+        );
+
+        if error.is_some() {
+            return error;
+        }
+
+        // replace all breaks:
+        for idx in 0..self.loop_ctls[current_loop_ctl].break_pos.len() {
+            let brk_pos = self.loop_ctls[current_loop_ctl].break_pos[idx];
+            error = self.replace_instruction_operands(
+                self.scope_index,
+                isa::InstructionKind::IJump,
+                &vec![loop_end_pos],
+                &brk_pos,
+            );
+            if error.is_some() {
+                return error;
+            }
+        }
+
+        // pop the loop control:
+        self.loop_ctls.pop();
+        return None;
+    }
+
+    fn compile_feach_stmt(&mut self, node: &ast::ForEachType) -> Option<errors::CompileError> {
+        let iter_exp = &node.iterator_exp;
+
+        // compile:
+        let mut error = self.compile_expression(&iter_exp);
+        if error.is_some() {
+            return error;
+        }
+
+        let current_pos = self.scopes[self.scope_index].get_size();
+        let new_loop_ctl = LoopControl {
+            loop_start_pos: current_pos.clone(),
+            pos_after_loop: 0,
+            break_pos: vec![],
+        };
+
+        self.loop_ctls.push(new_loop_ctl);
+        let current_loop_ctl = self.loop_ctls.len() - 1;
+
+        // register the target variable
+        let target = &node.element;
+        let index = &node.index;
+
+        self.save(isa::InstructionKind::IIter, &vec![]);
+        let loop_start = self.save(isa::InstructionKind::IEnumNext, &vec![0]);
+        self.loop_ctls[current_loop_ctl].loop_start_pos = loop_start;
+
+        error = self.register_loop_var(index);
+        if error.is_some() {
+            return error;
+        }
+
+        error = self.register_loop_var(target);
+        if error.is_some() {
+            return error;
+        }
+
+        // compile the block statement:
+        error = self.compile_block_statement(&node.block);
+        if error.is_some() {
+            return error;
+        }
+
+        // put a jump:
+        self.save(isa::InstructionKind::IJump, &vec![loop_start]);
+        // end the loop with a no-op:
+        let loop_end_pos = self.save(isa::InstructionKind::INoOp, &vec![]);
+
+        // replace the IIter with loop end pos:
+        error = self.replace_instruction_operands(
+            self.scope_index,
+            isa::InstructionKind::IEnumNext,
             &vec![loop_end_pos],
             &loop_start,
         );
@@ -1323,6 +1413,7 @@ impl BytecodeCompiler {
             ast::StatementKind::For(node) => self.compile_for_loop(&node),
             ast::StatementKind::Function(node) => self.compile_function(&node, false),
             ast::StatementKind::Return(node) => self.compile_return_stmt(&node),
+            ast::StatementKind::ForEach(node) => self.compile_feach_stmt(&node),
             _ => {
                 return Some(errors::CompileError::new(
                     "Not yet implemented".to_string(),

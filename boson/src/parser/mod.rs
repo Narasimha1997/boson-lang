@@ -881,6 +881,12 @@ impl Parser {
 
         let iterator_expression = parsed_exp_result.unwrap();
 
+        if !self.next_symbol_is(SymbolKind::SImpl) {
+            return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
+        }
+
+        self.lexer.iterate();
+
         if !self.next_symbol_is(SymbolKind::SLBrace) {
             return Err(self.new_invalid_token_err(String::from("Invalid syntax")));
         }

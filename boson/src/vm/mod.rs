@@ -374,7 +374,22 @@ impl BosonVM {
 
                 InstructionKind::IIterNext => {
                     let jmp_pos = operands[0];
-                    let result = Controls::jump_next_iter(&mut self.data_stack, jmp_pos, &mut frame);
+                    let result =
+                        Controls::jump_next_iter(&mut self.data_stack, jmp_pos, &mut frame, false);
+                    if result.is_err() {
+                        return Err(result.unwrap_err());
+                    }
+
+                    let has_jumped = result.unwrap();
+                    if !has_jumped {
+                        frame.farword_ip(next);
+                    }
+                }
+
+                InstructionKind::IEnumNext => {
+                    let jmp_pos = operands[0];
+                    let result =
+                        Controls::jump_next_iter(&mut self.data_stack, jmp_pos, &mut frame, true);
                     if result.is_err() {
                         return Err(result.unwrap_err());
                     }

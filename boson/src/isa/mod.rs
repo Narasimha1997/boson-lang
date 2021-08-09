@@ -104,6 +104,7 @@ pub enum InstructionKind {
     // Iterator:
     IIter,
     IIterNext,
+    IEnumNext,
 
     // Block start and end instructions:
     IBlockStart,
@@ -238,6 +239,7 @@ impl InstructionKind {
             InstructionKind::IGetIndex => "IGetIndex".to_string(),
             InstructionKind::ISetIndex => "ISetIndex".to_string(),
             InstructionKind::IIterNext => "IIterNext".to_string(),
+            InstructionKind::IEnumNext => "IIterEnum".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -251,6 +253,7 @@ impl InstructionKind {
             | InstructionKind::IJump
             | InstructionKind::INotJump
             | InstructionKind::IIterNext
+            | InstructionKind::IEnumNext 
             | InstructionKind::IHash
             | InstructionKind::IArray
             | InstructionKind::ILoadBuiltIn
@@ -284,8 +287,8 @@ impl InstructionKind {
             | InstructionKind::IBlockEnd
             | InstructionKind::IBlockStart
             | InstructionKind::IRetVal
-            | InstructionKind::IRet => vec![],
-            | InstructionKind::IGetIndex => vec![],
+            | InstructionKind::IRet
+            | InstructionKind::IGetIndex
             | InstructionKind::ISetIndex => vec![],
 
             InstructionKind::IClosure => vec![2, 2],

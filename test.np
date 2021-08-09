@@ -3,8 +3,8 @@ var array = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 var sum = 0;
 
-for x in array {
-    sum = sum + x;
+for x in array => {
+    println(x);
 }
 
 println(sum);

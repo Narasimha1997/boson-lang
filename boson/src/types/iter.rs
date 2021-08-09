@@ -61,6 +61,10 @@ impl ObjectIterator {
         return Some(object);
     }
 
+    pub fn get_pos(&self) -> usize {
+        return self.idx;
+    } 
+
     pub fn describe(&self) -> String {
         return format!("Iterator(position={} ,size={})", self.idx, self.size);
     }

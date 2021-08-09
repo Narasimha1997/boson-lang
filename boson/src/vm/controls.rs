@@ -616,6 +616,7 @@ impl Controls {
         }
 
         let popped_object = popped_res.unwrap();
+
         let iter_res = ObjectIterator::new(popped_object);
         if iter_res.is_err() {
             return Some(VMError::new(
@@ -639,6 +640,7 @@ impl Controls {
         ds: &mut DataStack,
         jmp_pos: usize,
         frame: &mut RefMut<ExecutionFrame>,
+        enumerate: bool,
     ) -> Result<bool, VMError> {
         let top_ref_res = ds.get_top_ref(InstructionKind::IIterNext);
         if top_ref_res.is_err() {
@@ -646,10 +648,18 @@ impl Controls {
         }
 
         let top_ref = top_ref_res.unwrap();
+
         match top_ref.as_ref() {
             Object::Iter(iter) => {
                 let mut iterator = iter.borrow_mut();
+
+                let mut current_pos = 0;
+                if enumerate {
+                    current_pos = iterator.get_pos();
+                }
+
                 let obj = iterator.next();
+
                 if obj.is_none() {
                     // pop the end
                     drop(iterator);
@@ -664,9 +674,19 @@ impl Controls {
                     return Ok(true);
                 } else {
                     drop(iterator);
-                    let push_res = ds.push_object(obj.unwrap(), InstructionKind::IIterNext);
+                    let mut push_res = ds.push_object(obj.unwrap(), InstructionKind::IIterNext);
                     if push_res.is_err() {
                         return Err(push_res.unwrap_err());
+                    }
+
+                    if enumerate {
+                        push_res = ds.push_object(
+                            Rc::new(Object::Int(current_pos as i64)),
+                            InstructionKind::IIterNext,
+                        );
+                        if push_res.is_err() {
+                            return Err(push_res.unwrap_err());
+                        }
                     }
 
                     return Ok(false);
