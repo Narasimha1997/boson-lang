@@ -12,11 +12,13 @@ pub fn main() {
     let args: Vec<String> = args().collect();
     if args.len() == 1 {
         info();
+        return;
     }
 
     let f_name = &args[1];
     if f_name == "help" {
         info();
+        return;
     }
 
     // run evaluator:

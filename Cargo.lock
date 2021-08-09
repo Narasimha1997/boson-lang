@@ -8,7 +8,7 @@ checksum = "8dead7461c1127cf637931a1e50934eb6eee8bff2f74433ac7909e9afcee04a3"
 
 [[package]]
 name = "boson"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "rustyline",
 ]

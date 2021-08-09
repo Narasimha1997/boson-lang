@@ -5,12 +5,30 @@
 arg=$1
 fname=$2
 
-if [[ "$arg" == "eval" ]]; then
+function build_eval () {
+    echo "Building Boson Evaluator..."
     cargo build --release --bin boson-eval
-elif [[ "$arg" == "repl" ]]; then 
+}
+
+function build_repl () {
+    echo "Building Boson REPL console..."
     cargo build --release --bin boson --features=repl --manifest-path=boson/Cargo.toml
-elif [[ "$arg" == "dis" ]]; then
+}
+
+function build_dis () {
+    echo "Building Boson Disassembler..."
     cargo build --release --bin boson-dis
+}
+
+if [[ "$arg" == "eval" ]]; then
+    build_eval
+elif [[ "$arg" == "repl" ]]; then 
+    build_repl
+elif [[ "$arg" == "dis" ]]; then
+    build_dis
 else
-    cargo run --bin boson $fname
+    echo "Building all the binaries..."
+    build_eval
+    build_repl
+    build_dis
 fi
