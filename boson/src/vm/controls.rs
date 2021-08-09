@@ -635,7 +635,7 @@ impl Controls {
         return None;
     }
 
-    pub fn jump_next(
+    pub fn jump_next_iter(
         ds: &mut DataStack,
         jmp_pos: usize,
         frame: &mut RefMut<ExecutionFrame>,
