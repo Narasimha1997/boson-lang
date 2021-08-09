@@ -99,6 +99,7 @@ impl DataStack {
     }
 
     pub fn push_object(&mut self, obj: Rc<Object>, inst: InstructionKind) -> Result<i64, VMError> {
+
         if (self.stack_pointer + 1) as usize >= self.max_size {
             return Err(VMError::new(
                 "Stack Overflow!".to_string(),
@@ -120,7 +121,7 @@ impl DataStack {
     ) -> Result<i64, VMError> {
         let n_objects = objects.len();
 
-        if self.stack_pointer as usize + n_objects >= self.max_size {
+        if self.stack_pointer + n_objects as i64 >= self.max_size as i64 {
             return Err(VMError::new(
                 "Stack Overflow!".to_string(),
                 VMErrorKind::DataStackOverflow,

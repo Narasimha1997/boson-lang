@@ -48,6 +48,8 @@ impl ExecutionFrame {
     }
 
     pub fn get_free(&mut self, idx: usize, inst: InstructionKind) -> Result<Rc<Object>, VMError> {
+
+        println!("{:?}", self.context.free_objects);
         let free_object = self.context.free_objects.get(idx);
         if free_object.is_some() {
             return Ok(free_object.unwrap().clone());

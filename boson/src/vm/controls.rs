@@ -333,7 +333,7 @@ impl Controls {
         let local_boundary = frame.get_bp();
         // clear off the stack till this point:
         ds.stack.truncate(local_boundary);
-        ds.stack_pointer = local_boundary as i64;
+        ds.stack_pointer = local_boundary as i64 - 1;
         let push_res = ds.push_object(returned_obj, InstructionKind::IRetVal);
         if push_res.is_err() {
             return Some(push_res.unwrap_err());

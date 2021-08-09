@@ -8,4 +8,10 @@ for x in array => {
 }
 
 println(sum);
-# println(et - st);
+
+func adder() {
+    20;
+    println("Hello, world");
+}
+
+var a = adder();
