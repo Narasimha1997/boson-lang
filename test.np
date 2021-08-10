@@ -1,3 +1,5 @@
 
 const plat = platform();
 println(plat);
+
+print("all done");
