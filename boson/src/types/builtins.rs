@@ -1,18 +1,20 @@
 use std::cell::RefCell;
+use std::collections::HashMap;
+use std::env;
 use std::hash::Hash;
 use std::hash::Hasher;
+use std::process;
 use std::rc::Rc;
 use std::time::SystemTime;
-use std::env;
-use std::process;
 use std::time::UNIX_EPOCH;
 
-
-use crate::types::array;
-use crate::types::object;
 use crate::api::BosonLang;
+use crate::types::array;
+use crate::types::hash;
+use crate::types::object;
 
 use array::Array;
+use hash::HashTable;
 use object::Object;
 
 #[repr(u8)]
@@ -28,6 +30,8 @@ pub enum BuiltinKind {
     Disasm,
     Args,
     Exit,
+    Env,
+    Envs,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -49,6 +53,8 @@ impl BuiltinKind {
             BuiltinKind::Disasm => "disasm".to_string(),
             BuiltinKind::Args => "args".to_string(),
             BuiltinKind::Exit => "exit".to_string(),
+            BuiltinKind::Env => "env".to_string(),
+            BuiltinKind::Envs => "envs".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -217,7 +223,7 @@ impl BuiltinKind {
 
                 let mut args_array = Array {
                     name: "builtin_args".to_string(),
-                    elements: vec![]
+                    elements: vec![],
                 };
 
                 if cmd_args.len() == 0 {
@@ -228,9 +234,8 @@ impl BuiltinKind {
                 cmd_args.next();
 
                 // get a vector slice starting from index 1:
-                let arg_str_objects: Vec<Rc<Object>> = cmd_args.map(
-                    |arg| Rc::new(Object::Str(arg))
-                ).collect();
+                let arg_str_objects: Vec<Rc<Object>> =
+                    cmd_args.map(|arg| Rc::new(Object::Str(arg))).collect();
 
                 args_array.elements = arg_str_objects;
                 return Ok(Rc::new(Object::Array(RefCell::new(args_array))));
@@ -238,10 +243,7 @@ impl BuiltinKind {
 
             BuiltinKind::Exit => {
                 if args.len() != 1 {
-                    return Err(format!(
-                        "exit() takes 1 argument, {} provided",
-                        args.len()
-                    ));
+                    return Err(format!("exit() takes 1 argument, {} provided", args.len()));
                 }
 
                 let obj = args[0].as_ref();
@@ -256,6 +258,55 @@ impl BuiltinKind {
                         ));
                     }
                 }
+            }
+
+            BuiltinKind::Env => {
+                if args.len() == 0 {
+                    return Err(format!("get_env() takes atleast one argument, 0 provided",));
+                }
+
+                let env_name_obj = args[0].as_ref();
+                if env_name_obj.get_type() != "string" {
+                    return Err(format!(
+                        "env() takes string as first argument, {} provided",
+                        env_name_obj.get_type()
+                    ));
+                }
+
+                let env_key = env_name_obj.describe();
+                let env_value_res = env::var(env_key);
+                if env_value_res.is_err() {
+                    if args.len() == 2 {
+                        // default value is provided, return it
+                        return Ok(args[1].clone());
+                    }
+                    return Ok(Rc::new(Object::Noval));
+                }
+
+                let env_value = env_value_res.unwrap();
+                return Ok(Rc::new(Object::Str(env_value)));
+            }
+
+            BuiltinKind::Envs => {
+                if args.len() != 0 {
+                    return Err(format!(
+                        "envs() takes zero arguments, {} provided",
+                        args.len()
+                    ));
+                }
+                // get envs:
+                let envs = env::vars();
+                let mut env_table = HashMap::new();
+                for (key, value) in envs {
+                    env_table.insert(Rc::new(Object::Str(key)), Rc::new(Object::Str(value)));
+                }
+
+                let htype = HashTable {
+                    name: "envs".to_string(),
+                    entries: env_table,
+                };
+
+                return Ok(Rc::new(Object::HashTable(RefCell::new(htype))));
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),

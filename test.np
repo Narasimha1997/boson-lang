@@ -1,8 +1,5 @@
+const vars = envs();
 
-const a = args();
+println(vars);
 
-if (len(a) > 1) {
-    println(a);
-} else {
-    println("Invalid arguments provided");
-}
+println(vars["HOME"]);
