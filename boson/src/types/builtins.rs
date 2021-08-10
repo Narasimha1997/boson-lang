@@ -4,6 +4,7 @@ use std::hash::Hasher;
 use std::rc::Rc;
 use std::time::SystemTime;
 use std::env;
+use std::process;
 use std::time::UNIX_EPOCH;
 
 
@@ -26,6 +27,7 @@ pub enum BuiltinKind {
     Eval,
     Disasm,
     Args,
+    Exit,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -46,6 +48,7 @@ impl BuiltinKind {
             BuiltinKind::Eval => "eval".to_string(),
             BuiltinKind::Disasm => "disasm".to_string(),
             BuiltinKind::Args => "args".to_string(),
+            BuiltinKind::Exit => "exit".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -231,6 +234,28 @@ impl BuiltinKind {
 
                 args_array.elements = arg_str_objects;
                 return Ok(Rc::new(Object::Array(RefCell::new(args_array))));
+            }
+
+            BuiltinKind::Exit => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "exit() takes 1 argument, {} provided",
+                        args.len()
+                    ));
+                }
+
+                let obj = args[0].as_ref();
+                match obj {
+                    Object::Int(exit_code) => {
+                        process::exit(*exit_code as i32);
+                    }
+                    _ => {
+                        return Err(format!(
+                            "exit() takes int as an argument, {} provided",
+                            obj.get_type()
+                        ));
+                    }
+                }
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),
