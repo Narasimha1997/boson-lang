@@ -1,0 +1,8 @@
+
+const a = args();
+
+if (len(a) > 1) {
+    println(a);
+} else {
+    println("Invalid arguments provided");
+}

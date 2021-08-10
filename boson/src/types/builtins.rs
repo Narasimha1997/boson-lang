@@ -210,7 +210,7 @@ impl BuiltinKind {
                     ));
                 }
 
-                let cmd_args = env::args();
+                let mut cmd_args = env::args();
 
                 let mut args_array = Array {
                     name: "builtin_args".to_string(),
@@ -220,6 +220,9 @@ impl BuiltinKind {
                 if cmd_args.len() == 0 {
                     return Ok(Rc::new(Object::Array(RefCell::new(args_array))));
                 }
+
+                // skip the binary name
+                cmd_args.next();
 
                 // get a vector slice starting from index 1:
                 let arg_str_objects: Vec<Rc<Object>> = cmd_args.map(
