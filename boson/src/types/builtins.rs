@@ -3,6 +3,7 @@ use std::hash::Hash;
 use std::hash::Hasher;
 use std::rc::Rc;
 use std::time::SystemTime;
+use std::env;
 use std::time::UNIX_EPOCH;
 
 
@@ -24,6 +25,7 @@ pub enum BuiltinKind {
     TimeUnix,
     Eval,
     Disasm,
+    Args,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -43,6 +45,7 @@ impl BuiltinKind {
             BuiltinKind::TimeUnix => "unix_time".to_string(),
             BuiltinKind::Eval => "eval".to_string(),
             BuiltinKind::Disasm => "disasm".to_string(),
+            BuiltinKind::Args => "args".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -184,7 +187,7 @@ impl BuiltinKind {
             BuiltinKind::TimeUnix => {
                 if args.len() != 0 {
                     return Err(format!(
-                        "epoch_time() takes zero arguments, {} provided",
+                        "unix_time() takes zero arguments, {} provided",
                         args.len()
                     ));
                 }
@@ -197,6 +200,34 @@ impl BuiltinKind {
                 let epoch_time = epoch_time_res.unwrap();
 
                 return Ok(Rc::new(Object::Float(epoch_time.as_secs_f64())));
+            }
+
+            BuiltinKind::Args => {
+                if args.len() != 0 {
+                    return Err(format!(
+                        "args() takes zero arguments, {} provided",
+                        args.len()
+                    ));
+                }
+
+                let cmd_args = env::args();
+
+                let mut args_array = Array {
+                    name: "builtin_args".to_string(),
+                    elements: vec![]
+                };
+
+                if cmd_args.len() == 0 {
+                    return Ok(Rc::new(Object::Array(RefCell::new(args_array))));
+                }
+
+                // get a vector slice starting from index 1:
+                let arg_str_objects: Vec<Rc<Object>> = cmd_args.map(
+                    |arg| Rc::new(Object::Str(arg))
+                ).collect();
+
+                args_array.elements = arg_str_objects;
+                return Ok(Rc::new(Object::Array(RefCell::new(args_array))));
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),
