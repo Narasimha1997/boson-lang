@@ -16,7 +16,7 @@ pub const SYMBOLS: &'static [&'static str] = &[
 pub const KEYWORDS: &'static [&'static str] = &[
     "invalid", "if", "else", "while", "for", "break", "continue", "const", "var", "none", "func",
     "return", "try", "catch", "finally", "rethrow", "throw", "as", "true", "false", "foreach",
-    "in", "indexed", "pure", "lambda", "assert",
+    "in", "use", "pure", "lambda", "assert",
 ];
 
 #[allow(dead_code)]
@@ -61,6 +61,7 @@ pub enum SymbolKind {
     SImpl = 36,
     SColon = 37,
     SDot = 38,
+    SResolve = 39,
 }
 
 #[allow(dead_code)]
@@ -88,7 +89,7 @@ pub enum KeywordKind {
     KFalse = 19,
     KForEach = 20,
     KIn = 21,
-    KIndexed = 22,
+    KUse = 22,
     KPure = 23,
     KLambda = 24,
     KAssert = 25,
@@ -375,7 +376,7 @@ impl ProgramLexer {
             "false" => TokenKind::Keyword(KeywordKind::KFalse),
             "foreach" => TokenKind::Keyword(KeywordKind::KForEach),
             "in" => TokenKind::Keyword(KeywordKind::KIn),
-            "indexed" => TokenKind::Keyword(KeywordKind::KIndexed),
+            "use" => TokenKind::Keyword(KeywordKind::KUse),
             "pure" => TokenKind::Keyword(KeywordKind::KPure),
             "lambda" => TokenKind::Keyword(KeywordKind::KLambda),
             "assert" => TokenKind::Keyword(KeywordKind::KAssert),
@@ -651,7 +652,17 @@ impl ProgramLexer {
 
             b';' => TokenKind::Operator(SymbolKind::SSemiColon),
 
-            b':' => TokenKind::Operator(SymbolKind::SColon),
+            b':' => {
+                let next_char = self.look_next_byte();
+                let combined_token = match next_char {
+                    b':' => {
+                        self.read_next();
+                        TokenKind::Operator(SymbolKind::SResolve)
+                    }
+                    _ => TokenKind::Operator(SymbolKind::SColon)
+                };
+                combined_token
+            },
 
             b'.' => TokenKind::Operator(SymbolKind::SDot),
 
