@@ -1,5 +1,3 @@
-const vars = envs();
 
-println(vars);
-
-println(vars["HOME"]);
+const plat = platform();
+println(plat);

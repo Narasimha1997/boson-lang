@@ -32,6 +32,7 @@ pub enum BuiltinKind {
     Exit,
     Env,
     Envs,
+    Platform,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -55,6 +56,7 @@ impl BuiltinKind {
             BuiltinKind::Exit => "exit".to_string(),
             BuiltinKind::Env => "env".to_string(),
             BuiltinKind::Envs => "envs".to_string(),
+            BuiltinKind::Platform => "platform".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -296,17 +298,52 @@ impl BuiltinKind {
                 }
                 // get envs:
                 let envs = env::vars();
-                let mut env_table = HashMap::new();
+                let mut env_table = HashTable {
+                    name: "envs".to_string(),
+                    entries: HashMap::new(),
+                };
                 for (key, value) in envs {
-                    env_table.insert(Rc::new(Object::Str(key)), Rc::new(Object::Str(value)));
+                    env_table.set(Rc::new(Object::Str(key)), Rc::new(Object::Str(value)));
                 }
 
-                let htype = HashTable {
-                    name: "envs".to_string(),
-                    entries: env_table,
+                return Ok(Rc::new(Object::HashTable(RefCell::new(env_table))));
+            }
+
+            BuiltinKind::Platform => {
+                if args.len() != 0 {
+                    return Err(format!(
+                        "arch() takes zero arguments, {} provided",
+                        args.len()
+                    ));
+                }
+
+                let arch_string = env::consts::ARCH.to_string();
+                let family_string = env::consts::FAMILY.to_string();
+                let os_string = env::consts::OS.to_string();
+
+                let mut platform_table = HashTable {
+                    name: "platform".to_string(),
+                    entries: HashMap::new(),
                 };
 
-                return Ok(Rc::new(Object::HashTable(RefCell::new(htype))));
+                platform_table.set(
+                    Rc::new(Object::Str("arch".to_string())),
+                    Rc::new(Object::Str(arch_string))
+                );
+
+                platform_table.set(
+                    Rc::new(Object::Str("family".to_string())),
+                    Rc::new(Object::Str(family_string))
+                );
+
+                platform_table.set(
+                    Rc::new(Object::Str("os".to_string())),
+                    Rc::new(Object::Str(os_string))
+                );
+
+                return Ok(Rc::new(Object::HashTable(
+                    RefCell::new(platform_table)
+                )));
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),
