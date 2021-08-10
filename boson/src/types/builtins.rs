@@ -23,6 +23,7 @@ pub enum BuiltinKind {
     Builtins,
     TimeUnix,
     Eval,
+    Disasm,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -41,6 +42,7 @@ impl BuiltinKind {
             BuiltinKind::Builtins => "builtins".to_string(),
             BuiltinKind::TimeUnix => "unix_time".to_string(),
             BuiltinKind::Eval => "eval".to_string(),
+            BuiltinKind::Disasm => "disasm".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -124,7 +126,7 @@ impl BuiltinKind {
                     ));
                 }
 
-                let buffer = obj.describe().as_bytes().to_vec().clone();
+                let buffer = obj.describe().as_bytes().to_vec();
                 let result = BosonLang::eval_buffer(buffer);
                 if result.is_none() {
                     return Ok(Rc::new(Object::Noval));
@@ -151,6 +153,32 @@ impl BuiltinKind {
                     name: "todo".to_string(),
                     elements: strings,
                 }))));
+            }
+
+            BuiltinKind::Disasm => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "disasm() takes 1 argument, {} provided",
+                        args.len()
+                    ));
+                }
+
+                let obj = args[0].as_ref();
+                if obj.get_type() != "string" {
+                    return Err(format!(
+                        "eval() takes string as argument, {} provided",
+                        obj.get_type()
+                    ));
+                }
+
+                // disassemble:
+                let buffer = obj.describe().as_bytes().to_vec();
+                let output_result = BosonLang::disasm_buffer(buffer);
+                if output_result.is_none() {
+                    return Ok(Rc::new(Object::Noval));
+                }
+
+                return Ok(Rc::new(Object::Str(output_result.unwrap())));
             }
 
             BuiltinKind::TimeUnix => {
