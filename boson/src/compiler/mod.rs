@@ -440,7 +440,15 @@ impl BytecodeCompiler {
         let compiled_func = compiled_result.unwrap();
 
         for sym in &free_symbols {
-            self.save(isa::InstructionKind::ILoadFree, &vec![sym.pos]);
+            match sym.scope {
+                symtab::ScopeKind::Local => {
+                    self.save(isa::InstructionKind::ILoadLocal, &vec![sym.pos]);
+                }
+                symtab::ScopeKind::Free => {
+                    self.save(isa::InstructionKind::ILoadGlobal, &vec![sym.pos]);
+                }
+                _ => {}
+            }
         }
 
         let compiled_func_type = Subroutine {
@@ -536,7 +544,10 @@ impl BytecodeCompiler {
                 );
             }
             symtab::ScopeKind::Local => {
-                self.save(isa::InstructionKind::IStoreLocal, &vec![registered_element.pos]);
+                self.save(
+                    isa::InstructionKind::IStoreLocal,
+                    &vec![registered_element.pos],
+                );
             }
             _ => {}
         }
@@ -732,7 +743,7 @@ impl BytecodeCompiler {
                 );
             }
             symtab::ScopeKind::Free => {
-                return None;
+                self.save(isa::InstructionKind::ILoadFree, &vec![resolved_symbol.pos]);
             }
             symtab::ScopeKind::Global => {
                 self.save(
@@ -1472,7 +1483,7 @@ impl BytecodeCompiler {
         return Ok(self.get_bytecode());
     }
 
-    pub fn clear_previous(&mut self){
+    pub fn clear_previous(&mut self) {
         self.scopes[self.scope_index].instructions.clear();
     }
 }

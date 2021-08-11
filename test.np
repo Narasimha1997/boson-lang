@@ -1,5 +1,12 @@
 
-const plat = platform();
-println(plat);
+func test(a) {
+    var x = a;
+    func adder(j) {
+        return x + j;
+    }
 
-print("all done");
+    return adder;
+}
+
+const k = test(10);
+println(k(20));
