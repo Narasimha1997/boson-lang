@@ -17,12 +17,22 @@ use isa::Operands;
 use object::Object;
 use subroutine::Subroutine;
 
+
+#[derive(Debug, Clone)]
+pub struct ExceptionHandler {
+    exception_handler: Rc<ClosureContext>,
+    finally_handler: Option<Rc<ClosureContext>>
+}
+
+pub type ExceptionHandleStack = Vec<ExceptionHandler>;
+
 #[derive(Debug, Clone)]
 pub struct ExecutionFrame {
     pub context: Rc<ClosureContext>,
     pub instruction_pointer: usize,
     pub base_pointer: usize,
     pub bytecode_size: usize,
+    pub handlers: ExceptionHandleStack,
 }
 
 impl ExecutionFrame {
@@ -34,6 +44,7 @@ impl ExecutionFrame {
             instruction_pointer: 0,
             base_pointer: base_pointer,
             bytecode_size: bytecode_size,
+            handlers: vec![]
         };
     }
 
@@ -48,7 +59,6 @@ impl ExecutionFrame {
     }
 
     pub fn get_free(&mut self, idx: usize, inst: InstructionKind) -> Result<Rc<Object>, VMError> {
-
         println!("{:?}", self.context.free_objects);
         let free_object = self.context.free_objects.get(idx);
         if free_object.is_some() {
@@ -131,5 +141,15 @@ impl ExecutionFrame {
         let (inst, operands, _) = self.read_current_instruction();
         let encoded_string = inst.disasm_instruction(&operands);
         return encoded_string;
+    }
+
+    pub fn get_function_name(&self) -> String {
+        self.context.as_ref().compiled_fn.name.clone()
+    }
+}
+
+impl PartialEq for ExecutionFrame {
+    fn eq(&self, other: &ExecutionFrame) -> bool {
+        self.get_function_name() == other.get_function_name()
     }
 }

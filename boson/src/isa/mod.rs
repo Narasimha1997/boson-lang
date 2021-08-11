@@ -72,6 +72,8 @@ pub enum InstructionKind {
 
     // Exception
     IRaise,
+    IPushExcHandle,
+    IPopExcHandle,
 
     // Return
     IRet,
@@ -194,7 +196,7 @@ impl InstructionKind {
     pub fn as_string(&self) -> String {
         match self {
             // TODO: Match more and more instructions,
-            // support for only airthmetic and data operations as of now.
+
             InstructionKind::IAdd => "IAdd".to_string(),
             InstructionKind::ISub => "ISub".to_string(),
             InstructionKind::IMul => "IMul".to_string(),
@@ -240,6 +242,9 @@ impl InstructionKind {
             InstructionKind::ISetIndex => "ISetIndex".to_string(),
             InstructionKind::IIterNext => "IIterNext".to_string(),
             InstructionKind::IEnumNext => "IIterEnum".to_string(),
+            InstructionKind::IPopExcHandle => "IPopExcHandle".to_string(),
+            InstructionKind::IPushExcHandle => "IPushExcHandle".to_string(),
+            InstructionKind::IRaise => "IRaise".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -258,7 +263,8 @@ impl InstructionKind {
             | InstructionKind::IArray
             | InstructionKind::ILoadBuiltIn
             | InstructionKind::ICall
-            | InstructionKind::ILoadFree => vec![2],
+            | InstructionKind::ILoadFree
+            | InstructionKind::IPushExcHandle => vec![2],
 
             InstructionKind::IAdd
             | InstructionKind::ISub
@@ -289,7 +295,9 @@ impl InstructionKind {
             | InstructionKind::IRetVal
             | InstructionKind::IRet
             | InstructionKind::IGetIndex
-            | InstructionKind::ISetIndex => vec![],
+            | InstructionKind::ISetIndex
+            | InstructionKind::IRaise
+            | InstructionKind::IPopExcHandle => vec![],
 
             InstructionKind::IClosure => vec![2, 2],
 

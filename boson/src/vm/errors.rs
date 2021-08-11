@@ -1,4 +1,8 @@
 use crate::isa;
+use crate::vm::frames::ExecutionFrame;
+
+
+use std::rc::Rc;
 
 use isa::InstructionKind;
 
@@ -89,3 +93,6 @@ impl ISAError {
         return ISAError { message: msg, t: t };
     }
 }
+
+pub type StackFrame = Rc<ExecutionFrame>; // state of each frame when exception occured
+

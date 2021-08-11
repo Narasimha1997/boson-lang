@@ -9,6 +9,7 @@ use crate::types::closure::ClosureContext;
 use crate::types::hash::HashTable;
 use crate::types::iter::ObjectIterator;
 use crate::types::subroutine::Subroutine;
+use crate::types::exception::Exception;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Object {
@@ -24,6 +25,7 @@ pub enum Object {
     HashTable(RefCell<HashTable>),
     Builtins(BuiltinKind),
     Iter(RefCell<ObjectIterator>),
+    Exception(Rc<Exception>),
 }
 
 impl Eq for Object {}
@@ -40,6 +42,8 @@ impl Hash for Object {
             Object::HashTable(ht) => ht.borrow().hash(state),
             Object::Subroutine(sub) => sub.hash(state),
             Object::ClosureContext(ctx) => ctx.hash(state),
+            Object::Exception(exc) => exc.hash(state),
+            // No hash for iterators
             _ => "undef".hash(state),
         }
     }
@@ -59,6 +63,7 @@ impl Object {
             Object::ClosureContext(ctx) => ctx.describe(),
             Object::Iter(it) => it.borrow().describe(),
             Object::Builtins(_) => "builtin".to_string(),
+            Object::Exception(exc) => exc.describe(),
             _ => String::from("undef"),
         }
     }
@@ -74,6 +79,7 @@ impl Object {
             Object::HashTable(_) => "hashmap".to_string(),
             Object::Subroutine(_) => "func".to_string(),
             Object::Iter(_) => "iter".to_string(),
+            Object::Exception(_) => "exception".to_string(),
             Object::Builtins(_) => "func".to_string(),
             _ => "unknown".to_string(),
         }
