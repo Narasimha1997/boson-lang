@@ -332,8 +332,9 @@ impl Controls {
 
         let local_boundary = frame.get_bp();
         // clear off the stack till this point:
-        ds.stack.truncate(local_boundary);
-        ds.stack_pointer = local_boundary as i64 - 1;
+
+        ds.stack.truncate(local_boundary + 1);
+        ds.stack_pointer = local_boundary as i64;
         let push_res = ds.push_object(returned_obj, InstructionKind::IRetVal);
         if push_res.is_err() {
             return Some(push_res.unwrap_err());
@@ -402,10 +403,10 @@ impl Controls {
                     ));
                 }
 
-                let frame_bp = if ds.stack_pointer < n_args as i64 {
-                    (ds.stack_pointer + 1) as usize - n_args
+                let frame_bp = if ds.stack_pointer <= 0  {
+                    0
                 } else {
-                    (ds.stack_pointer) as usize - n_args
+                    ds.stack.len() - n_args
                 };
 
                 // allocate the stack for local variables and frame:

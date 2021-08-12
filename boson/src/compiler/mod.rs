@@ -1231,6 +1231,10 @@ impl BytecodeCompiler {
 
         if stmt.expression.is_some() {
             self.compile_expression(stmt.expression.as_ref().unwrap());
+        } else {
+            // register a noval:
+            let no_val = self.register_constant(Object::Noval);
+            self.save(isa::InstructionKind::IConstant, &vec![no_val]);
         }
 
         match registered_symbol.scope {

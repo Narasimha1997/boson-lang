@@ -345,7 +345,6 @@ impl BuiltinKind {
                     RefCell::new(platform_table)
                 )));
             }
-
             _ => return Err("Trying to invoke invalid builtin".to_string()),
         }
     }

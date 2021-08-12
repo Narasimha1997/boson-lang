@@ -267,7 +267,9 @@ impl BosonVM {
                 InstructionKind::ICall => {
                     let args_len = operands[0];
 
-                    let result = Controls::execute_call(&inst, &mut self.data_stack, args_len);
+                    let result = Controls::execute_call(
+                        &inst, &mut self.data_stack, args_len
+                    );
 
                     if result.is_err() {
                         return Err(result.unwrap_err());

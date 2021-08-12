@@ -87,6 +87,9 @@ impl BosonLang {
                 );
             }
         }
+
+        self.print_stack();
+        self.print_globals();
     }
 
     pub fn update(&mut self, new_buffer: Vec<u8>) {
@@ -151,5 +154,19 @@ impl BosonLang {
 
         let disasm_string = BytecodeDecompiler::disassemble(&bytecode.unwrap());
         return Some(disasm_string);
+    }
+
+    pub fn print_stack(&self) {
+        if self.vm.is_some() {
+            let vm_inst = self.vm.as_ref().unwrap();
+            println!("Stack:\n{}", vm_inst.dump_ds());
+        }
+    }
+
+    pub fn print_globals(&self) {
+        if self.vm.is_some() {
+            let vm_inst = self.vm.as_ref().unwrap();
+            println!("Globals:\n{}", vm_inst.dump_globals());
+        }
     }
 }

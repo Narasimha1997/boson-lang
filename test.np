@@ -1,8 +1,1 @@
-
-
-func test(a) {
-    println(a);
-    test(a);
-}
-
-test(10);
+const x;
