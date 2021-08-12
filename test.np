@@ -1,1 +1,21 @@
-const x;
+
+func ll() {
+    return 10;
+}
+
+func dd(n, a, b, c) {
+    var x = 0;
+
+    if (n == 1) {
+        return 1;
+    }
+
+    if (n == 0) {
+        return 0;
+    }
+
+    return dd(n - 1, a, b, c) + dd(n - 2, a, b, c);
+}
+
+const x = dd(50, 10, 20, 50);
+println(x);
