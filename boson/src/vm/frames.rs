@@ -85,6 +85,7 @@ impl ExecutionFrame {
                 bytecode: bytecode.instructions.clone(),
                 num_locals: n_locals,
                 num_parameters: n_params,
+                is_local_scope: false,
             }),
             free_objects: vec![],
             bytecode_size: bytecode.instructions.len(),

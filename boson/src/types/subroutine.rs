@@ -9,6 +9,7 @@ pub struct Subroutine {
     pub bytecode: CompiledInstructions,
     pub num_locals: usize,
     pub num_parameters: usize,
+    pub is_local_scope: bool,
 }
 
 impl Subroutine {
@@ -30,6 +31,10 @@ impl Subroutine {
 
     pub fn describe(&self) -> String {
         return format!("Function<{}>", self.name);
+    }
+
+    pub fn get_scope(&self) -> bool {
+        return self.is_local_scope;
     }
 }
 

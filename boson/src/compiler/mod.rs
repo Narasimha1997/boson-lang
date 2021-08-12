@@ -385,6 +385,14 @@ impl BytecodeCompiler {
             ));
         }
 
+        // store
+        let mut sym_res: Option<Rc<symtab::Symbol>> = None;
+        if !is_lambda {
+            sym_res = Some(
+                self.symbol_table.insert_new_symbol(&node.name, true)
+            );
+        }
+
         // enter the scope:
         self.enter_scope();
 
@@ -456,28 +464,27 @@ impl BytecodeCompiler {
             bytecode: compiled_func,
             num_locals: n_locals,
             num_parameters: args.len(),
+            is_local_scope: false
         };
 
         let func_object = Object::Subroutine(Rc::new(compiled_func_type));
 
         // register the sub-routine:
         let func_idx = self.register_constant(func_object);
-
         // create a closure instruction:
         self.save(
             isa::InstructionKind::IClosure,
             &vec![func_idx, free_symbols.len()],
         );
 
-        // store
-        if !is_lambda {
-            let sym_res = self.symbol_table.insert_new_symbol(&node.name, true);
-            match sym_res.scope {
+        if sym_res.is_some() {
+            let sym = sym_res.unwrap();
+            match sym.scope {
                 symtab::ScopeKind::Global => {
-                    self.save(isa::InstructionKind::IStoreGlobal, &vec![sym_res.pos]);
+                    self.save(isa::InstructionKind::IStoreGlobal, &vec![sym.pos]);
                 }
                 symtab::ScopeKind::Local => {
-                    self.save(isa::InstructionKind::IStoreLocal, &vec![sym_res.pos]);
+                    self.save(isa::InstructionKind::IStoreLocal, &vec![sym.pos]);
                 }
                 _ => {}
             }

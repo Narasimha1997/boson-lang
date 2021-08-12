@@ -1,12 +1,8 @@
 
-func test(a) {
-    var x = a;
-    func adder(j) {
-        return x + j;
-    }
 
-    return adder;
+func test(a) {
+    println(a);
+    test(a);
 }
 
-const k = test(10);
-println(k(20));
+test(10);
