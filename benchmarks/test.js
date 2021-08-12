@@ -1,6 +1,5 @@
 
-func fib(N) {
-    
+const fib = (N) => {
     if (N == 0) {
         return 0;
     }
@@ -12,8 +11,8 @@ func fib(N) {
     return fib(N - 1) + fib(N - 2);
 }
 
-const st = unix_time();
-const result = fib(30);
-const et = unix_time();
+console.time('perf')
+const result = fib(30)
+console.timeEnd('perf')
 
-println(result, et - st);
+console.log(result)
