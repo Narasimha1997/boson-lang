@@ -1,0 +1,16 @@
+
+const N = 100;
+
+var n0 = 0;
+var n1 = 1;
+var n2 = 0;
+var idx = 2;
+
+while (idx <= N ) {
+    n2 = n0 + n1;
+    n0 = n1;
+    n1 = n2;
+    idx = idx + 1;
+}
+
+println(n1);

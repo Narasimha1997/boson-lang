@@ -17,5 +17,5 @@ func dd(n, a, b, c) {
     return dd(n - 1, a, b, c) + dd(n - 2, a, b, c);
 }
 
-const x = dd(50, 10, 20, 50);
+const x = dd(10, 1, 2, true);
 println(x);

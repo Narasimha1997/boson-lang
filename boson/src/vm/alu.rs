@@ -38,7 +38,7 @@ impl Arithmetic {
             _ => {
                 // throw a panic
                 let l_type = left.get_type();
-                let r_type = left.get_type();
+                let r_type = right.get_type();
 
                 return Err(ISAError::new(
                     format!(
@@ -72,7 +72,7 @@ impl Arithmetic {
             _ => {
                 // throw a panic
                 let l_type = left.get_type();
-                let r_type = left.get_type();
+                let r_type = right.get_type();
 
                 return Err(ISAError::new(
                     format!(
@@ -106,7 +106,7 @@ impl Arithmetic {
             _ => {
                 // throw a panic
                 let l_type = left.get_type();
-                let r_type = left.get_type();
+                let r_type = right.get_type();
 
                 return Err(ISAError::new(
                     format!(
@@ -167,7 +167,7 @@ impl Arithmetic {
             _ => {
                 // throw a panic
                 let l_type = left.get_type();
-                let r_type = left.get_type();
+                let r_type = right.get_type();
 
                 return Err(ISAError::new(
                     format!(
@@ -228,7 +228,7 @@ impl Arithmetic {
             _ => {
                 // throw a panic
                 let l_type = left.get_type();
-                let r_type = left.get_type();
+                let r_type = right.get_type();
 
                 return Err(ISAError::new(
                     format!(
