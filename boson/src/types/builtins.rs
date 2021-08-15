@@ -466,6 +466,21 @@ impl BuiltinKind {
                     }
                 }
             }
+
+            BuiltinKind::Bool => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "string() takes 1 argument, {} provided",
+                        args.len()
+                    ));
+                }
+
+                return Ok(Rc::new(Object::Bool(
+                    args[0].as_ref().is_true()
+                )));
+            }
+
+            
         
             _ => return Err("Trying to invoke invalid builtin".to_string()),
         }
