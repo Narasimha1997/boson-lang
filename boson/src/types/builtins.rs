@@ -393,6 +393,19 @@ impl BuiltinKind {
                 return Ok(Rc::new(Object::HashTable(RefCell::new(platform_table))));
             }
 
+            // Get type:
+            BuiltinKind::TypeOf => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "type_of() takes 1 argument, {} provided",
+                        args.len()
+                    ));
+                }
+
+                let t_str = args[0].as_ref().get_type();
+                return Ok(Rc::new(Object::Str(t_str)));
+            }
+
             // Conversion functions:
             BuiltinKind::String => {
                 if args.len() != 1 {
