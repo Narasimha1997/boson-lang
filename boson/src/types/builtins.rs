@@ -33,6 +33,10 @@ pub enum BuiltinKind {
     Env,
     Envs,
     Platform,
+    Str,
+    Int,
+    Float,
+    Bool,
     CreateArray,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
