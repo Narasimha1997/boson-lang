@@ -435,10 +435,7 @@ impl BuiltinKind {
                     Object::Str(st) => {
                         let result = st.parse::<i64>();
                         if result.is_err() {
-                            return Err(format!(
-                                "String {} cannot be converted to integer.",
-                                st
-                            ));
+                            return Err(format!("String {} cannot be converted to integer.", st));
                         }
 
                         let result_i64 = result.unwrap();
@@ -446,7 +443,7 @@ impl BuiltinKind {
                     }
 
                     Object::Float(f) => {
-                       return Ok(Rc::new(Object::Int(f.round() as i64)));
+                        return Ok(Rc::new(Object::Int(f.round() as i64)));
                     }
 
                     Object::Char(c) => {
@@ -454,7 +451,7 @@ impl BuiltinKind {
                     }
 
                     Object::Bool(b) => {
-                        let i_for_b = if *b {1} else {0};
+                        let i_for_b = if *b { 1 } else { 0 };
                         return Ok(Rc::new(Object::Int(i_for_b)));
                     }
 
@@ -475,13 +472,53 @@ impl BuiltinKind {
                     ));
                 }
 
-                return Ok(Rc::new(Object::Bool(
-                    args[0].as_ref().is_true()
-                )));
+                return Ok(Rc::new(Object::Bool(args[0].as_ref().is_true())));
             }
 
-            
-        
+            BuiltinKind::Float => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "string() takes 1 argument, {} provided",
+                        args.len()
+                    ));
+                }
+
+                match args[0].as_ref() {
+                    Object::Int(i) => {
+                        return Ok(Rc::new(Object::Float(*i as f64)));
+                    }
+
+                    Object::Str(st) => {
+                        let result = st.parse::<f64>();
+                        if result.is_err() {
+                            return Err(format!("String {} cannot be converted to integer.", st));
+                        }
+
+                        let result_f64 = result.unwrap();
+                        return Ok(Rc::new(Object::Float(result_f64)));
+                    }
+
+                    Object::Float(f) => {
+                        return Ok(Rc::new(Object::Float(*f)));
+                    }
+
+                    Object::Char(c) => {
+                        return Ok(Rc::new(Object::Float(*c as i64 as f64)));
+                    }
+
+                    Object::Bool(b) => {
+                        let f_for_b = if *b { 1.0 } else { 0.0 };
+                        return Ok(Rc::new(Object::Float(f_for_b)));
+                    }
+
+                    _ => {
+                        return Err(format!(
+                            "Object of type {} cannot be converted to float",
+                            args[0].as_ref().get_type()
+                        ));
+                    }
+                }
+            }
             _ => return Err("Trying to invoke invalid builtin".to_string()),
         }
     }
