@@ -33,10 +33,11 @@ pub enum BuiltinKind {
     Env,
     Envs,
     Platform,
-    Str,
+    String,
     Int,
     Float,
     Bool,
+    TypeOf,
     CreateArray,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
@@ -63,6 +64,11 @@ impl BuiltinKind {
             BuiltinKind::Envs => "envs".to_string(),
             BuiltinKind::Platform => "platform".to_string(),
             BuiltinKind::CreateArray => "create_array".to_string(),
+            BuiltinKind::Int => "int".to_string(),
+            BuiltinKind::String => "string".to_string(),
+            BuiltinKind::Float => "float".to_string(),
+            BuiltinKind::Bool => "bool".to_string(),
+            BuiltinKind::TypeOf => "type_of".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -338,7 +344,7 @@ impl BuiltinKind {
 
                         let arr_type = Array {
                             name: "todo".to_string(),
-                            elements: arr_vec
+                            elements: arr_vec,
                         };
 
                         return Ok(Rc::new(Object::Array(RefCell::new(arr_type))));
@@ -371,23 +377,35 @@ impl BuiltinKind {
 
                 platform_table.set(
                     Rc::new(Object::Str("arch".to_string())),
-                    Rc::new(Object::Str(arch_string))
+                    Rc::new(Object::Str(arch_string)),
                 );
 
                 platform_table.set(
                     Rc::new(Object::Str("family".to_string())),
-                    Rc::new(Object::Str(family_string))
+                    Rc::new(Object::Str(family_string)),
                 );
 
                 platform_table.set(
                     Rc::new(Object::Str("os".to_string())),
-                    Rc::new(Object::Str(os_string))
+                    Rc::new(Object::Str(os_string)),
                 );
 
-                return Ok(Rc::new(Object::HashTable(
-                    RefCell::new(platform_table)
-                )));
+                return Ok(Rc::new(Object::HashTable(RefCell::new(platform_table))));
             }
+
+            // Conversion functions:
+            BuiltinKind::String => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "string() takes 1 argument, {} provided",
+                        args.len()
+                    ));
+                }
+
+                let result_str = args[0].as_ref().describe();
+                return Ok(Rc::new(Object::Str(result_str)));
+            }
+        
             _ => return Err("Trying to invoke invalid builtin".to_string()),
         }
     }
