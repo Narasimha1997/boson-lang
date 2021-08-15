@@ -1,0 +1,39 @@
+
+var N = 100;
+
+var memory = create_array(N, 0);
+
+func fib(n) {
+    var x = 0;
+
+    if (n == 1) {
+        return 1;
+    }
+
+    if (n == 0) {
+        return 0;
+    }
+
+    var left = n - 1;
+    var right = n - 2;
+
+    var left_result = 0;
+    var right_result = 0;
+
+    if (memory[left] != 0) {
+        left_result = memory[left];
+    } else {
+        left_result = dd(n - 1);
+        memory[left] = left_result;
+    }
+
+    if (memory[right] != 0) {
+        right_result = memory[right];
+        memory[right] = right_result;
+    }
+
+    return left_result + right_result;
+}
+
+const result = fib(100);
+println(result);
