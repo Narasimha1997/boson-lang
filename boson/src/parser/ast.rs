@@ -184,9 +184,7 @@ pub enum StatementKind {
 #[derive(Debug, PartialEq, Clone)]
 pub struct BlockStatement {
     pub statements: Vec<StatementKind>,
+    pub pos: Vec<usize>
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct Program {
-    pub statements: Vec<StatementKind> 
-}
+pub type Program = BlockStatement;

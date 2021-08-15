@@ -33,6 +33,7 @@ pub enum BuiltinKind {
     Env,
     Envs,
     Platform,
+    CreateArray,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -57,6 +58,7 @@ impl BuiltinKind {
             BuiltinKind::Env => "env".to_string(),
             BuiltinKind::Envs => "envs".to_string(),
             BuiltinKind::Platform => "platform".to_string(),
+            BuiltinKind::CreateArray => "create_array".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -307,6 +309,43 @@ impl BuiltinKind {
                 }
 
                 return Ok(Rc::new(Object::HashTable(RefCell::new(env_table))));
+            }
+
+            BuiltinKind::CreateArray => {
+                let args_len = args.len();
+                if args_len == 0 || args_len > 2 {
+                    return Err(format!(
+                        "create_array() takes one or two arguments, provided {}.",
+                        args_len
+                    ));
+                }
+
+                match args[0].as_ref() {
+                    Object::Int(i) => {
+                        let to_fill = if args_len == 1 {
+                            Rc::new(Object::Noval)
+                        } else {
+                            args[1].clone()
+                        };
+
+                        // create a vector
+                        let mut arr_vec = vec![];
+                        arr_vec.resize(*i as usize, to_fill);
+
+                        let arr_type = Array {
+                            name: "todo".to_string(),
+                            elements: arr_vec
+                        };
+
+                        return Ok(Rc::new(Object::Array(RefCell::new(arr_type))));
+                    }
+                    _ => {
+                        return Err(format!(
+                            "create_array() expects int as first argument, provided {}.",
+                            args[0].get_type()
+                        ));
+                    }
+                }
             }
 
             BuiltinKind::Platform => {

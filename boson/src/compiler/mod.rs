@@ -502,6 +502,7 @@ impl BytecodeCompiler {
                 statements: vec![ast::StatementKind::Expression(
                     node.expression.as_ref().clone(),
                 )],
+                pos: vec![],
             },
             return_type: None,
         };

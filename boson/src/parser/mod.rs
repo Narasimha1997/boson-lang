@@ -55,7 +55,7 @@ impl Parser {
     fn parse_block_statement(&mut self) -> Result<ast::BlockStatement, ParserError> {
         self.lexer.iterate();
 
-        let mut block_statement = ast::BlockStatement { statements: vec![] };
+        let mut block_statement = ast::BlockStatement { statements: vec![], pos: vec![]};
 
         if self.next_symbol_is(SymbolKind::SRBrace) {
             self.lexer.iterate();
@@ -1264,7 +1264,7 @@ impl Parser {
 
     pub fn parse(&mut self) -> Result<ast::Program, &ParserErrors> {
         // parse and return the program ast
-        let mut program = ast::Program { statements: vec![] };
+        let mut program = ast::Program { statements: vec![], pos: vec![] };
         let mut current_token = self.lexer.get_current_token();
         while !self
             .lexer
