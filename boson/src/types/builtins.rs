@@ -418,6 +418,54 @@ impl BuiltinKind {
                 let result_str = args[0].as_ref().describe();
                 return Ok(Rc::new(Object::Str(result_str)));
             }
+
+            BuiltinKind::Int => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "string() takes 1 argument, {} provided",
+                        args.len()
+                    ));
+                }
+
+                match args[0].as_ref() {
+                    Object::Int(i) => {
+                        return Ok(Rc::new(Object::Int(*i)));
+                    }
+
+                    Object::Str(st) => {
+                        let result = st.parse::<i64>();
+                        if result.is_err() {
+                            return Err(format!(
+                                "String {} cannot be converted to integer.",
+                                st
+                            ));
+                        }
+
+                        let result_i64 = result.unwrap();
+                        return Ok(Rc::new(Object::Int(result_i64)));
+                    }
+
+                    Object::Float(f) => {
+                       return Ok(Rc::new(Object::Int(f.round() as i64)));
+                    }
+
+                    Object::Char(c) => {
+                        return Ok(Rc::new(Object::Int(*c as i64)));
+                    }
+
+                    Object::Bool(b) => {
+                        let i_for_b = if *b {1} else {0};
+                        return Ok(Rc::new(Object::Int(i_for_b)));
+                    }
+
+                    _ => {
+                        return Err(format!(
+                            "Object of type {} cannot be converted to int",
+                            args[0].as_ref().get_type()
+                        ));
+                    }
+                }
+            }
         
             _ => return Err("Trying to invoke invalid builtin".to_string()),
         }
