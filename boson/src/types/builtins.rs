@@ -7,6 +7,7 @@ use std::process;
 use std::rc::Rc;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
+use std::process::Command;
 
 use crate::api::BosonLang;
 use crate::types::array;
@@ -39,6 +40,7 @@ pub enum BuiltinKind {
     Bool,
     TypeOf,
     CreateArray,
+    Exec,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -69,6 +71,7 @@ impl BuiltinKind {
             BuiltinKind::Float => "float".to_string(),
             BuiltinKind::Bool => "bool".to_string(),
             BuiltinKind::TypeOf => "type_of".to_string(),
+            BuiltinKind::Exec => "exec".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -518,6 +521,46 @@ impl BuiltinKind {
                         ));
                     }
                 }
+            }
+            BuiltinKind::Exec => {
+                if args.len() == 0 {
+                    return Err(
+                        format!("exec() expects atleast one argument, zero provided.")
+                    );
+                }
+
+                let mut command = Command::new(args[0].as_ref().describe());
+                for idx in 1..args.len() {
+                    command.arg(args[idx].as_ref().describe());
+                }
+
+                let result = command.output();
+                if result.is_err() {
+                    return Err(format!("Sub Command Error: {}", result.unwrap_err()));
+                }
+
+                let command_result = result.unwrap();
+                if command_result.status.success() {
+                    let op_u8 = command_result.stdout;
+                    let op_string = String::from_utf8(op_u8);
+                    if op_string.is_err() {
+                        return Err(format!(
+                            "Invalid output: {}", op_string.unwrap_err()
+                        ))
+                    }
+
+                    return Ok(Rc::new(Object::Str(op_string.unwrap())));
+                }
+
+                let error_u8 = command_result.stderr;
+                let error_string = String::from_utf8(error_u8);
+                if error_string.is_err() {
+                    return Err(format!(
+                        "Invalid output: {}", error_string.unwrap_err()
+                    ))
+                }
+
+                return Ok(Rc::new(Object::Str(error_string.unwrap())));
             }
             _ => return Err("Trying to invoke invalid builtin".to_string()),
         }
