@@ -21,7 +21,7 @@ required-features = ["repl"]
 
 [dependencies]
 rustyline = { version = "1.0.0", optional = true }
-byteorder = { version = "1", default-features = false }
+byteorder = { version = "1", default-features = true }
 
 [features]
 repl = ["rustyline"]
