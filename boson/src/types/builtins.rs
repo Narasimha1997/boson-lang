@@ -501,7 +501,7 @@ impl BuiltinKind {
 
                     Object::Int(i) => {
                         if *i < 0 || *i > 255 {
-                            return format!("Integer {} cannot be casted to raw", i);
+                            return Err(format!("Integer {} cannot be casted to raw", i));
                         }
 
                         return Ok(Rc::new(Object::Byte(*i as u8)));
@@ -513,6 +513,12 @@ impl BuiltinKind {
 
                     Object::Bool(b) => {
                         return Ok(Rc::new(Object::Byte(if *b { 1 as u8 } else { 0 as u8 })));
+                    }
+                    _ => {
+                        return Err(format!(
+                            "Object of type {} cannot be converted to byte",
+                            args[0].as_ref().get_type()
+                        ));
                     }
                 }
             }

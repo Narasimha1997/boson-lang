@@ -127,6 +127,9 @@ pub type Operands = Vec<usize>;
 pub struct InstructionPacker {}
 
 impl InstructionPacker {
+
+    // TODO: Migrate to byteorder crate later.
+
     fn unpack_16(operand: u16) -> (u8, u8) {
         let x1 = ((operand >> 8) & 0x00FF) as u8;
         let x2 = (operand & 0x00FF) as u8;

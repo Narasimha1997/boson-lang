@@ -1,5 +1,10 @@
+extern crate byteorder;
+
 use std::hash::Hash;
 use std::hash::Hasher;
+
+use byteorder::BigEndian;
+use byteorder::LittleEndian;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Buffer {
@@ -11,7 +16,7 @@ pub struct Buffer {
 
 impl Buffer {
 
-    pub fn new(data: Vec<u8>, name: String) -> Buffer {
+    pub fn from_u8(data: Vec<u8>, name: String) -> Buffer {
         let current_length = data.len();
         return Buffer {
             data: data,
@@ -33,7 +38,7 @@ impl Buffer {
         return self.data.get(idx).cloned();
     }
 
-    pub fn set_byte_at(&self, idx: usize, byte: u8) -> Option<String> {
+    pub fn set_byte_at(&mut self, idx: usize, byte: u8) -> Option<String> {
        if idx >= self.length {
            return Some(format!("Index {} out of bounds", idx));
        }
@@ -43,7 +48,7 @@ impl Buffer {
     }
 
     pub fn get_as_string(&self) -> Result<String, String> {
-        let str_repr_result = String::from_utf8(self.data);
+        let str_repr_result = String::from_utf8(self.data.clone());
         if str_repr_result.is_err() {
             return Err(format!("{}", str_repr_result.unwrap_err()));
         }
