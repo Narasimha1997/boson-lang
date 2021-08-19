@@ -1,5 +1,5 @@
 
-const output = exec("ls", "-R");
+const output = exec("cowsay", "hello world!!");
 
 
-println(len(output));
+println(output);

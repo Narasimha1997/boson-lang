@@ -4,10 +4,10 @@ use std::env;
 use std::hash::Hash;
 use std::hash::Hasher;
 use std::process;
+use std::process::Command;
 use std::rc::Rc;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
-use std::process::Command;
 
 use crate::api::BosonLang;
 use crate::types::array;
@@ -38,6 +38,7 @@ pub enum BuiltinKind {
     Int,
     Float,
     Bool,
+    Byte,
     TypeOf,
     CreateArray,
     Exec,
@@ -71,6 +72,7 @@ impl BuiltinKind {
             BuiltinKind::Float => "float".to_string(),
             BuiltinKind::Bool => "bool".to_string(),
             BuiltinKind::TypeOf => "type_of".to_string(),
+            BuiltinKind::Byte => "byte".to_string(),
             BuiltinKind::Exec => "exec".to_string(),
             _ => "undef".to_string(),
         }
@@ -478,6 +480,33 @@ impl BuiltinKind {
                 return Ok(Rc::new(Object::Bool(args[0].as_ref().is_true())));
             }
 
+            BuiltinKind::Byte => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "string() takes 1 argument, {} provided",
+                        args.len()
+                    ));
+                }
+
+                match args[0].as_ref() {
+                    Object::Int(i) => {
+                        if *i < 0 || *i > 255 {
+                            return format!("Integer {} cannot be casted to raw", i);
+                        }
+
+                        return Ok(Rc::new(Object::Byte(*i as u8)));
+                    }
+
+                    Object::Char(c) => {
+                        return Ok(Rc::new(Object::Byte(*c as u8)));
+                    }
+
+                    Object::Bool(b) => {
+                        return Ok(Rc::new(Object::Byte(if *b { 1 as u8 } else { 0 as u8 })));
+                    }
+                }
+            }
+
             BuiltinKind::Float => {
                 if args.len() != 1 {
                     return Err(format!(
@@ -524,9 +553,9 @@ impl BuiltinKind {
             }
             BuiltinKind::Exec => {
                 if args.len() == 0 {
-                    return Err(
-                        format!("exec() expects atleast one argument, zero provided.")
-                    );
+                    return Err(format!(
+                        "exec() expects atleast one argument, zero provided."
+                    ));
                 }
 
                 let mut command = Command::new(args[0].as_ref().describe());
@@ -544,9 +573,7 @@ impl BuiltinKind {
                     let op_u8 = command_result.stdout;
                     let op_string = String::from_utf8(op_u8);
                     if op_string.is_err() {
-                        return Err(format!(
-                            "Invalid output: {}", op_string.unwrap_err()
-                        ))
+                        return Err(format!("Invalid output: {}", op_string.unwrap_err()));
                     }
 
                     return Ok(Rc::new(Object::Str(op_string.unwrap())));
@@ -555,9 +582,7 @@ impl BuiltinKind {
                 let error_u8 = command_result.stderr;
                 let error_string = String::from_utf8(error_u8);
                 if error_string.is_err() {
-                    return Err(format!(
-                        "Invalid output: {}", error_string.unwrap_err()
-                    ))
+                    return Err(format!("Invalid output: {}", error_string.unwrap_err()));
                 }
 
                 return Ok(Rc::new(Object::Str(error_string.unwrap())));

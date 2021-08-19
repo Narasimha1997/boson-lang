@@ -18,6 +18,7 @@ pub enum Object {
     Bool(bool),
     Char(char),
     Str(String),
+    Byte(u8),
     Float(f64),
     Subroutine(Rc<Subroutine>),
     ClosureContext(Rc<ClosureContext>),
@@ -43,6 +44,7 @@ impl Hash for Object {
             Object::Subroutine(sub) => sub.hash(state),
             Object::ClosureContext(ctx) => ctx.hash(state),
             Object::Exception(exc) => exc.hash(state),
+            Object::Byte(byte) => byte.hash(state),
             // No hash for iterators
             _ => "undef".hash(state),
         }
@@ -57,6 +59,7 @@ impl Object {
             Object::Str(st) => st.clone(),
             Object::Float(f) => f.to_string(),
             Object::Bool(b) => b.to_string(),
+            Object::Byte(byte) => byte.to_string(),
             Object::Array(arr) => arr.borrow().describe(),
             Object::HashTable(ht) => ht.borrow().describe(),
             Object::Subroutine(sub) => sub.describe(),
@@ -75,6 +78,7 @@ impl Object {
             Object::Str(_) => "string".to_string(),
             Object::Float(_) => "float".to_string(),
             Object::Bool(_) => "bool".to_string(),
+            Object::Byte(_) => "byte".to_string(),
             Object::Array(_) => "array".to_string(),
             Object::HashTable(_) => "hashmap".to_string(),
             Object::Subroutine(_) => "func".to_string(),
@@ -95,6 +99,7 @@ impl Object {
             Object::Array(a) => a.borrow().elements.len() != 0,
             Object::HashTable(h) => h.borrow().entries.len() != 0,
             Object::Iter(it) => it.borrow().has_next(),
+            Object::Byte(b) => *b != 0,
             _ => true,
         }
     }
