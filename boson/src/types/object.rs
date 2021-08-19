@@ -4,13 +4,13 @@ use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 use crate::types::array::Array;
+use crate::types::buffer::Buffer;
 use crate::types::builtins::BuiltinKind;
 use crate::types::closure::ClosureContext;
+use crate::types::exception::Exception;
 use crate::types::hash::HashTable;
 use crate::types::iter::ObjectIterator;
 use crate::types::subroutine::Subroutine;
-use crate::types::exception::Exception;
-use crate::types::buffer::Buffer;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Object {
@@ -122,6 +122,20 @@ impl Object {
 
                 return Ok(result.unwrap());
             }
+            (Object::ByteBuffer(buffer), Object::Int(i)) => {
+                if *i < 0 {
+                    return Err(format!("Index {} must be greater than or equal to zero", i));
+                }
+
+                let result = buffer.borrow().get_byte_at(*i as usize);
+                if result.is_err() {
+                    return Err(result.unwrap_err());
+                }
+
+                // wrap the result into raw type
+                return Ok(Rc::new(Object::Byte(result.unwrap())));
+            }
+
             (Object::HashTable(ht), _) => {
                 let result = ht.borrow().get(idx);
                 if result.is_err() {
@@ -162,6 +176,28 @@ impl Object {
                 // set object at index:
                 arr.borrow_mut().set_object(*i as usize, data);
                 return None;
+            }
+            (Object::ByteBuffer(buffer), Object::Int(i)) => {
+                if *i < 0 {
+                    return Some(format!("Index {} must be greater than or equal to zero", i));
+                }
+
+                match data.as_ref() {
+                    Object::Byte(byte) => {
+                        let result = buffer.borrow_mut().set_byte_at(*i as usize, *byte);
+                        if result.is_none() {
+                            return Some(format!("Index {} out of bounds", i));
+                        }
+
+                        return None;
+                    }
+                    _ => {
+                        return Some(format!(
+                            "Object of type RawBuffer does not support assignment of type {}",
+                            data.get_type()
+                        ));
+                    }
+                }
             }
             (Object::HashTable(ht), _) => {
                 ht.borrow_mut().set(idx.clone(), data);

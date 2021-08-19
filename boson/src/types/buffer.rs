@@ -33,8 +33,13 @@ impl Buffer {
         return format!("RawBuffer(size={}, elements={:?})", self.length, self.data);
     }
 
-    pub fn get_byte_at(&self, idx: usize) -> Option<u8> {
-        return self.data.get(idx).cloned();
+    pub fn get_byte_at(&self, idx: usize) -> Result<u8, String> {
+        let element = self.data.get(idx).cloned();
+        if element.is_none() {
+            return Err(format!("Index {} out of bounds", idx));
+        }
+
+        return Ok(element.unwrap());
     }
 
     pub fn set_byte_at(&mut self, idx: usize, byte: u8) -> Option<String> {
