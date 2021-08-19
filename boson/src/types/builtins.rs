@@ -447,6 +447,10 @@ impl BuiltinKind {
                         return Ok(Rc::new(Object::Int(result_i64)));
                     }
 
+                    Object::Byte(byte) => {
+                        return Ok(Rc::new(Object::Int(*byte as i64)))
+                    }
+
                     Object::Float(f) => {
                         return Ok(Rc::new(Object::Int(f.round() as i64)));
                     }
@@ -489,6 +493,11 @@ impl BuiltinKind {
                 }
 
                 match args[0].as_ref() {
+
+                    Object::Byte(byte) => {
+                        return Ok(Rc::new(Object::Byte(*byte)));
+                    }
+
                     Object::Int(i) => {
                         if *i < 0 || *i > 255 {
                             return format!("Integer {} cannot be casted to raw", i);
