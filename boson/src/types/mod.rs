@@ -6,3 +6,4 @@ pub mod array;
 pub mod builtins;
 pub mod iter;
 pub mod exception;
+pub mod buffer;

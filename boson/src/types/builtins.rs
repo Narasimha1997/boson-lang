@@ -46,6 +46,10 @@ pub enum BuiltinKind {
              // they are sequential.
 }
 
+fn builtin_exec(args: &Vec<Rc<Object>>) {
+
+}
+
 impl BuiltinKind {
     pub fn get_size() -> usize {
         return BuiltinKind::EndMark as usize;
@@ -447,9 +451,7 @@ impl BuiltinKind {
                         return Ok(Rc::new(Object::Int(result_i64)));
                     }
 
-                    Object::Byte(byte) => {
-                        return Ok(Rc::new(Object::Int(*byte as i64)))
-                    }
+                    Object::Byte(byte) => return Ok(Rc::new(Object::Int(*byte as i64))),
 
                     Object::Float(f) => {
                         return Ok(Rc::new(Object::Int(f.round() as i64)));
@@ -493,7 +495,6 @@ impl BuiltinKind {
                 }
 
                 match args[0].as_ref() {
-
                     Object::Byte(byte) => {
                         return Ok(Rc::new(Object::Byte(*byte)));
                     }

@@ -10,6 +10,7 @@ use crate::types::hash::HashTable;
 use crate::types::iter::ObjectIterator;
 use crate::types::subroutine::Subroutine;
 use crate::types::exception::Exception;
+use crate::types::buffer::Buffer;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Object {
@@ -23,6 +24,7 @@ pub enum Object {
     Subroutine(Rc<Subroutine>),
     ClosureContext(Rc<ClosureContext>),
     Array(RefCell<Array>),
+    ByteBuffer(RefCell<Buffer>),
     HashTable(RefCell<HashTable>),
     Builtins(BuiltinKind),
     Iter(RefCell<ObjectIterator>),
@@ -45,6 +47,7 @@ impl Hash for Object {
             Object::ClosureContext(ctx) => ctx.hash(state),
             Object::Exception(exc) => exc.hash(state),
             Object::Byte(byte) => byte.hash(state),
+            Object::ByteBuffer(buff) => buff.borrow().hash(state),
             // No hash for iterators
             _ => "undef".hash(state),
         }
@@ -67,6 +70,7 @@ impl Object {
             Object::Iter(it) => it.borrow().describe(),
             Object::Builtins(_) => "builtin".to_string(),
             Object::Exception(exc) => exc.describe(),
+            Object::ByteBuffer(buff) => buff.borrow().describe(),
             _ => String::from("undef"),
         }
     }
@@ -97,6 +101,7 @@ impl Object {
             Object::Int(i) => *i != 0,
             Object::Char(c) => *c != '\0',
             Object::Array(a) => a.borrow().elements.len() != 0,
+            Object::ByteBuffer(buff) => buff.borrow().length != 0,
             Object::HashTable(h) => h.borrow().entries.len() != 0,
             Object::Iter(it) => it.borrow().has_next(),
             Object::Byte(b) => *b != 0,
