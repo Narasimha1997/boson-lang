@@ -625,10 +625,9 @@ impl BuiltinKind {
             }
 
             BuiltinKind::ExecRaw => {
-                if args.len() != 0 {
+                if args.len() == 0 {
                     return Err(format!(
-                        "string() takes 1 argument, {} provided",
-                        args.len()
+                        "exec_raw() expects atleast one argument, zero provided.",
                     ));
                 }
 

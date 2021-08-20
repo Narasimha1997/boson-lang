@@ -1,5 +1,6 @@
 
 const output = exec("cowsay", "hello world!!");
+println(output)
 
-
-println(output);
+const output_bytes = exec_raw("cowsay", "hello world!!");
+println(output_bytes);
