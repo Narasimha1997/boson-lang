@@ -11,9 +11,9 @@ use std::time::UNIX_EPOCH;
 
 use crate::api::BosonLang;
 use crate::types::array;
+use crate::types::buffer;
 use crate::types::hash;
 use crate::types::object;
-use crate::types::buffer;
 
 use array::Array;
 use hash::HashTable;
@@ -40,6 +40,7 @@ pub enum BuiltinKind {
     Float,
     Bool,
     Byte,
+    Bytes,
     TypeOf,
     CreateArray,
     Exec,
@@ -73,7 +74,15 @@ fn builtin_exec(args: &Vec<Rc<Object>>) -> Result<(i32, Vec<u8>), String> {
         None => return Err("Failed to get exit code.".to_string()),
     };
 
-    return Ok((exit_code, output_data))
+    return Ok((exit_code, output_data));
+}
+
+fn repr_is_big_endian(args: &Vec<Rc<Object>>) -> bool {
+    if args.len() == 2 && args[1].get_type() == "bool" && args[1].is_true() {
+        true
+    } else {
+        false
+    }
 }
 
 impl BuiltinKind {
@@ -594,6 +603,62 @@ impl BuiltinKind {
                     }
                 }
             }
+
+            BuiltinKind::Bytes => {
+                if args.len() == 0 {
+                    return Err(format!("bytes() takes atleast one argument, zero provided",));
+                }
+
+                match args[0].as_ref() {
+                    Object::Int(i) => {
+                        let is_bg = repr_is_big_endian(&args);
+                        let b_array_res = buffer::Buffer::from_i64(i, !is_bg);
+                        if b_array_res.is_err() {
+                            return Err(b_array_res.unwrap_err());
+                        }
+
+                        return Ok(Rc::new(Object::ByteBuffer(RefCell::new(
+                            b_array_res.unwrap(),
+                        ))));
+                    }
+
+                    Object::Float(f) => {
+                        let is_bg = repr_is_big_endian(&args);
+                        let b_array_res = buffer::Buffer::from_f64(f, !is_bg);
+                        if b_array_res.is_err() {
+                            return Err(b_array_res.unwrap_err());
+                        }
+
+                        return Ok(Rc::new(Object::ByteBuffer(RefCell::new(
+                            b_array_res.unwrap()
+                        ))));
+                    }
+
+                    Object::Char(c) => {
+                        let result_arr = buffer::Buffer::from_u8(
+                            vec![*c as u8], "todo".to_string(), true
+                        );
+
+                        return Ok(Rc::new(Object::ByteBuffer(RefCell::new(
+                            result_arr
+                        ))));
+                    }
+
+                    Object::Str(st) => {
+                        let result_arr = buffer::Buffer::from_string(st);
+                        return Ok(Rc::new(Object::ByteBuffer(RefCell::new(
+                            result_arr
+                        ))));
+                    }
+                    _ => {
+                        return Err(format!(
+                            "Object of type {} cannot be converted to bytes",
+                            args[0].as_ref().get_type()
+                        ));
+                    }
+                }
+            }
+
             BuiltinKind::Exec => {
                 if args.len() == 0 {
                     return Err(format!(
@@ -617,8 +682,8 @@ impl BuiltinKind {
                     name: "todo".to_string(),
                     elements: vec![
                         Rc::new(Object::Int(exit_code as i64)),
-                        Rc::new(Object::Str(result_str.unwrap()))
-                    ]
+                        Rc::new(Object::Str(result_str.unwrap())),
+                    ],
                 };
 
                 return Ok(Rc::new(Object::Array(RefCell::new(op_array))));
@@ -644,10 +709,8 @@ impl BuiltinKind {
                     name: "todo".to_string(),
                     elements: vec![
                         Rc::new(Object::Int(exit_code as i64)),
-                        Rc::new(Object::ByteBuffer(RefCell::new(
-                            raw_buffer
-                        )))
-                    ]
+                        Rc::new(Object::ByteBuffer(RefCell::new(raw_buffer))),
+                    ],
                 };
 
                 return Ok(Rc::new(Object::Array(RefCell::new(op_array))));

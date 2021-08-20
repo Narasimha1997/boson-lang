@@ -84,7 +84,7 @@ impl Object {
             Object::Bool(_) => "bool".to_string(),
             Object::Byte(_) => "raw".to_string(),
             Object::Array(_) => "array".to_string(),
-            Object::ByteBuffer(_) => "raw_buffer".to_string(),
+            Object::ByteBuffer(_) => "bytes".to_string(),
             Object::HashTable(_) => "hashmap".to_string(),
             Object::Subroutine(_) => "func".to_string(),
             Object::Iter(_) => "iter".to_string(),
