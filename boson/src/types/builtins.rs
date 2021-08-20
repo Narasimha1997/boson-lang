@@ -13,6 +13,7 @@ use crate::api::BosonLang;
 use crate::types::array;
 use crate::types::hash;
 use crate::types::object;
+use crate::types::buffer;
 
 use array::Array;
 use hash::HashTable;
@@ -42,12 +43,37 @@ pub enum BuiltinKind {
     TypeOf,
     CreateArray,
     Exec,
+    ExecRaw,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
 
-fn builtin_exec(args: &Vec<Rc<Object>>) {
+fn builtin_exec(args: &Vec<Rc<Object>>) -> Result<(i32, Vec<u8>), String> {
+    let mut command = Command::new(args[0].as_ref().describe());
+    for idx in 1..args.len() {
+        command.arg(args[idx].as_ref().describe());
+    }
 
+    let result = command.output();
+    if result.is_err() {
+        return Err(format!("Sub Command Error: {}", result.unwrap_err()));
+    }
+
+    // return the output:
+    let cmd_result = result.unwrap();
+    let output_data = if cmd_result.status.success() {
+        cmd_result.stdout
+    } else {
+        cmd_result.stderr
+    };
+
+    // get the exit status code:
+    let exit_code = match cmd_result.status.code() {
+        Some(code) => code,
+        None => return Err("Failed to get exit code.".to_string()),
+    };
+
+    return Ok((exit_code, output_data))
 }
 
 impl BuiltinKind {
@@ -78,6 +104,7 @@ impl BuiltinKind {
             BuiltinKind::TypeOf => "type_of".to_string(),
             BuiltinKind::Byte => "byte".to_string(),
             BuiltinKind::Exec => "exec".to_string(),
+            BuiltinKind::ExecRaw => "exec_raw".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -574,35 +601,59 @@ impl BuiltinKind {
                     ));
                 }
 
-                let mut command = Command::new(args[0].as_ref().describe());
-                for idx in 1..args.len() {
-                    command.arg(args[idx].as_ref().describe());
-                }
-
-                let result = command.output();
+                let result = builtin_exec(&args);
                 if result.is_err() {
-                    return Err(format!("Sub Command Error: {}", result.unwrap_err()));
+                    return Err(result.unwrap_err());
                 }
 
-                let command_result = result.unwrap();
-                if command_result.status.success() {
-                    let op_u8 = command_result.stdout;
-                    let op_string = String::from_utf8(op_u8);
-                    if op_string.is_err() {
-                        return Err(format!("Invalid output: {}", op_string.unwrap_err()));
-                    }
-
-                    return Ok(Rc::new(Object::Str(op_string.unwrap())));
+                // cast it to string:
+                let (exit_code, op_data) = result.unwrap();
+                let result_str = String::from_utf8(op_data);
+                if result_str.is_err() {
+                    return Err(format!("{}", result_str.unwrap_err()));
                 }
 
-                let error_u8 = command_result.stderr;
-                let error_string = String::from_utf8(error_u8);
-                if error_string.is_err() {
-                    return Err(format!("Invalid output: {}", error_string.unwrap_err()));
-                }
+                let op_array = Array {
+                    name: "todo".to_string(),
+                    elements: vec![
+                        Rc::new(Object::Int(exit_code as i64)),
+                        Rc::new(Object::Str(result_str.unwrap()))
+                    ]
+                };
 
-                return Ok(Rc::new(Object::Str(error_string.unwrap())));
+                return Ok(Rc::new(Object::Array(RefCell::new(op_array))));
             }
+
+            BuiltinKind::ExecRaw => {
+                if args.len() != 0 {
+                    return Err(format!(
+                        "string() takes 1 argument, {} provided",
+                        args.len()
+                    ));
+                }
+
+                let result = builtin_exec(&args);
+                if result.is_err() {
+                    return Err(result.unwrap_err());
+                }
+
+                // return the result and exit code
+                let (exit_code, op_data) = result.unwrap();
+                let raw_buffer = buffer::Buffer::from_u8(op_data, "todo".to_string(), true);
+
+                let op_array = Array {
+                    name: "todo".to_string(),
+                    elements: vec![
+                        Rc::new(Object::Int(exit_code as i64)),
+                        Rc::new(Object::ByteBuffer(RefCell::new(
+                            raw_buffer
+                        )))
+                    ]
+                };
+
+                return Ok(Rc::new(Object::Array(RefCell::new(op_array))));
+            }
+
             _ => return Err("Trying to invoke invalid builtin".to_string()),
         }
     }
