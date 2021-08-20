@@ -460,8 +460,20 @@ impl BuiltinKind {
                     ));
                 }
 
-                let result_str = args[0].as_ref().describe();
-                return Ok(Rc::new(Object::Str(result_str)));
+                match args[0].as_ref() {
+                    Object::ByteBuffer(bytes) => {
+                        let result_str = bytes.borrow().get_as_string();
+                        if result_str.is_err() {
+                            return Err(result_str.unwrap_err());
+                        }
+
+                        return Ok(Rc::new(Object::Str(result_str.unwrap())));
+                    }
+                    _ => {
+                        let result_str = args[0].as_ref().describe();
+                        return Ok(Rc::new(Object::Str(result_str)));
+                    }
+                }
             }
 
             BuiltinKind::Int => {
@@ -491,6 +503,15 @@ impl BuiltinKind {
 
                     Object::Float(f) => {
                         return Ok(Rc::new(Object::Int(f.round() as i64)));
+                    }
+
+                    Object::ByteBuffer(bytes) => {
+                        let i_for_b_res = bytes.borrow().get_as_i64();
+                        if i_for_b_res.is_err() {
+                            return Err(i_for_b_res.unwrap_err());
+                        }
+
+                        return Ok(Rc::new(Object::Int(i_for_b_res.unwrap())));
                     }
 
                     Object::Char(c) => {
@@ -593,6 +614,15 @@ impl BuiltinKind {
                     Object::Bool(b) => {
                         let f_for_b = if *b { 1.0 } else { 0.0 };
                         return Ok(Rc::new(Object::Float(f_for_b)));
+                    }
+
+                    Object::ByteBuffer(bytes) => {
+                        let f_for_b_res = bytes.borrow().get_as_f64();
+                        if f_for_b_res.is_err() {
+                            return Err(f_for_b_res.unwrap_err());
+                        }
+
+                        return Ok(Rc::new(Object::Float(f_for_b_res.unwrap())));
                     }
 
                     _ => {
