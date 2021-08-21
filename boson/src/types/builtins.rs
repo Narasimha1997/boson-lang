@@ -40,6 +40,7 @@ pub enum BuiltinKind {
     Float,
     Bool,
     Byte,
+    Char,
     Bytes,
     TypeOf,
     CreateArray,
@@ -112,6 +113,8 @@ impl BuiltinKind {
             BuiltinKind::Bool => "bool".to_string(),
             BuiltinKind::TypeOf => "type_of".to_string(),
             BuiltinKind::Byte => "byte".to_string(),
+            BuiltinKind::Bytes => "bytes".to_string(),
+            BuiltinKind::Char => "char".to_string(),
             BuiltinKind::Exec => "exec".to_string(),
             BuiltinKind::ExecRaw => "exec_raw".to_string(),
             _ => "undef".to_string(),
@@ -660,30 +663,45 @@ impl BuiltinKind {
                         }
 
                         return Ok(Rc::new(Object::ByteBuffer(RefCell::new(
-                            b_array_res.unwrap()
+                            b_array_res.unwrap(),
                         ))));
                     }
 
                     Object::Char(c) => {
-                        let result_arr = buffer::Buffer::from_u8(
-                            vec![*c as u8], "todo".to_string(), true
-                        );
+                        let result_arr =
+                            buffer::Buffer::from_u8(vec![*c as u8], "todo".to_string(), true);
 
-                        return Ok(Rc::new(Object::ByteBuffer(RefCell::new(
-                            result_arr
-                        ))));
+                        return Ok(Rc::new(Object::ByteBuffer(RefCell::new(result_arr))));
                     }
 
                     Object::Str(st) => {
                         let result_arr = buffer::Buffer::from_string(st);
-                        return Ok(Rc::new(Object::ByteBuffer(RefCell::new(
-                            result_arr
-                        ))));
+                        return Ok(Rc::new(Object::ByteBuffer(RefCell::new(result_arr))));
                     }
                     _ => {
                         return Err(format!(
                             "Object of type {} cannot be converted to bytes",
                             args[0].as_ref().get_type()
+                        ));
+                    }
+                }
+            }
+
+            BuiltinKind::Char => {
+                if args.len() == 0 {
+                    return Err(format!(
+                        "exec() expects atleast one argument, zero provided."
+                    ));
+                }
+
+                match args[0].as_ref() {
+                    Object::Byte(b) => {
+                        return Ok(Rc::new(Object::Char(*b as char)));
+                    }
+                    _ => {
+                        return Err(format!(
+                            "Object of type {} cannot be converted to bytes",
+                            args[0].get_type()
                         ));
                     }
                 }
