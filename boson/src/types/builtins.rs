@@ -13,6 +13,7 @@ use crate::api::BosonLang;
 use crate::types::array;
 use crate::types::buffer;
 use crate::types::hash;
+use crate::types::iter;
 use crate::types::object;
 
 use array::Array;
@@ -43,6 +44,7 @@ pub enum BuiltinKind {
     Char,
     Iter,
     Next,
+    HasNext,
     Bytes,
     TypeOf,
     CreateArray,
@@ -117,6 +119,9 @@ impl BuiltinKind {
             BuiltinKind::Byte => "byte".to_string(),
             BuiltinKind::Bytes => "bytes".to_string(),
             BuiltinKind::Char => "char".to_string(),
+            BuiltinKind::Iter => "iter".to_string(),
+            BuiltinKind::HasNext => "has_next".to_string(),
+            BuiltinKind::Next => "next".to_string(),
             BuiltinKind::Exec => "exec".to_string(),
             BuiltinKind::ExecRaw => "exec_raw".to_string(),
             _ => "undef".to_string(),
@@ -764,6 +769,23 @@ impl BuiltinKind {
                 };
 
                 return Ok(Rc::new(Object::Array(RefCell::new(op_array))));
+            }
+
+            BuiltinKind::Iter => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "iter() expects one argument, {} provided.",
+                        args.len()
+                    ));
+                }
+
+                let object_to_iter = args[0].as_ref();
+                let iter_res = iter::ObjectIterator::new(Rc::new(object_to_iter.clone()));
+                if iter_res.is_err() {
+                    return Err(iter_res.unwrap_err());
+                }
+
+                return Ok(Rc::new(Object::Iter(RefCell::new(iter_res.unwrap()))));
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),
