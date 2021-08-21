@@ -41,6 +41,8 @@ pub enum BuiltinKind {
     Bool,
     Byte,
     Char,
+    Iter,
+    Next,
     Bytes,
     TypeOf,
     CreateArray,

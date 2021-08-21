@@ -1,0 +1,6 @@
+const ls_res = exec_raw("ls");
+println("Exit Code: ", ls_res[0]);
+
+for c in ls_res[1] => {
+    print(char(c));
+}
