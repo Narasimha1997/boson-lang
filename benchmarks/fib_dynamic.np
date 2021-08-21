@@ -23,7 +23,7 @@ func fib(n) {
     if (memory[left] != 0) {
         left_result = memory[left];
     } else {
-        left_result = dd(n - 1);
+        left_result = fib(n - 1);
         memory[left] = left_result;
     }
 

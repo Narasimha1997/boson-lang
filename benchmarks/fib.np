@@ -13,7 +13,7 @@ func fib(N) {
 }
 
 const st = unix_time();
-const result = fib(30);
+const result = fib(10);
 const et = unix_time();
 
 println(result, et - st);
