@@ -814,7 +814,7 @@ impl BuiltinKind {
             BuiltinKind::Next => {
                 if args.len() != 1 {
                     return Err(format!(
-                        "has_next() expects one argument, {} provided.",
+                        "next() expects one argument, {} provided.",
                         args.len()
                     ));
                 }
