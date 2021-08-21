@@ -788,6 +788,56 @@ impl BuiltinKind {
                 return Ok(Rc::new(Object::Iter(RefCell::new(iter_res.unwrap()))));
             }
 
+            BuiltinKind::HasNext => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "has_next() expects one argument, {} provided.",
+                        args.len()
+                    ));
+                }
+
+                let obj = args[0].as_ref();
+                match obj {
+                    Object::Iter(it) => {
+                        let has_next = it.borrow().has_next();
+                        return Ok(Rc::new(Object::Bool(has_next)));
+                    }
+                    _ => {
+                        return Err(format!(
+                            "has_next() can be applied only on iter, but got {}",
+                            obj.get_type()
+                        ))
+                    }
+                }
+            }
+
+            BuiltinKind::Next => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "has_next() expects one argument, {} provided.",
+                        args.len()
+                    ));
+                }
+
+                let obj = args[0].as_ref();
+                match obj {
+                    Object::Iter(it) => {
+                        let next_obj = it.borrow_mut().next();
+                        if next_obj.is_none() {
+                            return Err(format!("next() called on ended iterator",));
+                        }
+
+                        return Ok(next_obj.unwrap());
+                    }
+                    _ => {
+                        return Err(format!(
+                            "has_next() can be applied only on iter, but got {}",
+                            obj.get_type()
+                        ));
+                    }
+                }
+            }
+
             _ => return Err("Trying to invoke invalid builtin".to_string()),
         }
     }
