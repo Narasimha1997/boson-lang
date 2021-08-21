@@ -379,11 +379,9 @@ impl Controls {
                 }
 
                 let result_obj = exec_result.unwrap();
-                if result_obj.is_true() {
-                    let push_res = ds.push_object(result_obj, inst.clone());
-                    if push_res.is_err() {
-                        return Err(push_res.unwrap_err());
-                    }
+                let push_res = ds.push_object(result_obj, inst.clone());
+                if push_res.is_err() {
+                    return Err(push_res.unwrap_err());
                 }
 
                 return Ok(None);
