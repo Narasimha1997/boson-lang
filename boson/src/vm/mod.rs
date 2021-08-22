@@ -74,6 +74,7 @@ impl BosonVM {
         return None;
     }
 
+
     pub fn eval_bytecode(&mut self, pop_last: bool) -> Result<Rc<Object>, VMError> {
         while self.call_stack.top_ref().has_instructions() {
             let mut frame = self.call_stack.top();

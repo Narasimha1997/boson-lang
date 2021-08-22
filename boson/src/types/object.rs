@@ -86,10 +86,11 @@ impl Object {
             Object::Array(_) => "array".to_string(),
             Object::ByteBuffer(_) => "bytes".to_string(),
             Object::HashTable(_) => "hashmap".to_string(),
-            Object::Subroutine(_) => "func".to_string(),
             Object::Iter(_) => "iter".to_string(),
             Object::Exception(_) => "exception".to_string(),
-            Object::Builtins(_) => "func".to_string(),
+            Object::Builtins(_) | Object::Subroutine(_) | Object::ClosureContext(_) => {
+                "func".to_string()
+            }
             _ => "unknown".to_string(),
         }
     }
