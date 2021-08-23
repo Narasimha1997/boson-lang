@@ -107,12 +107,12 @@ impl BuiltinKind {
 
                 // print function:
                 let length = args.len();
-                let fmt_string = String::new();
+                let mut fmt_string = String::new();
                 for idx in 0..length - 1 {
-                    fmt_string.push_str(format!("{} ", args[idx].describe()));
+                    fmt_string.push_str(&format!("{} ", args[idx].describe()));
                 }
 
-                fmt_string.push_str(format!("{}", args[length - 1].describe()));
+                fmt_string.push_str(&format!("{}", args[length - 1].describe()));
 
                 // call the platform print function:
                 let print_fn = platform.print;
@@ -125,15 +125,15 @@ impl BuiltinKind {
                 // println function:
                 let length = args.len();
 
-                let fmt_string = String::new();
+                let mut fmt_string = String::new();
                 if length == 0 {
                     fmt_string.push_str("\n");
                 } else {
                     for idx in 0..length - 1 {
-                        fmt_string.push_str(format!("{} ", args[idx].describe()));
+                        fmt_string.push_str(&format!("{} ", args[idx].describe()));
                     }
 
-                    fmt_string.push_str(format!("{}\n", args[length - 1].describe()));
+                    fmt_string.push_str(&format!("{}\n", args[length - 1].describe()));
                 }
 
                 // call the platform println function:
@@ -271,25 +271,15 @@ impl BuiltinKind {
                     ));
                 }
 
-                let mut cmd_args = env::args();
+                let args_fn = platform.get_args;
+                let args = args_fn();
 
                 let mut args_array = Array {
                     name: "builtin_args".to_string(),
                     elements: vec![],
                 };
 
-                if cmd_args.len() == 0 {
-                    return Ok(Rc::new(Object::Array(RefCell::new(args_array))));
-                }
-
-                // skip the binary name
-                cmd_args.next();
-
-                // get a vector slice starting from index 1:
-                let arg_str_objects: Vec<Rc<Object>> =
-                    cmd_args.map(|arg| Rc::new(Object::Str(arg))).collect();
-
-                args_array.elements = arg_str_objects;
+                args_array.elements = args;
                 return Ok(Rc::new(Object::Array(RefCell::new(args_array))));
             }
 
@@ -408,9 +398,8 @@ impl BuiltinKind {
                     ));
                 }
 
-                let arch_string = env::consts::ARCH.to_string();
-                let family_string = env::consts::FAMILY.to_string();
-                let os_string = env::consts::OS.to_string();
+                let platform_info_fn = platform.get_platform_info;
+                let platform_info_vec = platform_info_fn();
 
                 let mut platform_table = HashTable {
                     name: "platform".to_string(),
@@ -419,17 +408,17 @@ impl BuiltinKind {
 
                 platform_table.set(
                     Rc::new(Object::Str("arch".to_string())),
-                    Rc::new(Object::Str(arch_string)),
+                    Rc::new(Object::Str(platform_info_vec[0].clone())),
                 );
 
                 platform_table.set(
                     Rc::new(Object::Str("family".to_string())),
-                    Rc::new(Object::Str(family_string)),
+                    Rc::new(Object::Str(platform_info_vec[1].clone())),
                 );
 
                 platform_table.set(
                     Rc::new(Object::Str("os".to_string())),
-                    Rc::new(Object::Str(os_string)),
+                    Rc::new(Object::Str(platform_info_vec[2].clone())),
                 );
 
                 return Ok(Rc::new(Object::HashTable(RefCell::new(platform_table))));
