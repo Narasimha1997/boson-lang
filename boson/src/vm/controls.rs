@@ -35,6 +35,7 @@ use iter::ObjectIterator;
 use object::Object;
 use stack::DataStack;
 
+
 pub struct Controls {}
 
 impl Controls {
@@ -347,7 +348,7 @@ impl Controls {
     pub fn execute_call(
         inst: &InstructionKind,
         ds: &mut DataStack,
-        n_args: usize,
+        n_args: usize
     ) -> Result<Option<RefCell<ExecutionFrame>>, VMError> {
         // pop the function:
 

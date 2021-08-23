@@ -8,13 +8,25 @@ use crate::parser::Parser;
 use crate::types::object::Object;
 use crate::vm::errors::VMError;
 use crate::vm::BosonVM;
-
+use std::env::VarError;
+use std::env::Vars;
 use std::rc::Rc;
+
+pub mod native;
+
+pub struct Platform {
+    pub print: fn(&String),
+    pub println: fn(&String),
+    pub exec: fn(&Vec<Rc<Object>>) -> Result<(i32, Vec<u8>), String>,
+    pub get_args: fn() -> Vec<Rc<Object>>,
+    pub get_env: fn(name: &String) -> Result<String, VarError>,
+    pub get_envs: fn() -> Vars,
+}
 
 pub struct BosonLang {
     pub parser: Parser,
     pub compiler: BytecodeCompiler,
-    pub vm: Option<BosonVM>
+    pub vm: Option<BosonVM>,
 }
 
 #[derive(Debug)]
@@ -45,7 +57,7 @@ impl BosonLang {
         return BosonLang {
             parser: parser,
             compiler: compiler,
-            vm: None
+            vm: None,
         };
     }
 
@@ -130,12 +142,11 @@ impl BosonLang {
         if self.vm.is_none() {
             self.vm = Some(BosonVM::new(&bytecode.unwrap()));
         } else {
-            self.vm = Some(
-                BosonVM::new_state(&bytecode.unwrap(),
-                self.vm.as_mut().unwrap().globals.clone()
+            self.vm = Some(BosonVM::new_state(
+                &bytecode.unwrap(),
+                self.vm.as_mut().unwrap().globals.clone(),
             ));
         }
-        
         let result = self.vm.as_mut().unwrap().eval_bytecode(true);
         if result.is_err() {
             self.__display_error(ErrorKind::VMError(result.unwrap_err()));
