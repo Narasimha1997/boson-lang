@@ -20,6 +20,7 @@ pub struct Platform {
     pub get_args: fn() -> Vec<Rc<Object>>,
     pub get_env: fn(name: &String) -> Result<String, String>,
     pub get_envs: fn() -> Vars,
+    pub get_unix_time: fn() -> Result<f64, String>
 }
 
 pub struct BosonLang {

@@ -1,8 +1,10 @@
 use crate::types::object;
 
-use std::process::Command;
 use std::env;
+use std::process::Command;
 use std::rc::Rc;
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
 use object::Object;
 
@@ -66,4 +68,14 @@ pub fn get_env(name: &String) -> Result<String, String> {
 
 pub fn get_envs() -> env::Vars {
     return env::vars();
+}
+
+pub fn get_unix_time() -> Result<f64, String> {
+    let epoch_time_res = SystemTime::now().duration_since(UNIX_EPOCH);
+    if epoch_time_res.is_err() {
+        return Err(format!("{}", epoch_time_res.unwrap_err()));
+    }
+
+    let epoch_time = epoch_time_res.unwrap();
+    return Ok(epoch_time.as_secs_f64());
 }
