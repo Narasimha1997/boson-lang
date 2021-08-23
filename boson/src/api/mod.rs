@@ -21,6 +21,7 @@ pub struct Platform {
     pub get_env: fn(name: &String) -> Result<String, String>,
     pub get_envs: fn() -> Vars,
     pub get_unix_time: fn() -> Result<f64, String>,
+    pub get_platform_info: fn() -> Vec<String>,
 }
 
 pub struct BosonLang {
@@ -47,6 +48,7 @@ impl BosonLang {
             get_env: native::get_env,
             get_envs: native::get_envs,
             get_unix_time: native::get_unix_time,
+            get_platform_info: native::get_platform_info,
         };
     }
 

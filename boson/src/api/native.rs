@@ -79,3 +79,11 @@ pub fn get_unix_time() -> Result<f64, String> {
     let epoch_time = epoch_time_res.unwrap();
     return Ok(epoch_time.as_secs_f64());
 }
+
+pub fn get_platform_info() -> Vec<String> {
+    return vec![
+        env::consts::ARCH.to_string(),
+        env::consts::FAMILY.to_string(),
+        env::consts::OS.to_string(),
+    ];
+}
