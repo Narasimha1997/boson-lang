@@ -137,7 +137,7 @@ impl BuiltinKind {
                 }
 
                 // call the platform println function:
-                let print_fn = platform.println;
+                let print_fn = platform.print;
                 print_fn(&fmt_string);
 
                 return Ok(Rc::new(Object::Noval));

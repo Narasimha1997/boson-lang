@@ -15,7 +15,6 @@ pub mod native;
 
 pub struct Platform {
     pub print: fn(&String),
-    pub println: fn(&String),
     pub exec: fn(&Vec<Rc<Object>>) -> Result<(i32, Vec<u8>), String>,
     pub get_args: fn() -> Vec<Rc<Object>>,
     pub get_env: fn(name: &String) -> Result<String, String>,
@@ -42,7 +41,6 @@ impl BosonLang {
     fn prepare_native_platform() -> Platform {
         return Platform {
             print: native::print,
-            println: native::println,
             exec: native::exec,
             get_args: native::get_args,
             get_env: native::get_env,

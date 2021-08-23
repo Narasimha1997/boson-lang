@@ -16,9 +16,6 @@ pub fn print(st: &String) {
     print!("{}", st);
 }
 
-pub fn println(st: &String) {
-    println!("{}", st);
-}
 
 pub fn exec(args: &Vec<Rc<Object>>) -> Result<(i32, Vec<u8>), String> {
     let mut command = Command::new(args[0].as_ref().describe());
