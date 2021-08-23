@@ -43,6 +43,20 @@ impl ObjectIterator {
                     elements: vec_string,
                 });
             }
+            Object::ByteBuffer(buffer) => {
+                let byte_vec: Vec<Rc<Object>> = buffer
+                    .borrow()
+                    .data
+                    .iter()
+                    .map(|b| Rc::new(Object::Byte(*b)))
+                    .collect();
+
+                return Ok(ObjectIterator {
+                    idx: 0,
+                    size: byte_vec.len(),
+                    elements: byte_vec,
+                });
+            }
             _ => {
                 return Err(format!(
                     "Object of type {} does not support iteration.",
@@ -63,7 +77,7 @@ impl ObjectIterator {
 
     pub fn get_pos(&self) -> usize {
         return self.idx;
-    } 
+    }
 
     pub fn describe(&self) -> String {
         return format!("Iterator(position={} ,size={})", self.idx, self.size);

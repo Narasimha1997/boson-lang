@@ -13,6 +13,7 @@ use crate::api::BosonLang;
 use crate::types::array;
 use crate::types::buffer;
 use crate::types::hash;
+use crate::types::iter;
 use crate::types::object;
 
 use array::Array;
@@ -40,6 +41,10 @@ pub enum BuiltinKind {
     Float,
     Bool,
     Byte,
+    Char,
+    Iter,
+    Next,
+    HasNext,
     Bytes,
     TypeOf,
     CreateArray,
@@ -112,6 +117,11 @@ impl BuiltinKind {
             BuiltinKind::Bool => "bool".to_string(),
             BuiltinKind::TypeOf => "type_of".to_string(),
             BuiltinKind::Byte => "byte".to_string(),
+            BuiltinKind::Bytes => "bytes".to_string(),
+            BuiltinKind::Char => "char".to_string(),
+            BuiltinKind::Iter => "iter".to_string(),
+            BuiltinKind::HasNext => "has_next".to_string(),
+            BuiltinKind::Next => "next".to_string(),
             BuiltinKind::Exec => "exec".to_string(),
             BuiltinKind::ExecRaw => "exec_raw".to_string(),
             _ => "undef".to_string(),
@@ -660,30 +670,45 @@ impl BuiltinKind {
                         }
 
                         return Ok(Rc::new(Object::ByteBuffer(RefCell::new(
-                            b_array_res.unwrap()
+                            b_array_res.unwrap(),
                         ))));
                     }
 
                     Object::Char(c) => {
-                        let result_arr = buffer::Buffer::from_u8(
-                            vec![*c as u8], "todo".to_string(), true
-                        );
+                        let result_arr =
+                            buffer::Buffer::from_u8(vec![*c as u8], "todo".to_string(), true);
 
-                        return Ok(Rc::new(Object::ByteBuffer(RefCell::new(
-                            result_arr
-                        ))));
+                        return Ok(Rc::new(Object::ByteBuffer(RefCell::new(result_arr))));
                     }
 
                     Object::Str(st) => {
                         let result_arr = buffer::Buffer::from_string(st);
-                        return Ok(Rc::new(Object::ByteBuffer(RefCell::new(
-                            result_arr
-                        ))));
+                        return Ok(Rc::new(Object::ByteBuffer(RefCell::new(result_arr))));
                     }
                     _ => {
                         return Err(format!(
                             "Object of type {} cannot be converted to bytes",
                             args[0].as_ref().get_type()
+                        ));
+                    }
+                }
+            }
+
+            BuiltinKind::Char => {
+                if args.len() == 0 {
+                    return Err(format!(
+                        "exec() expects atleast one argument, zero provided."
+                    ));
+                }
+
+                match args[0].as_ref() {
+                    Object::Byte(b) => {
+                        return Ok(Rc::new(Object::Char(*b as char)));
+                    }
+                    _ => {
+                        return Err(format!(
+                            "Object of type {} cannot be converted to bytes",
+                            args[0].get_type()
                         ));
                     }
                 }
@@ -744,6 +769,73 @@ impl BuiltinKind {
                 };
 
                 return Ok(Rc::new(Object::Array(RefCell::new(op_array))));
+            }
+
+            BuiltinKind::Iter => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "iter() expects one argument, {} provided.",
+                        args.len()
+                    ));
+                }
+
+                let object_to_iter = args[0].as_ref();
+                let iter_res = iter::ObjectIterator::new(Rc::new(object_to_iter.clone()));
+                if iter_res.is_err() {
+                    return Err(iter_res.unwrap_err());
+                }
+
+                return Ok(Rc::new(Object::Iter(RefCell::new(iter_res.unwrap()))));
+            }
+
+            BuiltinKind::HasNext => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "has_next() expects one argument, {} provided.",
+                        args.len()
+                    ));
+                }
+
+                let obj = args[0].as_ref();
+                match obj {
+                    Object::Iter(it) => {
+                        let has_next = it.borrow().has_next();
+                        return Ok(Rc::new(Object::Bool(has_next)));
+                    }
+                    _ => {
+                        return Err(format!(
+                            "has_next() can be applied only on iter, but got {}",
+                            obj.get_type()
+                        ))
+                    }
+                }
+            }
+
+            BuiltinKind::Next => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "next() expects one argument, {} provided.",
+                        args.len()
+                    ));
+                }
+
+                let obj = args[0].as_ref();
+                match obj {
+                    Object::Iter(it) => {
+                        let next_obj = it.borrow_mut().next();
+                        if next_obj.is_none() {
+                            return Err(format!("next() called on ended iterator",));
+                        }
+
+                        return Ok(next_obj.unwrap());
+                    }
+                    _ => {
+                        return Err(format!(
+                            "has_next() can be applied only on iter, but got {}",
+                            obj.get_type()
+                        ));
+                    }
+                }
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),

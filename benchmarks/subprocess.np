@@ -1,7 +1,3 @@
 
-const output = exec("cowsay", "hello world!!");
-println(output)
-
-const output_bytes = exec_raw("cowsay", "hello world!!");
+const output_bytes = exec_raw("ls");
 println(output_bytes);
-println(string(output_bytes))
