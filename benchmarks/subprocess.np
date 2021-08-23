@@ -4,3 +4,4 @@ println(output)
 
 const output_bytes = exec_raw("cowsay", "hello world!!");
 println(output_bytes);
+println(string(output_bytes))
