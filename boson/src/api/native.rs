@@ -1,7 +1,8 @@
 use crate::types::object;
 
-use std::rc::Rc;
 use std::process::Command;
+use std::env;
+use std::rc::Rc;
 
 use object::Object;
 
@@ -43,4 +44,26 @@ pub fn exec(args: &Vec<Rc<Object>>) -> Result<(i32, Vec<u8>), String> {
     };
 
     return Ok((exit_code, output_data));
+}
+
+pub fn get_args() -> Vec<Rc<Object>> {
+    let mut cmd_args = env::args();
+    // skip the binary name
+    cmd_args.next();
+
+    // get a vector slice starting from index 1:
+    let arg_str_objects: Vec<Rc<Object>> = cmd_args.map(|arg| Rc::new(Object::Str(arg))).collect();
+    return arg_str_objects;
+}
+
+pub fn get_env(name: &String) -> Result<String, String> {
+    let result = env::var(name);
+    if result.is_err() {
+        return Err(format!("{}", result.unwrap_err()));
+    }
+    return Ok(result.unwrap());
+}
+
+pub fn get_envs() -> env::Vars {
+    return env::vars();
 }

@@ -8,7 +8,6 @@ use crate::parser::Parser;
 use crate::types::object::Object;
 use crate::vm::errors::VMError;
 use crate::vm::BosonVM;
-use std::env::VarError;
 use std::env::Vars;
 use std::rc::Rc;
 
@@ -19,7 +18,7 @@ pub struct Platform {
     pub println: fn(&String),
     pub exec: fn(&Vec<Rc<Object>>) -> Result<(i32, Vec<u8>), String>,
     pub get_args: fn() -> Vec<Rc<Object>>,
-    pub get_env: fn(name: &String) -> Result<String, VarError>,
+    pub get_env: fn(name: &String) -> Result<String, String>,
     pub get_envs: fn() -> Vars,
 }
 
