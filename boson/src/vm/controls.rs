@@ -10,6 +10,7 @@ use crate::vm::errors;
 use crate::vm::frames;
 use crate::vm::global;
 use crate::vm::stack;
+use crate::api;
 
 use std::cell::Ref;
 use std::cell::RefCell;
@@ -28,6 +29,7 @@ use errors::ISAErrorKind;
 use errors::VMError;
 use errors::VMErrorKind;
 use frames::ExecutionFrame;
+use api::Platform;
 use global::GlobalPool;
 use hash::HashTable;
 use isa::InstructionKind;
@@ -348,7 +350,9 @@ impl Controls {
     pub fn execute_call(
         inst: &InstructionKind,
         ds: &mut DataStack,
-        n_args: usize
+        n_args: usize,
+        platform: &Platform,
+
     ) -> Result<Option<RefCell<ExecutionFrame>>, VMError> {
         // pop the function:
 
@@ -369,7 +373,7 @@ impl Controls {
                 let mut args = popped_args.unwrap();
                 args.reverse();
                 // call the builtin:
-                let exec_result = func.exec(args);
+                let exec_result = func.exec(args, platform);
                 if exec_result.is_err() {
                     return Err(VMError::new(
                         exec_result.unwrap_err(),

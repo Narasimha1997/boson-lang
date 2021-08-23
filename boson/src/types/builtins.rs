@@ -1,14 +1,11 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::env;
 use std::hash::Hash;
 use std::hash::Hasher;
 use std::process;
-use std::process::Command;
 use std::rc::Rc;
-use std::time::SystemTime;
-use std::time::UNIX_EPOCH;
 
+use crate::api;
 use crate::api::BosonLang;
 use crate::types::array;
 use crate::types::buffer;
@@ -16,6 +13,7 @@ use crate::types::hash;
 use crate::types::iter;
 use crate::types::object;
 
+use api::Platform;
 use array::Array;
 use hash::HashTable;
 use object::Object;
@@ -52,34 +50,6 @@ pub enum BuiltinKind {
     ExecRaw,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
-}
-
-fn builtin_exec(args: &Vec<Rc<Object>>) -> Result<(i32, Vec<u8>), String> {
-    let mut command = Command::new(args[0].as_ref().describe());
-    for idx in 1..args.len() {
-        command.arg(args[idx].as_ref().describe());
-    }
-
-    let result = command.output();
-    if result.is_err() {
-        return Err(format!("Sub Command Error: {}", result.unwrap_err()));
-    }
-
-    // return the output:
-    let cmd_result = result.unwrap();
-    let output_data = if cmd_result.status.success() {
-        cmd_result.stdout
-    } else {
-        cmd_result.stderr
-    };
-
-    // get the exit status code:
-    let exit_code = match cmd_result.status.code() {
-        Some(code) => code,
-        None => return Err("Failed to get exit code.".to_string()),
-    };
-
-    return Ok((exit_code, output_data));
 }
 
 fn repr_is_big_endian(args: &Vec<Rc<Object>>) -> bool {
@@ -128,7 +98,7 @@ impl BuiltinKind {
         }
     }
 
-    pub fn exec(&self, args: Vec<Rc<Object>>) -> Result<Rc<Object>, String> {
+    pub fn exec(&self, args: Vec<Rc<Object>>, platform: &Platform) -> Result<Rc<Object>, String> {
         match self {
             BuiltinKind::Print => {
                 if args.len() == 0 {
@@ -137,11 +107,17 @@ impl BuiltinKind {
 
                 // print function:
                 let length = args.len();
+                let fmt_string = String::new();
                 for idx in 0..length - 1 {
-                    print!("{} ", args[idx].describe());
+                    fmt_string.push_str(format!("{} ", args[idx].describe()));
                 }
 
-                print!("{}", args[length - 1].describe());
+                fmt_string.push_str(format!("{}", args[length - 1].describe()));
+
+                // call the platform print function:
+                let print_fn = platform.print;
+                print_fn(&fmt_string);
+
                 return Ok(Rc::new(Object::Noval));
             }
 
@@ -149,15 +125,21 @@ impl BuiltinKind {
                 // println function:
                 let length = args.len();
 
+                let fmt_string = String::new();
                 if length == 0 {
-                    println!();
+                    fmt_string.push_str("\n");
                 } else {
                     for idx in 0..length - 1 {
-                        print!("{} ", args[idx].describe());
+                        fmt_string.push_str(format!("{} ", args[idx].describe()));
                     }
 
-                    print!("{}\n", args[length - 1].describe());
+                    fmt_string.push_str(format!("{}\n", args[length - 1].describe()));
                 }
+
+                // call the platform println function:
+                let print_fn = platform.println;
+                print_fn(&fmt_string);
+
                 return Ok(Rc::new(Object::Noval));
             }
 
@@ -270,14 +252,15 @@ impl BuiltinKind {
                     ));
                 }
 
-                let epoch_time_res = SystemTime::now().duration_since(UNIX_EPOCH);
+                let get_time_fn = platform.get_unix_time;
+                let epoch_time_res = get_time_fn();
+
                 if epoch_time_res.is_err() {
                     return Err("Failed to fetch UNIX epoch time.".to_string());
                 }
 
                 let epoch_time = epoch_time_res.unwrap();
-
-                return Ok(Rc::new(Object::Float(epoch_time.as_secs_f64())));
+                return Ok(Rc::new(Object::Float(epoch_time)));
             }
 
             BuiltinKind::Args => {
@@ -343,7 +326,10 @@ impl BuiltinKind {
                 }
 
                 let env_key = env_name_obj.describe();
-                let env_value_res = env::var(env_key);
+
+                // call the platform specific get_env:
+                let get_env_fn = platform.get_env;
+                let env_value_res = get_env_fn(&env_key);
                 if env_value_res.is_err() {
                     if args.len() == 2 {
                         // default value is provided, return it
@@ -364,7 +350,8 @@ impl BuiltinKind {
                     ));
                 }
                 // get envs:
-                let envs = env::vars();
+                let get_envs_fn = platform.get_envs;
+                let envs = get_envs_fn();
                 let mut env_table = HashTable {
                     name: "envs".to_string(),
                     entries: HashMap::new(),
@@ -721,7 +708,8 @@ impl BuiltinKind {
                     ));
                 }
 
-                let result = builtin_exec(&args);
+                let exec_fn = platform.exec;
+                let result = exec_fn(&args);
                 if result.is_err() {
                     return Err(result.unwrap_err());
                 }
@@ -751,7 +739,8 @@ impl BuiltinKind {
                     ));
                 }
 
-                let result = builtin_exec(&args);
+                let exec_fn = platform.exec;
+                let result = exec_fn(&args);
                 if result.is_err() {
                     return Err(result.unwrap_err());
                 }

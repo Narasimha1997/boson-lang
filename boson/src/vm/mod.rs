@@ -19,6 +19,7 @@ use stack::DataStack;
 use crate::compiler::symtab::ConstantPool;
 use crate::compiler::CompiledBytecode;
 use crate::isa::InstructionKind;
+use crate::api::Platform;
 use crate::types::object;
 
 use object::Object;
@@ -74,7 +75,7 @@ impl BosonVM {
         return None;
     }
 
-    pub fn eval_bytecode(&mut self, pop_last: bool) -> Result<Rc<Object>, VMError> {
+    pub fn eval_bytecode(&mut self, platform: &Platform, pop_last: bool) -> Result<Rc<Object>, VMError> {
         while self.call_stack.top_ref().has_instructions() {
             let mut frame = self.call_stack.top();
 
@@ -268,7 +269,8 @@ impl BosonVM {
                     let args_len = operands[0];
 
                     let result = Controls::execute_call(
-                        &inst, &mut self.data_stack, args_len
+                        &inst, &mut self.data_stack, args_len,
+                        platform
                     );
 
                     if result.is_err() {

@@ -20,13 +20,14 @@ pub struct Platform {
     pub get_args: fn() -> Vec<Rc<Object>>,
     pub get_env: fn(name: &String) -> Result<String, String>,
     pub get_envs: fn() -> Vars,
-    pub get_unix_time: fn() -> Result<f64, String>
+    pub get_unix_time: fn() -> Result<f64, String>,
 }
 
 pub struct BosonLang {
     pub parser: Parser,
     pub compiler: BytecodeCompiler,
     pub vm: Option<BosonVM>,
+    pub platform: Platform,
 }
 
 #[derive(Debug)]
@@ -37,6 +38,18 @@ pub enum ErrorKind {
 }
 
 impl BosonLang {
+    fn prepare_native_platform() -> Platform {
+        return Platform {
+            print: native::print,
+            println: native::println,
+            exec: native::exec,
+            get_args: native::get_args,
+            get_env: native::get_env,
+            get_envs: native::get_envs,
+            get_unix_time: native::get_unix_time,
+        };
+    }
+
     pub fn new_from_file(file: String) -> BosonLang {
         let lexer = LexerAPI::new_from_file(file);
         let parser = Parser::new_from_lexer(lexer);
@@ -46,6 +59,7 @@ impl BosonLang {
             parser: parser,
             compiler: compiler,
             vm: None,
+            platform: BosonLang::prepare_native_platform(),
         };
     }
 
@@ -58,6 +72,7 @@ impl BosonLang {
             parser: parser,
             compiler: compiler,
             vm: None,
+            platform: BosonLang::prepare_native_platform(),
         };
     }
 
@@ -147,7 +162,12 @@ impl BosonLang {
                 self.vm.as_mut().unwrap().globals.clone(),
             ));
         }
-        let result = self.vm.as_mut().unwrap().eval_bytecode(true);
+        let result = self
+            .vm
+            .as_mut()
+            .unwrap()
+            .eval_bytecode(&self.platform, true);
+
         if result.is_err() {
             self.__display_error(ErrorKind::VMError(result.unwrap_err()));
             return None;
