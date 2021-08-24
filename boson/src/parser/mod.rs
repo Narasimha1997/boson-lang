@@ -1317,4 +1317,8 @@ impl Parser {
 
         return error_strings;
     }
+
+    pub fn reset_errors(&mut self) {
+        self.errors.clear();
+    }
 }

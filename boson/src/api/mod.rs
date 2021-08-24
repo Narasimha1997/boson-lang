@@ -122,6 +122,7 @@ impl BosonLang {
     }
 
     pub fn update(&mut self, new_buffer: Vec<u8>) {
+        self.parser.reset_errors();
         self.parser.lexer = LexerAPI::new_from_buffer(new_buffer);
     }
 
