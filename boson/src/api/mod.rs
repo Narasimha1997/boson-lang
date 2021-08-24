@@ -14,13 +14,14 @@ use std::rc::Rc;
 pub mod native;
 
 pub struct Platform {
-    pub print: fn(&String),
-    pub exec: fn(&Vec<Rc<Object>>) -> Result<(i32, Vec<u8>), String>,
+    pub print: fn(fmt_string: &String),
+    pub exec: fn(args: &Vec<Rc<Object>>) -> Result<(i32, Vec<u8>), String>,
     pub get_args: fn() -> Vec<Rc<Object>>,
     pub get_env: fn(name: &String) -> Result<String, String>,
     pub get_envs: fn() -> Vars,
     pub get_unix_time: fn() -> Result<f64, String>,
     pub get_platform_info: fn() -> Vec<String>,
+    pub sleep: fn(duration_ms: &f64),
 }
 
 pub struct BosonLang {
@@ -47,6 +48,7 @@ impl BosonLang {
             get_envs: native::get_envs,
             get_unix_time: native::get_unix_time,
             get_platform_info: native::get_platform_info,
+            sleep: native::sleep,
         };
     }
 

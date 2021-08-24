@@ -6,6 +6,8 @@ use std::rc::Rc;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
+use std::thread;
+use std::time::Duration;
 use object::Object;
 
 /*
@@ -83,4 +85,9 @@ pub fn get_platform_info() -> Vec<String> {
         env::consts::FAMILY.to_string(),
         env::consts::OS.to_string(),
     ];
+}
+
+pub fn sleep(duration_ms: &f64) {
+    let ns_time = (*duration_ms * 1000 as f64).round() as u64;
+    thread::sleep(Duration::from_nanos(ns_time));
 }
