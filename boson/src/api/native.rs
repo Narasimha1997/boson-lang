@@ -88,6 +88,7 @@ pub fn get_platform_info() -> Vec<String> {
 }
 
 pub fn sleep(duration_ms: &f64) {
-    let ns_time = (*duration_ms * 1000 as f64).round() as u64;
+    let ns_time = (*duration_ms * 1000000 as f64).round() as u64;
+    println!("Duration: {}", ns_time);
     thread::sleep(Duration::from_nanos(ns_time));
 }
