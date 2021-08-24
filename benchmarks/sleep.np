@@ -1,6 +1,23 @@
 
+var i = 0;
+var st = 0;
+var et = 0;
 
-while (true) {
-    println("Hello, world!");
-    sleep(3000);
+while (i < 10) {
+    st = unix_time();
+    sleep_ms(3000);
+    et = unix_time();
+
+    println("Sleep time", et - st);
+    i = i + 1;
+}
+
+i = 0;
+while (i < 10) {
+    st = unix_time();
+    sleep_sec(3);
+    et = unix_time();
+
+    println("Sleep time", et - st);
+    i = i + 1;
 }
