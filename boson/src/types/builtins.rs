@@ -48,7 +48,8 @@ pub enum BuiltinKind {
     CreateArray,
     Exec,
     ExecRaw,
-    Sleep,
+    SleepMs,
+    SleepSec,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -95,7 +96,8 @@ impl BuiltinKind {
             BuiltinKind::Next => "next".to_string(),
             BuiltinKind::Exec => "exec".to_string(),
             BuiltinKind::ExecRaw => "exec_raw".to_string(),
-            BuiltinKind::Sleep => "sleep".to_string(),
+            BuiltinKind::SleepSec => "sleep_sec".to_string(),
+            BuiltinKind::SleepMs => "sleep_ms".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -818,7 +820,7 @@ impl BuiltinKind {
                 }
             }
 
-            BuiltinKind::Sleep => {
+            BuiltinKind::SleepMs => {
                 if args.len() != 1 {
                     return Err(format!(
                         "sleep() expects one argument, provided {}.",
@@ -834,6 +836,34 @@ impl BuiltinKind {
                     Object::Int(duration_i_ms) => {
                         let sleep_fn = platform.sleep;
                         sleep_fn(&(*duration_i_ms as f64));
+                    }
+                    _ => {
+                        return Err(format!(
+                            "sleep() expects a float or int, but got {}",
+                            args[0].get_type()
+                        ));
+                    }
+                }
+
+                return Ok(Rc::new(Object::Noval));
+            }
+
+            BuiltinKind::SleepSec => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "sleep() expects one argument, provided {}.",
+                        args.len()
+                    ));
+                }
+
+                match args[0].as_ref() {
+                    Object::Float(duration_f_s) => {
+                        let sleep_fn = platform.sleep;
+                        sleep_fn(&(*duration_f_s * 1000 as f64));
+                    }
+                    Object::Int(duration_i_ms) => {
+                        let sleep_fn = platform.sleep;
+                        sleep_fn(&((*duration_i_ms * 1000) as f64));
                     }
                     _ => {
                         return Err(format!(

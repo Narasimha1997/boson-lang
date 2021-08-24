@@ -6,9 +6,9 @@ use std::rc::Rc;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
+use object::Object;
 use std::thread;
 use std::time::Duration;
-use object::Object;
 
 /*
     Contains all the implementation of native built-ins
@@ -17,7 +17,6 @@ use object::Object;
 pub fn print(st: &String) {
     print!("{}", st);
 }
-
 
 pub fn exec(args: &Vec<Rc<Object>>) -> Result<(i32, Vec<u8>), String> {
     let mut command = Command::new(args[0].as_ref().describe());
@@ -89,6 +88,5 @@ pub fn get_platform_info() -> Vec<String> {
 
 pub fn sleep(duration_ms: &f64) {
     let ns_time = (*duration_ms * 1000000 as f64).round() as u64;
-    println!("Duration: {}", ns_time);
     thread::sleep(Duration::from_nanos(ns_time));
 }
