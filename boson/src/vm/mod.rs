@@ -286,7 +286,11 @@ impl BosonVM {
                     let args_len = operands[0];
 
                     let result =
-                        Controls::execute_call(&inst, &mut self.data_stack, args_len, platform);
+                        Controls::execute_call(
+                            &inst, &mut self.data_stack, args_len,
+                            &mut self.globals, &mut self.constants,
+                            platform
+                        );
 
                     if result.is_err() {
                         return Err(result.unwrap_err());
@@ -488,7 +492,8 @@ impl BosonVM {
         // execute the function call:
         let exec_frame = Controls::execute_call(
             &InstructionKind::ICall, &mut vm_instance.data_stack,
-            params_len, platform
+            params_len, &mut vm_instance.globals, &mut vm_instance.constants,
+            platform
         );
 
         if exec_frame.is_err() {

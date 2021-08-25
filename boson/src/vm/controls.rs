@@ -365,6 +365,8 @@ impl Controls {
         inst: &InstructionKind,
         ds: &mut DataStack,
         n_args: usize,
+        global_pool: &mut GlobalPool,
+        constants: &mut ConstantPool,
         platform: &Platform,
 
     ) -> Result<Option<RefCell<ExecutionFrame>>, VMError> {
