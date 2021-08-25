@@ -31,9 +31,10 @@ pub enum VMErrorKind {
     AssertionError,
     IndexError,
     IterationError,
+    ThreadKillError,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VMError {
     pub message: String,
     pub t: VMErrorKind,

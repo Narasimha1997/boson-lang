@@ -10,6 +10,7 @@ use crate::types::closure::ClosureContext;
 use crate::types::exception::Exception;
 use crate::types::hash::HashTable;
 use crate::types::iter::ObjectIterator;
+use crate::types::th::ThreadBlock;
 use crate::types::subroutine::Subroutine;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -29,6 +30,7 @@ pub enum Object {
     Builtins(BuiltinKind),
     Iter(RefCell<ObjectIterator>),
     Exception(Rc<Exception>),
+    Thread(RefCell<ThreadBlock>),
 }
 
 impl Eq for Object {}
@@ -48,7 +50,7 @@ impl Hash for Object {
             Object::Exception(exc) => exc.hash(state),
             Object::Byte(byte) => byte.hash(state),
             Object::ByteBuffer(buff) => buff.borrow().hash(state),
-            // No hash for iterators
+            // No hash for iterators and thread block
             _ => "undef".hash(state),
         }
     }
@@ -71,6 +73,7 @@ impl Object {
             Object::Builtins(_) => "builtin".to_string(),
             Object::Exception(exc) => exc.describe(),
             Object::ByteBuffer(buff) => buff.borrow().describe(),
+            Object::Thread(th) => th.borrow().describe(),
             _ => String::from("undef"),
         }
     }

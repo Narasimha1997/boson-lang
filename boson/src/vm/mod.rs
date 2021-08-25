@@ -3,6 +3,7 @@ pub mod controls;
 pub mod errors;
 pub mod frames;
 pub mod global;
+pub mod thread;
 pub mod stack;
 
 use std::cell::RefCell;
