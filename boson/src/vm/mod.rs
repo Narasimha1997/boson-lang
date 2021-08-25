@@ -16,10 +16,11 @@ use global::GlobalPool;
 use stack::CallStack;
 use stack::DataStack;
 
+use crate::api::Platform;
 use crate::compiler::symtab::ConstantPool;
 use crate::compiler::CompiledBytecode;
 use crate::isa::InstructionKind;
-use crate::api::Platform;
+use crate::types::closure;
 use crate::types::object;
 
 use object::Object;
@@ -66,6 +67,18 @@ impl BosonVM {
         };
     }
 
+    pub fn new_empty_from_state(globals: GlobalPool, constants: ConstantPool) -> BosonVM {
+        let mut call_stack = CallStack::new();
+        let data_stack = DataStack::new();
+
+        return BosonVM {
+            constants: constants,
+            call_stack: call_stack,
+            data_stack: data_stack,
+            globals: globals,
+        };
+    }
+
     pub fn push_new_frame(&mut self, frame: RefCell<ExecutionFrame>) -> Option<VMError> {
         let push_result = self.call_stack.push_frame(frame);
         if push_result.is_err() {
@@ -75,7 +88,11 @@ impl BosonVM {
         return None;
     }
 
-    pub fn eval_bytecode(&mut self, platform: &Platform, pop_last: bool) -> Result<Rc<Object>, VMError> {
+    pub fn eval_bytecode(
+        &mut self,
+        platform: &Platform,
+        pop_last: bool,
+    ) -> Result<Rc<Object>, VMError> {
         while self.call_stack.top_ref().has_instructions() {
             let mut frame = self.call_stack.top();
 
@@ -268,10 +285,8 @@ impl BosonVM {
                 InstructionKind::ICall => {
                     let args_len = operands[0];
 
-                    let result = Controls::execute_call(
-                        &inst, &mut self.data_stack, args_len,
-                        platform
-                    );
+                    let result =
+                        Controls::execute_call(&inst, &mut self.data_stack, args_len, platform);
 
                     if result.is_err() {
                         return Err(result.unwrap_err());
@@ -441,6 +456,18 @@ impl BosonVM {
         }
 
         return result;
+    }
+
+    pub fn execute_sandbox(
+        closure: closure::ClosureContext,
+        params: Vec<Rc<Object>>,
+        platform: &Platform,
+        globals: GlobalPool,
+        constants: ConstantPool
+    ) -> Result<Rc<Object>, VMError> {
+
+        // create an execution frame for that closure:
+        let vm_instance = BosonVM::new_empty_from_state(globals, constants);
     }
 
     pub fn dump_ds(&self) -> String {
