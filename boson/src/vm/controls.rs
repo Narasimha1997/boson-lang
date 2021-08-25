@@ -112,7 +112,8 @@ impl Controls {
     }
 
     pub fn push_objects(objs: Vec<Rc<Object>>, ds: &mut DataStack) -> Option<VMError> {
-        if ds.stack_pointer + objs.len() as i64 >= ds.max_size as i64{
+        let objs_len = objs.len() as i64;
+        if ds.stack_pointer + objs_len >= ds.max_size as i64{
             return Some(VMError::new(
                 "Stack Overflow!".to_string(), VMErrorKind::DataStackOverflow,
                 Some(InstructionKind::ILoadGlobal), 0
@@ -120,7 +121,7 @@ impl Controls {
         }
 
         ds.stack.extend(objs);
-        ds.stack_pointer += objs.len() as i64;
+        ds.stack_pointer += objs_len;
         return None;
     }
 

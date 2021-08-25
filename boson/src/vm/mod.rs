@@ -68,7 +68,7 @@ impl BosonVM {
     }
 
     pub fn new_empty_from_state(globals: GlobalPool, constants: ConstantPool) -> BosonVM {
-        let mut call_stack = CallStack::new();
+        let call_stack = CallStack::new();
         let data_stack = DataStack::new();
 
         return BosonVM {
@@ -473,14 +473,45 @@ impl BosonVM {
         let closure_rc = Rc::new(Object::ClosureContext(Rc::new(closure)));
 
         // push the arguments on top of the stack:
-        let error = Controls::push_objects(params, &mut vm_instance.data_stack);
+        let params_len = params.len();
+        let mut error = Controls::push_objects(params, &mut vm_instance.data_stack);
         if error.is_some() {
             return Err(error.unwrap());
         }
 
         // push the closure on to the stack:
         error = Controls::push_objects(vec![closure_rc], &mut vm_instance.data_stack);
+        if error.is_some() {
+            return Err(error.unwrap());
+        }
 
+        // execute the function call:
+        let exec_frame = Controls::execute_call(
+            &InstructionKind::ICall, &mut vm_instance.data_stack,
+            params_len, platform
+        );
+
+        if exec_frame.is_err() {
+            return Err(exec_frame.unwrap_err());
+        }
+
+        // check if there is a frame returned:
+        let unwrapped_frame_res = exec_frame.unwrap();
+        if unwrapped_frame_res.is_some() {
+            // custom function call, push the execution frame:
+            vm_instance.push_new_frame(unwrapped_frame_res.unwrap());
+            // evaluate the frame:
+            let eval_result = vm_instance.eval_bytecode(platform, true);
+            return eval_result;
+        }
+
+        // last item in the stack:
+        let popped_result = vm_instance.data_stack.pop_object(InstructionKind::IBlockEnd);
+        if popped_result.is_err() {
+            return Ok(Rc::new(Object::Noval));
+        }
+    
+        return Ok(popped_result.unwrap());
     }
 
     pub fn dump_ds(&self) -> String {
