@@ -13,3 +13,6 @@ println(add_res);
 
 call_func(print_hello, []);
 
+# builtin:
+const t = call_func(unix_time, []);
+println(t);

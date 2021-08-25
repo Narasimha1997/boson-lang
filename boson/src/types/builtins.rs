@@ -931,9 +931,14 @@ impl BuiltinKind {
                         let obj_result = sandbox_result.unwrap();
                         return Ok(obj_result);
                     }
+                    (Object::Builtins(func), Object::Array(params)) => {
+                        let params_vec = params.borrow().elements.clone();
+                        let exec_result = func.exec(params_vec, platform, gp, c);
+                        return exec_result;
+                    },
                     _ => {
                         return Err(format!(
-                            "call_func takes closure and array as arguments, but got {} {}.",
+                            "call_func takes closure/func and array as arguments, but got {} {}.",
                             args[0].get_type(),
                             args[1].get_type()
                         ));
