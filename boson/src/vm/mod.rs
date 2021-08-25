@@ -467,7 +467,20 @@ impl BosonVM {
     ) -> Result<Rc<Object>, VMError> {
 
         // create an execution frame for that closure:
-        let vm_instance = BosonVM::new_empty_from_state(globals, constants);
+
+        // new empty from state will create a VM with an empty call stack.
+        let mut vm_instance = BosonVM::new_empty_from_state(globals, constants);
+        let closure_rc = Rc::new(Object::ClosureContext(Rc::new(closure)));
+
+        // push the arguments on top of the stack:
+        let error = Controls::push_objects(params, &mut vm_instance.data_stack);
+        if error.is_some() {
+            return Err(error.unwrap());
+        }
+
+        // push the closure on to the stack:
+        error = Controls::push_objects(vec![closure_rc], &mut vm_instance.data_stack);
+
     }
 
     pub fn dump_ds(&self) -> String {

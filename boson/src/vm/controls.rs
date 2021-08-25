@@ -111,6 +111,19 @@ impl Controls {
         return None;
     }
 
+    pub fn push_objects(objs: Vec<Rc<Object>>, ds: &mut DataStack) -> Option<VMError> {
+        if ds.stack_pointer + objs.len() as i64 >= ds.max_size as i64{
+            return Some(VMError::new(
+                "Stack Overflow!".to_string(), VMErrorKind::DataStackOverflow,
+                Some(InstructionKind::ILoadGlobal), 0
+            ));
+        }
+
+        ds.stack.extend(objs);
+        ds.stack_pointer += objs.len() as i64;
+        return None;
+    }
+
     pub fn store_local(
         ds: &mut DataStack,
         pos: usize,
