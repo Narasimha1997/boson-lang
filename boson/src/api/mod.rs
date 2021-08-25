@@ -169,7 +169,7 @@ impl BosonLang {
             .vm
             .as_mut()
             .unwrap()
-            .eval_bytecode(&self.platform, true);
+            .eval_bytecode(&self.platform, true, false);
 
         if result.is_err() {
             self.__display_error(ErrorKind::VMError(result.unwrap_err()));

@@ -92,7 +92,9 @@ impl BosonVM {
         &mut self,
         platform: &Platform,
         pop_last: bool,
+        break_on_ret: bool,
     ) -> Result<Rc<Object>, VMError> {
+
         while self.call_stack.top_ref().has_instructions() {
             let mut frame = self.call_stack.top();
 
@@ -285,12 +287,14 @@ impl BosonVM {
                 InstructionKind::ICall => {
                     let args_len = operands[0];
 
-                    let result =
-                        Controls::execute_call(
-                            &inst, &mut self.data_stack, args_len,
-                            &mut self.globals, &mut self.constants,
-                            platform
-                        );
+                    let result = Controls::execute_call(
+                        &inst,
+                        &mut self.data_stack,
+                        args_len,
+                        &mut self.globals,
+                        &mut self.constants,
+                        platform,
+                    );
 
                     if result.is_err() {
                         return Err(result.unwrap_err());
@@ -364,6 +368,10 @@ impl BosonVM {
                     if error.is_some() {
                         return Err(error.unwrap());
                     }
+
+                    if break_on_ret {
+                        break;
+                    }
                 }
 
                 InstructionKind::IRetVal => {
@@ -383,6 +391,10 @@ impl BosonVM {
 
                     if error.is_some() {
                         return Err(error.unwrap());
+                    }
+
+                    if break_on_ret {
+                        break;
                     }
                 }
 
@@ -467,9 +479,8 @@ impl BosonVM {
         params: Vec<Rc<Object>>,
         platform: &Platform,
         globals: GlobalPool,
-        constants: ConstantPool
+        constants: ConstantPool,
     ) -> Result<Rc<Object>, VMError> {
-
         // create an execution frame for that closure:
 
         // new empty from state will create a VM with an empty call stack.
@@ -491,9 +502,12 @@ impl BosonVM {
 
         // execute the function call:
         let exec_frame = Controls::execute_call(
-            &InstructionKind::ICall, &mut vm_instance.data_stack,
-            params_len, &mut vm_instance.globals, &mut vm_instance.constants,
-            platform
+            &InstructionKind::ICall,
+            &mut vm_instance.data_stack,
+            params_len,
+            &mut vm_instance.globals,
+            &mut vm_instance.constants,
+            platform,
         );
 
         if exec_frame.is_err() {
@@ -504,18 +518,23 @@ impl BosonVM {
         let unwrapped_frame_res = exec_frame.unwrap();
         if unwrapped_frame_res.is_some() {
             // custom function call, push the execution frame:
-            vm_instance.push_new_frame(unwrapped_frame_res.unwrap());
+            let frame_push_res = vm_instance.push_new_frame(unwrapped_frame_res.unwrap());
+            if frame_push_res.is_some() {
+                return Err(frame_push_res.unwrap());
+            }
             // evaluate the frame:
-            let eval_result = vm_instance.eval_bytecode(platform, true);
+            let eval_result = vm_instance.eval_bytecode(platform, true, true);
             return eval_result;
         }
 
         // last item in the stack:
-        let popped_result = vm_instance.data_stack.pop_object(InstructionKind::IBlockEnd);
+        let popped_result = vm_instance
+            .data_stack
+            .pop_object(InstructionKind::IBlockEnd);
         if popped_result.is_err() {
             return Ok(Rc::new(Object::Noval));
         }
-    
+
         return Ok(popped_result.unwrap());
     }
 

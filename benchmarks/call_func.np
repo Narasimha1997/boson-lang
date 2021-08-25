@@ -1,0 +1,15 @@
+
+
+func add_numbers(x, y) {
+    return x + y;
+}
+
+func print_hello() {
+    println("Hello, World!");
+}
+
+const add_res = call_func(add_numbers, [10, 20]);
+println(add_res);
+
+call_func(print_hello, []);
+
