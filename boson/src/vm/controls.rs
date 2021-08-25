@@ -389,7 +389,7 @@ impl Controls {
                 let mut args = popped_args.unwrap();
                 args.reverse();
                 // call the builtin:
-                let exec_result = func.exec(args, platform);
+                let exec_result = func.exec(args, platform, global_pool, constants);
                 if exec_result.is_err() {
                     return Err(VMError::new(
                         exec_result.unwrap_err(),

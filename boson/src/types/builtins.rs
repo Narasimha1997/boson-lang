@@ -7,11 +7,17 @@ use std::rc::Rc;
 
 use crate::api;
 use crate::api::BosonLang;
+use crate::compiler;
 use crate::types::array;
 use crate::types::buffer;
 use crate::types::hash;
 use crate::types::iter;
 use crate::types::object;
+use crate::vm;
+
+use compiler::symtab::ConstantPool;
+use vm::global::GlobalPool;
+use vm::BosonVM;
 
 use api::Platform;
 use array::Array;
@@ -50,6 +56,7 @@ pub enum BuiltinKind {
     ExecRaw,
     SleepMs,
     SleepSec,
+    CallFunc,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -98,11 +105,18 @@ impl BuiltinKind {
             BuiltinKind::ExecRaw => "exec_raw".to_string(),
             BuiltinKind::SleepSec => "sleep_sec".to_string(),
             BuiltinKind::SleepMs => "sleep_ms".to_string(),
+            BuiltinKind::CallFunc => "call_func".to_string(),
             _ => "undef".to_string(),
         }
     }
 
-    pub fn exec(&self, args: Vec<Rc<Object>>, platform: &Platform) -> Result<Rc<Object>, String> {
+    pub fn exec(
+        &self,
+        args: Vec<Rc<Object>>,
+        platform: &Platform,
+        gp: &mut GlobalPool,
+        c: &mut ConstantPool,
+    ) -> Result<Rc<Object>, String> {
         match self {
             BuiltinKind::Print => {
                 if args.len() == 0 {
@@ -874,6 +888,57 @@ impl BuiltinKind {
                 }
 
                 return Ok(Rc::new(Object::Noval));
+            }
+
+            BuiltinKind::CallFunc => {
+                if args.len() != 2 {
+                    return Err(format!(
+                        "call_func takes 2 arguments, provided {}.",
+                        args.len()
+                    ));
+                }
+
+                match (args[0].as_ref(), args[1].as_ref()) {
+                    (Object::ClosureContext(ctx), Object::Array(params)) => {
+                        let n_parms_required = ctx.as_ref().compiled_fn.as_ref().num_parameters;
+                        let n_provided = params.borrow().elements.len();
+                        if n_parms_required != n_provided {
+                            return Err(format!(
+                                "Function {} requires {} parameters, provided {}",
+                                ctx.as_ref().compiled_fn.name,
+                                n_parms_required,
+                                n_provided
+                            ));
+                        }
+
+                        // launch the sandbox function:
+                        let sandbox_result = BosonVM::execute_sandbox(
+                            ctx.clone(),
+                            params.borrow().elements.clone(),
+                            platform,
+                            gp.clone(),
+                            c.clone(),
+                        );
+
+                        if sandbox_result.is_err() {
+                            let error = sandbox_result.unwrap_err();
+                            return Err(format!(
+                                "{:?}: {} at {}, Instruction: {:?}",
+                                error.t, error.message, error.pos, error.instruction
+                            ));
+                        }
+
+                        let obj_result = sandbox_result.unwrap();
+                        return Ok(obj_result);
+                    }
+                    _ => {
+                        return Err(format!(
+                            "call_func takes closure and array as arguments, but got {} {}.",
+                            args[0].get_type(),
+                            args[1].get_type()
+                        ));
+                    }
+                }
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),

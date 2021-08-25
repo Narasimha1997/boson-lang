@@ -463,7 +463,7 @@ impl BosonVM {
     }
 
     pub fn execute_sandbox(
-        closure: closure::ClosureContext,
+        closure: Rc<closure::ClosureContext>,
         params: Vec<Rc<Object>>,
         platform: &Platform,
         globals: GlobalPool,
@@ -474,7 +474,7 @@ impl BosonVM {
 
         // new empty from state will create a VM with an empty call stack.
         let mut vm_instance = BosonVM::new_empty_from_state(globals, constants);
-        let closure_rc = Rc::new(Object::ClosureContext(Rc::new(closure)));
+        let closure_rc = Rc::new(Object::ClosureContext(closure));
 
         // push the arguments on top of the stack:
         let params_len = params.len();
