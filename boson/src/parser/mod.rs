@@ -55,7 +55,10 @@ impl Parser {
     fn parse_block_statement(&mut self) -> Result<ast::BlockStatement, ParserError> {
         self.lexer.iterate();
 
-        let mut block_statement = ast::BlockStatement { statements: vec![], pos: vec![]};
+        let mut block_statement = ast::BlockStatement {
+            statements: vec![],
+            pos: vec![],
+        };
 
         if self.next_symbol_is(SymbolKind::SRBrace) {
             self.lexer.iterate();
@@ -513,7 +516,7 @@ impl Parser {
         if self.next_symbol_is(SymbolKind::SRBrace) {
             self.lexer.iterate();
             return Ok(ast::ExpressionKind::Literal(ast::LiteralKind::HashTable(
-                ast::HashTableType{pairs: h_pairs},
+                ast::HashTableType { pairs: h_pairs },
             )));
         }
 
@@ -542,7 +545,7 @@ impl Parser {
         }
         self.lexer.iterate();
         return Ok(ast::ExpressionKind::Literal(ast::LiteralKind::HashTable(
-            ast::HashTableType{pairs: h_pairs},
+            ast::HashTableType { pairs: h_pairs },
         )));
     }
 
@@ -906,6 +909,27 @@ impl Parser {
         }));
     }
 
+    fn parse_thread_exp(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        self.lexer.iterate();
+        let suffix_exp_res = self.parse_expression(exp::ExpOrder::Zero);
+        if suffix_exp_res.is_err() {
+            return suffix_exp_res;
+        }
+
+        let exp = suffix_exp_res.unwrap();
+        match exp {
+            ast::ExpressionKind::Call(mut ct) => {
+                ct.is_thread = true;
+                return Ok(ast::ExpressionKind::Call(ct));
+            }
+            _ => {
+                return Err(self.new_invalid_token_err(
+                    "thread expression requires a callable prefix".to_string(),
+                ));
+            }
+        }
+    }
+
     fn parse_expression(&mut self, pre: ExpOrder) -> Result<ast::ExpressionKind, ParserError> {
         // when an expression is called, the current_token should be at the starting
         // the next_token should point to the next token after start.
@@ -935,6 +959,7 @@ impl Parser {
                     }
                     KeywordKind::KLambda => self.parse_lambda_exp(),
                     KeywordKind::KNone => Ok(ast::ExpressionKind::Noval),
+                    KeywordKind::KThread => self.parse_thread_exp(),
                     _ => Err(self
                         .new_invalid_token_err(String::from("Functionality not yet implemented"))),
                 };
@@ -965,7 +990,6 @@ impl Parser {
         }
 
         while !self.next_symbol_is(SymbolKind::SSemiColon) && pre < self.get_next_order() {
-
             if matched_prefix.is_err() {
                 return Err(matched_prefix.unwrap_err());
             }
@@ -1005,9 +1029,9 @@ impl Parser {
         }
 
         self.lexer.iterate();
-        let index_type = ast::IndexType{
+        let index_type = ast::IndexType {
             expression_left: Box::new(prefix_exp),
-            index: Box::new(exp_result.unwrap())
+            index: Box::new(exp_result.unwrap()),
         };
 
         return Ok(ast::ExpressionKind::Index(index_type));
@@ -1017,12 +1041,12 @@ impl Parser {
         &mut self,
         caller_expr: ast::ExpressionKind,
     ) -> Result<ast::ExpressionKind, ParserError> {
-
         if self.next_symbol_is(SymbolKind::SRparen) {
             self.lexer.iterate();
             return Ok(ast::ExpressionKind::Call(ast::CallType {
                 function: Box::new(caller_expr),
                 arguments: vec![],
+                is_thread: false,
             }));
         }
 
@@ -1035,6 +1059,7 @@ impl Parser {
         let call_type = ast::CallType {
             function: Box::new(caller_expr),
             arguments: args_list_result.unwrap(),
+            is_thread: false,
         };
 
         return Ok(ast::ExpressionKind::Call(call_type));
@@ -1264,7 +1289,10 @@ impl Parser {
 
     pub fn parse(&mut self) -> Result<ast::Program, &ParserErrors> {
         // parse and return the program ast
-        let mut program = ast::Program { statements: vec![], pos: vec![] };
+        let mut program = ast::Program {
+            statements: vec![],
+            pos: vec![],
+        };
         let mut current_token = self.lexer.get_current_token();
         while !self
             .lexer
