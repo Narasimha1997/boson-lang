@@ -16,6 +16,13 @@ pub struct GlobalPool {
     pub max_size: usize,
 }
 
+// make GlobalPool capable of sharing between threads.
+// by design, GlobalPool will always be thread safe as each thread will
+// get it's own copy of global pool.
+// so this unsafe impl is just a cover-up to fool the compiler to make global pool
+// sharebale across threads.
+unsafe impl Send for GlobalPool {}
+
 impl GlobalPool {
     pub fn new() -> GlobalPool {
         let mut pool = Vec::with_capacity(GLOBAL_POOL_SIZE);

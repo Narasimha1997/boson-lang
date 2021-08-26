@@ -224,3 +224,11 @@ impl fmt::Display for Object {
         write!(f, "{}", self.describe())
     }
 }
+
+
+// make Object capable of sharing between threads.
+// by design, Object will always be thread safe as each thread will
+// get it's own copy of Object.
+// so this unsafe impl is just a cover-up to fool the compiler to make Object
+// sharebale across threads.
+unsafe impl Send for Object {}
