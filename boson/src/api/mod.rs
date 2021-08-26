@@ -15,13 +15,13 @@ use std::rc::Rc;
 pub mod native;
 
 #[derive(Debug)]
-pub enum PlatformType {
+pub enum PlatformKind {
     Native,
     WebAssembly,
 }
 
 pub struct Platform {
-    pub platform_type: PlatformType,
+    pub platform_type: PlatformKind,
     pub print: fn(fmt_string: &String),
     pub exec: fn(args: &Vec<Rc<Object>>) -> Result<(i32, Vec<u8>), String>,
     pub get_args: fn() -> Vec<Rc<Object>>,
@@ -57,7 +57,7 @@ pub enum ErrorKind {
 impl BosonLang {
     pub fn prepare_native_platform() -> Platform {
         return Platform {
-            platform_type: PlatformType::Native,
+            platform_type: PlatformKind::Native,
             print: native::print,
             exec: native::exec,
             get_args: native::get_args,

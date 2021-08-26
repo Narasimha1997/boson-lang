@@ -11,7 +11,7 @@ use crate::vm::global;
 
 use api::BosonLang;
 use api::Platform;
-use api::PlatformType;
+use api::PlatformKind;
 use closure::ClosureContext;
 use global::GlobalPool;
 use object::Object;
@@ -104,7 +104,7 @@ impl BosonThreads {
         platform: &Platform,
     ) -> Result<u64, String> {
         let new_platform = match platform.platform_type {
-            PlatformType::Native => BosonLang::prepare_native_platform(),
+            PlatformKind::Native => BosonLang::prepare_native_platform(),
             _ => {
                 // TODO: re-iterate this section after web assembly support.
                 return Err(format!(
