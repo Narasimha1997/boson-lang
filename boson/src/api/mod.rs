@@ -9,11 +9,19 @@ use crate::types::object::Object;
 use crate::vm::errors::VMError;
 use crate::vm::BosonVM;
 use std::env::Vars;
+use std::fmt;
 use std::rc::Rc;
 
 pub mod native;
 
+#[derive(Debug)]
+pub enum PlatformType {
+    Native,
+    WebAssembly,
+}
+
 pub struct Platform {
+    pub platform_type: PlatformType,
     pub print: fn(fmt_string: &String),
     pub exec: fn(args: &Vec<Rc<Object>>) -> Result<(i32, Vec<u8>), String>,
     pub get_args: fn() -> Vec<Rc<Object>>,
@@ -22,6 +30,14 @@ pub struct Platform {
     pub get_unix_time: fn() -> Result<f64, String>,
     pub get_platform_info: fn() -> Vec<String>,
     pub sleep: fn(duration_ms: &f64),
+}
+
+impl fmt::Debug for Platform {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Platform")
+            .field("type", &self.platform_type)
+            .finish()
+    }
 }
 
 pub struct BosonLang {
@@ -41,6 +57,7 @@ pub enum ErrorKind {
 impl BosonLang {
     fn prepare_native_platform() -> Platform {
         return Platform {
+            platform_type: PlatformType::Native,
             print: native::print,
             exec: native::exec,
             get_args: native::get_args,
