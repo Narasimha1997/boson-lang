@@ -1320,7 +1320,11 @@ impl BytecodeCompiler {
         }
 
         // place the call instruction:
-        self.save(isa::InstructionKind::ICall, &vec![args.len()]);
+        if node.is_thread {
+            self.save(isa::InstructionKind::ICallThread, &vec![args.len()]);
+        } else {
+            self.save(isa::InstructionKind::ICall, &vec![args.len()]);
+        }
 
         return None;
     }

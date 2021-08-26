@@ -81,6 +81,7 @@ pub enum InstructionKind {
 
     // Call
     ICall,
+    ICallThread,
 
     // Call builtin
     ILoadBuiltIn,
@@ -248,6 +249,7 @@ impl InstructionKind {
             InstructionKind::IPopExcHandle => "IPopExcHandle".to_string(),
             InstructionKind::IPushExcHandle => "IPushExcHandle".to_string(),
             InstructionKind::IRaise => "IRaise".to_string(),
+            InstructionKind::ICallThread => "ICallThread".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -266,6 +268,7 @@ impl InstructionKind {
             | InstructionKind::IArray
             | InstructionKind::ILoadBuiltIn
             | InstructionKind::ICall
+            | InstructionKind::ICallThread
             | InstructionKind::ILoadFree
             | InstructionKind::IPushExcHandle => vec![2],
 
