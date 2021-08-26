@@ -1,0 +1,7 @@
+
+func get_data(file) {
+    return exec_raw("cat", file);
+}
+
+var result = call_async(get_data, ["dump.txt"]);
+println(string(result[1]));
