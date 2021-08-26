@@ -21,6 +21,7 @@ use vm::BosonVM;
 use crate::vm::errors;
 use errors::VMError;
 
+#[derive(Debug, Clone)]
 pub struct ThreadReturnType {
     pub result: Result<Rc<Object>, VMError>,
 }

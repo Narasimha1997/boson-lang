@@ -298,6 +298,7 @@ impl BosonVM {
                         &mut self.globals,
                         &mut self.constants,
                         platform,
+                        &mut self.threads
                     );
 
                     if result.is_err() {
@@ -531,6 +532,7 @@ impl BosonVM {
             &mut vm_instance.globals,
             &mut vm_instance.constants,
             platform,
+            &mut vm_instance.threads
         );
 
         if exec_frame.is_err() {

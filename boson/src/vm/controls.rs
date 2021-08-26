@@ -372,6 +372,7 @@ impl Controls {
         global_pool: &mut GlobalPool,
         constants: &mut ConstantPool,
         platform: &Platform,
+        threads: &mut thread::BosonThreads
     ) -> Result<Option<RefCell<ExecutionFrame>>, VMError> {
         // pop the function:
 
@@ -392,7 +393,7 @@ impl Controls {
                 let mut args = popped_args.unwrap();
                 args.reverse();
                 // call the builtin:
-                let exec_result = func.exec(args, platform, global_pool, constants);
+                let exec_result = func.exec(args, platform, global_pool, constants, threads);
                 if exec_result.is_err() {
                     return Err(VMError::new(
                         exec_result.unwrap_err(),

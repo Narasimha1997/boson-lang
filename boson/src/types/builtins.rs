@@ -17,6 +17,8 @@ use crate::vm;
 
 use compiler::symtab::ConstantPool;
 use vm::global::GlobalPool;
+use vm::thread::BosonThreads;
+use vm::thread::ThreadParams;
 use vm::BosonVM;
 
 use api::Platform;
@@ -57,6 +59,7 @@ pub enum BuiltinKind {
     SleepMs,
     SleepSec,
     CallFunc,
+    CallAsync,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -106,6 +109,7 @@ impl BuiltinKind {
             BuiltinKind::SleepSec => "sleep_sec".to_string(),
             BuiltinKind::SleepMs => "sleep_ms".to_string(),
             BuiltinKind::CallFunc => "call_func".to_string(),
+            BuiltinKind::CallAsync => "call_async".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -116,6 +120,7 @@ impl BuiltinKind {
         platform: &Platform,
         gp: &mut GlobalPool,
         c: &mut ConstantPool,
+        th: &mut BosonThreads,
     ) -> Result<Rc<Object>, String> {
         match self {
             BuiltinKind::Print => {
@@ -933,12 +938,73 @@ impl BuiltinKind {
                     }
                     (Object::Builtins(func), Object::Array(params)) => {
                         let params_vec = params.borrow().elements.clone();
-                        let exec_result = func.exec(params_vec, platform, gp, c);
+                        let exec_result = func.exec(params_vec, platform, gp, c, th);
                         return exec_result;
-                    },
+                    }
                     _ => {
                         return Err(format!(
                             "call_func takes closure/func and array as arguments, but got {} {}.",
+                            args[0].get_type(),
+                            args[1].get_type()
+                        ));
+                    }
+                }
+            }
+
+            BuiltinKind::CallAsync => {
+                if args.len() != 2 {
+                    return Err(format!(
+                        "call_async takes 2 arguments, provided {}.",
+                        args.len()
+                    ));
+                }
+
+                match (args[0].as_ref(), args[1].as_ref()) {
+                    (Object::ClosureContext(ctx), Object::Array(params)) => {
+                        let n_parms_required = ctx.as_ref().compiled_fn.as_ref().num_parameters;
+                        let n_provided = params.borrow().elements.len();
+                        if n_parms_required != n_provided {
+                            return Err(format!(
+                                "Function {} requires {} parameters, provided {}",
+                                ctx.as_ref().compiled_fn.name,
+                                n_parms_required,
+                                n_provided
+                            ));
+                        }
+
+                        let params = params.borrow().elements.clone();
+                        // call the async function
+                        let thread_params = ThreadParams::new(
+                            ctx.clone(), params, gp.clone(), c.clone()
+                        );
+
+                        let thread_create_res = th.create_thread_sandbox(thread_params, platform);
+                        if thread_create_res.is_err() {
+                            return Err(thread_create_res.unwrap_err());
+                        }
+
+                        // wait for the thread to finish:
+                        let thread_exec_res = th.wait_and_return(thread_create_res.unwrap());
+                        if thread_exec_res.is_err() {
+                            return Err(thread_exec_res.unwrap_err());
+                        }
+
+                        // thread has finished execution successfully:
+                        let sandbox_result = thread_exec_res.unwrap().result;
+                        if sandbox_result.is_err() {
+                            let error = sandbox_result.unwrap_err();
+                            return Err(format!(
+                                "{:?}: {} at {}, Instruction: {:?}",
+                                error.t, error.message, error.pos, error.instruction
+                            ));
+                        }
+
+                        // return the result object
+                        return Ok(sandbox_result.unwrap());
+                    }
+                    _ => {
+                        return Err(format!(
+                            "call_async takes closure/func and array as arguments, but got {} {}.",
                             args[0].get_type(),
                             args[1].get_type()
                         ));
