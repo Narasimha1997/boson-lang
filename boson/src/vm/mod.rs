@@ -3,8 +3,8 @@ pub mod controls;
 pub mod errors;
 pub mod frames;
 pub mod global;
-pub mod thread;
 pub mod stack;
+pub mod thread;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -31,6 +31,7 @@ pub struct BosonVM {
     pub globals: GlobalPool,
     pub data_stack: DataStack,
     pub call_stack: CallStack,
+    pub threads: thread::BosonThreads,
 }
 
 impl BosonVM {
@@ -49,6 +50,7 @@ impl BosonVM {
             call_stack: call_stack,
             data_stack: data_stack,
             globals: globals,
+            threads: thread::BosonThreads::new_empty(),
         };
     }
 
@@ -65,6 +67,7 @@ impl BosonVM {
             call_stack: call_stack,
             data_stack: data_stack,
             globals: globals,
+            threads: thread::BosonThreads::new_empty(),
         };
     }
 
@@ -77,6 +80,7 @@ impl BosonVM {
             call_stack: call_stack,
             data_stack: data_stack,
             globals: globals,
+            threads: thread::BosonThreads::new_empty(),
         };
     }
 
@@ -95,7 +99,6 @@ impl BosonVM {
         pop_last: bool,
         break_on_ret: bool,
     ) -> Result<Rc<Object>, VMError> {
-
         while self.call_stack.top_ref().has_instructions() {
             let mut frame = self.call_stack.top();
 
@@ -313,6 +316,25 @@ impl BosonVM {
                     } else {
                         frame.farword_ip(next);
                     }
+                }
+
+                InstructionKind::ICallThread => {
+                    let n_args = operands[0];
+                    let result = Controls::execute_thread(
+                        &inst,
+                        &mut self.data_stack,
+                        n_args,
+                        &mut self.globals,
+                        &mut self.constants,
+                        platform,
+                        &mut self.threads,
+                    );
+
+                    if result.is_some() {
+                        return Err(result.unwrap());
+                    }
+
+                    frame.farword_ip(next);
                 }
 
                 // build Array and Hash:

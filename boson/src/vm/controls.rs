@@ -1,3 +1,4 @@
+use crate::api;
 use crate::compiler::symtab::ConstantPool;
 use crate::isa;
 use crate::types::array;
@@ -5,12 +6,13 @@ use crate::types::builtins;
 use crate::types::hash;
 use crate::types::iter;
 use crate::types::object;
+use crate::types::th;
 use crate::vm::alu;
 use crate::vm::errors;
 use crate::vm::frames;
 use crate::vm::global;
 use crate::vm::stack;
-use crate::api;
+use crate::vm::thread;
 
 use std::cell::Ref;
 use std::cell::RefCell;
@@ -22,6 +24,7 @@ use alu::Arithmetic;
 use alu::Bitwise;
 use alu::Comparision;
 use alu::Logical;
+use api::Platform;
 use array::Array;
 use builtins::BuiltinKind;
 use errors::ISAError;
@@ -29,14 +32,13 @@ use errors::ISAErrorKind;
 use errors::VMError;
 use errors::VMErrorKind;
 use frames::ExecutionFrame;
-use api::Platform;
 use global::GlobalPool;
 use hash::HashTable;
 use isa::InstructionKind;
 use iter::ObjectIterator;
 use object::Object;
 use stack::DataStack;
-
+use th::ThreadBlock;
 
 pub struct Controls {}
 
@@ -113,10 +115,12 @@ impl Controls {
 
     pub fn push_objects(objs: Vec<Rc<Object>>, ds: &mut DataStack) -> Option<VMError> {
         let objs_len = objs.len() as i64;
-        if ds.stack_pointer + objs_len >= ds.max_size as i64{
+        if ds.stack_pointer + objs_len >= ds.max_size as i64 {
             return Some(VMError::new(
-                "Stack Overflow!".to_string(), VMErrorKind::DataStackOverflow,
-                Some(InstructionKind::ILoadGlobal), 0
+                "Stack Overflow!".to_string(),
+                VMErrorKind::DataStackOverflow,
+                Some(InstructionKind::ILoadGlobal),
+                0,
             ));
         }
 
@@ -368,7 +372,6 @@ impl Controls {
         global_pool: &mut GlobalPool,
         constants: &mut ConstantPool,
         platform: &Platform,
-
     ) -> Result<Option<RefCell<ExecutionFrame>>, VMError> {
         // pop the function:
 
@@ -423,7 +426,7 @@ impl Controls {
                     ));
                 }
 
-                let frame_bp = if ds.stack_pointer <= 0  {
+                let frame_bp = if ds.stack_pointer <= 0 {
                     0
                 } else {
                     ds.stack.len() - n_args
@@ -755,6 +758,88 @@ impl Controls {
         if push_result.is_err() {
             return Some(push_result.unwrap_err());
         }
+        return None;
+    }
+
+    pub fn execute_thread(
+        inst: &InstructionKind,
+        ds: &mut DataStack,
+        n_args: usize,
+        global_pool: &mut GlobalPool,
+        constants: &mut ConstantPool,
+        platform: &Platform,
+        threads: &mut thread::BosonThreads,
+    ) -> Option<VMError> {
+        // pop the closure:
+        let popped_result = ds.pop_object(inst.clone());
+        if popped_result.is_err() {
+            return Some(popped_result.unwrap_err());
+        }
+
+        let popped_obj = popped_result.unwrap();
+        match popped_obj.as_ref() {
+            Object::ClosureContext(ctx) => {
+                let subroutine = ctx.as_ref().compiled_fn.as_ref();
+                if subroutine.num_parameters != n_args {
+                    return Some(VMError::new(
+                        format!(
+                            "Function {} expects {} arguments, given {}",
+                            subroutine.name, subroutine.num_parameters, n_args
+                        ),
+                        VMErrorKind::FunctionArgumentsError,
+                        Some(inst.clone()),
+                        0,
+                    ));
+                }
+
+                // pop N args from the stack:
+                let popped_args = Controls::pop_n(ds, n_args, inst);
+                if popped_args.is_err() {
+                    return Some(popped_args.unwrap_err());
+                }
+
+                let mut args = popped_args.unwrap();
+                args.reverse();
+
+                // wrap parameters in a thread-type:
+                let thread_params = thread::ThreadParams::new(
+                    ctx.clone(),
+                    args,
+                    global_pool.clone(),
+                    constants.clone(),
+                );
+
+                let create_result = threads.create_thread_sandbox(thread_params, platform);
+                if create_result.is_err() {
+                    return Some(VMError::new(
+                        create_result.unwrap_err(),
+                        VMErrorKind::ThreadCreateError,
+                        Some(inst.clone()),
+                        0,
+                    ));
+                }
+
+                // create a thread ID object and push it to the stack:
+                let thread_obj = ThreadBlock::new(create_result.unwrap(), subroutine.name.clone());
+                let push_result = ds.push_object(
+                    Rc::new(Object::Thread(RefCell::new(thread_obj))),
+                    inst.clone()
+                );
+
+                if push_result.is_err() {
+                    return Some(push_result.unwrap_err());
+                }
+            }
+            _ => {
+                return Some(VMError::new(
+                    format!("{} cannot be called as a thread.", popped_obj.get_type()),
+                    VMErrorKind::ThreadCreateError,
+                    Some(inst.clone()),
+                    0,
+                ));
+            }
+        }
+
         return None;
     }
 }

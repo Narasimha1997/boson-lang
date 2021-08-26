@@ -1,9 +1,15 @@
 
-func print_periodic() {
+func print_periodic(name) {
     while (true) {
-        println("Hello, thread!!!");
+        println("Hello, world from ", name);
         sleep_sec(3);
     }
 }
 
-const th = thread print_periodic();
+const th1 = thread print_periodic("thread1");
+const th2 = thread print_periodic("thread2");
+
+println(th1, th2);
+while (true) {
+    sleep_sec(10);
+}
