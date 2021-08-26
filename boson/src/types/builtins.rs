@@ -60,6 +60,7 @@ pub enum BuiltinKind {
     SleepSec,
     CallFunc,
     CallAsync,
+    Wait,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -110,6 +111,7 @@ impl BuiltinKind {
             BuiltinKind::SleepMs => "sleep_ms".to_string(),
             BuiltinKind::CallFunc => "call_func".to_string(),
             BuiltinKind::CallAsync => "call_async".to_string(),
+            BuiltinKind::Wait => "wait".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -974,9 +976,8 @@ impl BuiltinKind {
 
                         let params = params.borrow().elements.clone();
                         // call the async function
-                        let thread_params = ThreadParams::new(
-                            ctx.clone(), params, gp.clone(), c.clone()
-                        );
+                        let thread_params =
+                            ThreadParams::new(ctx.clone(), params, gp.clone(), c.clone());
 
                         let thread_create_res = th.create_thread_sandbox(thread_params, platform);
                         if thread_create_res.is_err() {
@@ -1011,7 +1012,42 @@ impl BuiltinKind {
                     }
                 }
             }
+            BuiltinKind::Wait => {
+                if args.len() != 1 {
+                    return Err(format!("wait() takes 1 argument, given {}", args.len()));
+                }
 
+                match args[0].as_ref() {
+                    Object::Thread(t_block) => {
+                        let thread_id = t_block.borrow().handle_id;
+                        let thread_exec_res = th.wait_and_return(thread_id);
+                        if thread_exec_res.is_err() {
+                            return Err(format!(
+                                "{} wait error: {}",
+                                t_block.borrow().describe(),
+                                thread_exec_res.unwrap_err()
+                            ));
+                        }
+
+                        let sandbox_result = thread_exec_res.unwrap().result;
+                        if sandbox_result.is_err() {
+                            let error = sandbox_result.unwrap_err();
+                            return Err(format!(
+                                "{:?}: {} at {}, Instruction: {:?}",
+                                error.t, error.message, error.pos, error.instruction
+                            ));
+                        }
+
+                        return Ok(sandbox_result.unwrap());
+                    }
+                    _ => {
+                        return Err(format!(
+                            "wait() takes thread as argument, provided {}",
+                            args[0].get_type()
+                        ));
+                    }
+                }
+            }
             _ => return Err("Trying to invoke invalid builtin".to_string()),
         }
     }

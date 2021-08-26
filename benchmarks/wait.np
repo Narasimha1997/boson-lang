@@ -1,0 +1,24 @@
+
+
+func add_with_sleep(n) {
+    var idx = 0;
+    var sum = 0;
+    while (idx < n) {
+        sum = sum + idx;
+        sleep_sec(1);
+        idx = idx + 1;
+    }
+
+    return sum;
+}
+
+const handle_1 = thread add_with_sleep(10);
+const handle_2 = thread add_with_sleep(10);
+
+const st = unix_time();
+const result_1 = wait(handle_1);
+const result_2 = wait(handle_2);
+const et = unix_time();
+
+#println(result_1, result_2);
+println("Time taken: ", et - st);

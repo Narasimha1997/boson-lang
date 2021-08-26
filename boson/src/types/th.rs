@@ -16,7 +16,7 @@ impl ThreadBlock {
     }
 
     pub fn describe(&self) -> String {
-        return format!("Thread(func={})", self.name);
+        return format!("Thread(func={}, id={})", self.name, self.handle_id);
     }
 }
 
