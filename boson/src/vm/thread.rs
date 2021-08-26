@@ -1,7 +1,5 @@
-use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::sync::Arc;
 use std::thread;
 
 use crate::api;
@@ -11,7 +9,9 @@ use crate::types::object;
 use crate::vm;
 use crate::vm::global;
 
+use api::BosonLang;
 use api::Platform;
+use api::PlatformType;
 use closure::ClosureContext;
 use global::GlobalPool;
 use object::Object;
@@ -21,13 +21,39 @@ use vm::BosonVM;
 use crate::vm::errors;
 use errors::VMError;
 
-pub type ThreadReturnType = Result<Rc<Object>, VMError>;
+pub struct ThreadReturnType {
+    pub result: Result<Rc<Object>, VMError>,
+}
+
+impl ThreadReturnType {
+    pub fn new(result: Result<Rc<Object>, VMError>) -> ThreadReturnType {
+        return ThreadReturnType { result: result };
+    }
+}
+
+unsafe impl Send for ThreadReturnType {}
 
 pub struct ThreadParams {
     closure: Rc<ClosureContext>,
     params: Vec<Rc<Object>>,
     globals: GlobalPool,
-    constants: ConstantPool
+    constants: ConstantPool,
+}
+
+impl ThreadParams {
+    pub fn new(
+        closure: Rc<ClosureContext>,
+        params: Vec<Rc<Object>>,
+        globals: GlobalPool,
+        constants: ConstantPool,
+    ) -> ThreadParams {
+        return ThreadParams {
+            closure: closure,
+            params: params,
+            globals: globals,
+            constants: constants,
+        };
+    }
 }
 
 unsafe impl Send for ThreadParams {}
@@ -66,7 +92,7 @@ impl BosonThreads {
 
         let join_result = handle_ref.unwrap().join();
         if join_result.is_err() {
-            return Err(format!("{:?}", join_result.unwrap_err()));
+            return Err("Failed to join thread.".to_string());
         }
 
         return Ok(join_result.unwrap());
@@ -75,18 +101,35 @@ impl BosonThreads {
     pub fn create_thread_sandbox(
         &mut self,
         thread_params: ThreadParams,
-        platform: Arc<&Platform>,
-    ) {
+        platform: &Platform,
+    ) -> Result<u64, String> {
+        let new_platform = match platform.platform_type {
+            PlatformType::Native => BosonLang::prepare_native_platform(),
+            _ => {
+                // TODO: re-iterate this section after web assembly support.
+                return Err(format!(
+                    "Platform {:?} not implemented.",
+                    platform.platform_type
+                ));
+            }
+        };
 
-        let handle = thread::spawn( move || {
-            
-            let unwrapped_platform = Arc::try_unwrap(platform);
-            
-
+        let handle = thread::spawn(move || {
             let result = BosonVM::execute_sandbox(
-                thread_params.closure, thread_params.params, 
-                thread_params.globals, thread_params.constants
+                thread_params.closure,
+                thread_params.params,
+                &new_platform,
+                thread_params.globals,
+                thread_params.constants,
             );
+
+            return ThreadReturnType::new(result);
         });
+
+        // register the thread handle
+        let thread_id = self.current_count;
+        self.thread_map.insert(thread_id, handle);
+        self.current_count += 1;
+        return Ok(thread_id);
     }
 }

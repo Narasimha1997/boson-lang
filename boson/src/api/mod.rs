@@ -55,7 +55,7 @@ pub enum ErrorKind {
 }
 
 impl BosonLang {
-    fn prepare_native_platform() -> Platform {
+    pub fn prepare_native_platform() -> Platform {
         return Platform {
             platform_type: PlatformType::Native,
             print: native::print,
