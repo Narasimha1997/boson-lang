@@ -29,7 +29,7 @@ impl Arithmetic {
             (Object::Int(lval), Object::Int(rval)) => {
                 let result = (*lval).checked_add(*rval);
                 if result.is_none() {
-                    return Err(Arithmetic::new_overflow_err(left, right, format!("add")));
+                    return Err(Arithmetic::new_overflow_err(left, right, "add".to_string()));
                 }
                 return Ok(Rc::new(Object::Int(result.unwrap())));
             }
@@ -71,7 +71,7 @@ impl Arithmetic {
             (Object::Int(lval), Object::Int(rval)) => {
                 let result = (*lval).checked_sub(*rval);
                 if result.is_none() {
-                    return Err(Arithmetic::new_overflow_err(left, right, format!("add")));
+                    return Err(Arithmetic::new_overflow_err(left, right, "add".to_string()));
                 }
                 return Ok(Rc::new(Object::Int(result.unwrap())));
             }
@@ -108,7 +108,7 @@ impl Arithmetic {
             (Object::Int(lval), Object::Int(rval)) => {
                 let result = (*lval).checked_mul(*rval);
                 if result.is_none() {
-                    return Err(Arithmetic::new_overflow_err(left, right, format!("add")));
+                    return Err(Arithmetic::new_overflow_err(left, right, "add".to_string()));
                 }
                 return Ok(Rc::new(Object::Int(result.unwrap())));
             }
