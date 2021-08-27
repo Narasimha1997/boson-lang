@@ -1,0 +1,19 @@
+
+
+const x = 10;
+
+func sleep_for_n() {
+    var i = 0;
+    while (i < x) {
+        println("Hello");
+        sleep_sec(1);
+        i = i + 1;
+    }
+}
+
+func sleep_wrapper() {
+    sleep_for_n();
+}
+
+const t1 = thread sleep_wrapper();
+wait(t1);

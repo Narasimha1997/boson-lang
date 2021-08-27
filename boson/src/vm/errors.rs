@@ -30,6 +30,7 @@ pub enum VMErrorKind {
     FunctionArgumentsError,
     AssertionError,
     IndexError,
+    OverflowError,
     IterationError,
     ThreadKillError,
     ThreadCreateError,
@@ -59,20 +60,39 @@ impl VMError {
     }
 
     pub fn new_from_isa_error(isa_error: &ISAError, inst: InstructionKind) -> VMError {
-        if isa_error.t == ISAErrorKind::TypeError {
-            return VMError {
-                message: isa_error.message.clone(),
-                t: VMErrorKind::TypeError,
-                instruction: Some(inst),
-                pos: 0,
-            };
-        } else {
-            return VMError {
-                message: isa_error.message.clone(),
-                t: VMErrorKind::DivideByZeroError,
-                instruction: Some(inst),
-                pos: 0,
-            };
+        match isa_error.t {
+            ISAErrorKind::TypeError => {
+                return VMError {
+                    message: isa_error.message.clone(),
+                    t: VMErrorKind::TypeError,
+                    instruction: Some(inst),
+                    pos: 0,
+                };
+            }
+            ISAErrorKind::OverflowError => {
+                return VMError {
+                    message: isa_error.message.clone(),
+                    t: VMErrorKind::OverflowError,
+                    instruction: Some(inst),
+                    pos: 0,
+                };
+            }
+            ISAErrorKind::DivideByZeroError => {
+                return VMError {
+                    message: isa_error.message.clone(),
+                    t: VMErrorKind::DivideByZeroError,
+                    instruction: Some(inst),
+                    pos: 0,
+                };
+            }
+            _ => {
+                return VMError {
+                    message: isa_error.message.clone(),
+                    t: VMErrorKind::IllegalOperation,
+                    instruction: Some(inst),
+                    pos: 0,
+                };
+            }
         }
     }
 }
@@ -80,8 +100,10 @@ impl VMError {
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub enum ISAErrorKind {
     DivideByZeroError,
+    OverflowError,
     TypeError,
     InvalidOperation,
+
 }
 
 #[derive(Debug)]

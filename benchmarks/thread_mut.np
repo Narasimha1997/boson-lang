@@ -1,0 +1,24 @@
+
+
+var x = 10;
+
+func increment_x(y) {
+    x = x + y;
+    println("Value of x after increment: ", x);
+}
+
+func increment_and_ret(y) {
+    x = x + y;
+    return x;
+}
+
+# case-1: The thread will update x and does not return
+const res = call_async(increment_x, [10]);
+
+# the value of x will remain 10
+println(res, x);
+
+x = call_async(increment_and_ret, [10]);
+
+# the value of x will now be 20
+println(x);
