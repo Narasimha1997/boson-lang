@@ -1,0 +1,6 @@
+func overflow_add(x, y) {
+	return x + y;
+}
+
+const result = overflow_add(9223372036854775807 + 30000)
+println(result)

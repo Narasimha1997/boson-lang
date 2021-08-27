@@ -1,7 +1,6 @@
 use crate::isa;
 use crate::vm::frames::ExecutionFrame;
 
-
 use std::rc::Rc;
 
 use isa::InstructionKind;
@@ -103,7 +102,6 @@ pub enum ISAErrorKind {
     OverflowError,
     TypeError,
     InvalidOperation,
-
 }
 
 #[derive(Debug)]
@@ -119,4 +117,3 @@ impl ISAError {
 }
 
 pub type StackFrame = Rc<ExecutionFrame>; // state of each frame when exception occured
-

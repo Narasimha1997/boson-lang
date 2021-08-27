@@ -12,11 +12,26 @@ pub struct Arithmetic {}
 pub struct Bitwise {}
 
 impl Arithmetic {
+    fn new_overflow_err(v_1: &Rc<Object>, v_2: &Rc<Object>, operation: String) -> ISAError {
+        return ISAError::new(
+            format!(
+                "Operation {} between {} and {} results in arithmetic overflow",
+                operation,
+                v_1.describe(),
+                v_2.describe()
+            ),
+            ISAErrorKind::OverflowError,
+        );
+    }
+
     pub fn add(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Int(lval), Object::Int(rval)) => {
-                let result = lval + rval;
-                return Ok(Rc::new(Object::Int(result)));
+                let result = (*lval).checked_add(*rval);
+                if result.is_none() {
+                    return Err(Arithmetic::new_overflow_err(left, right, format!("add")));
+                }
+                return Ok(Rc::new(Object::Int(result.unwrap())));
             }
             (Object::Int(lval), Object::Float(rval)) => {
                 let result = lval.clone() as f64 + rval;
@@ -54,8 +69,11 @@ impl Arithmetic {
     pub fn sub(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Int(lval), Object::Int(rval)) => {
-                let result = lval - rval;
-                return Ok(Rc::new(Object::Int(result)));
+                let result = (*lval).checked_sub(*rval);
+                if result.is_none() {
+                    return Err(Arithmetic::new_overflow_err(left, right, format!("add")));
+                }
+                return Ok(Rc::new(Object::Int(result.unwrap())));
             }
             (Object::Int(lval), Object::Float(rval)) => {
                 let result = lval.clone() as f64 - rval;
@@ -88,8 +106,11 @@ impl Arithmetic {
     pub fn mul(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Int(lval), Object::Int(rval)) => {
-                let result = lval * rval;
-                return Ok(Rc::new(Object::Int(result)));
+                let result = (*lval).checked_mul(*rval);
+                if result.is_none() {
+                    return Err(Arithmetic::new_overflow_err(left, right, format!("add")));
+                }
+                return Ok(Rc::new(Object::Int(result.unwrap())));
             }
             (Object::Int(lval), Object::Float(rval)) => {
                 let result = lval.clone() as f64 * rval;
