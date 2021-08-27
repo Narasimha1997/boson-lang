@@ -20,15 +20,26 @@ function build_dis () {
     cargo build --verbose --release --bin boson-dis
 }
 
+function install() {
+    echo "Installing binaries in system root /usr/local/bin..."
+    sudo cp ./target/release/boson /usr/local/bin/
+    sudo cp ./target/release/boson-eval /usr/local/bin/
+    sudo cp ./target/release/boson-dis /usr/local/bin/
+}
+
 if [[ "$arg" == "eval" ]]; then
     build_eval
 elif [[ "$arg" == "repl" ]]; then 
     build_repl
 elif [[ "$arg" == "dis" ]]; then
     build_dis
+elif [[ "$arg" == "install" ]]; then
+    install
 else
     echo "Building all the binaries..."
     build_eval
     build_repl
     build_dis
+    install
+    echo "All Done, you can start using boson, boson-eval and boson-dis"
 fi
