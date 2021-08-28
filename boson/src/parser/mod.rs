@@ -137,6 +137,30 @@ impl Parser {
         }
     }
 
+    fn parse_shell_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        self.lexer.iterate();
+
+        let mut is_raw = false;
+        if self.current_symbol_is(SymbolKind::SDot) {
+            is_raw = true;
+            self.lexer.iterate();
+        }
+
+        // parse the next expression:
+        match &self.lexer.current_token.token {
+            TokenKind::Str(st) => {
+                let arg_str = st.clone();
+                return Ok(ast::ExpressionKind::Shell(ast::ShellType {
+                    arg_str,
+                    is_raw,
+                }));
+            }
+            _ => {
+                return Err(self.new_invalid_token_err("Invalid shell expression.".to_string()));
+            }
+        }
+    }
+
     fn parse_function_statement(&mut self) -> Result<ast::StatementKind, ParserError> {
         self.lexer.iterate();
 
