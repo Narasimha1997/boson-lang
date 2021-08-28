@@ -388,9 +388,7 @@ impl BytecodeCompiler {
         // store
         let mut sym_res: Option<Rc<symtab::Symbol>> = None;
         if !is_lambda {
-            sym_res = Some(
-                self.symbol_table.insert_new_symbol(&node.name, true)
-            );
+            sym_res = Some(self.symbol_table.insert_new_symbol(&node.name, true));
         }
 
         // enter the scope:
@@ -464,7 +462,7 @@ impl BytecodeCompiler {
             bytecode: compiled_func,
             num_locals: n_locals,
             num_parameters: args.len(),
-            is_local_scope: false
+            is_local_scope: false,
         };
 
         let func_object = Object::Subroutine(Rc::new(compiled_func_type));
@@ -1067,6 +1065,39 @@ impl BytecodeCompiler {
         return None;
     }
 
+    fn transform_to_builtin(
+        &self,
+        name: String,
+        arguments: Vec<ast::ExpressionKind>,
+    ) -> ast::CallType {
+        return ast::CallType {
+            function: Box::new(ast::ExpressionKind::Literal(ast::LiteralKind::Str(
+                name.to_string(),
+            ))),
+            arguments,
+            is_thread: false,
+        };
+    }
+
+    fn compile_shell_expr(&mut self, node: &ast::ShellType) -> Option<errors::CompileError> {
+        if node.arg_str.len() == 0 {
+            return Some(errors::CompileError::new(
+                "Shell expressions cannot be empty".to_string(),
+                errors::CompilerErrorKind::InvalidOperand,
+                0,
+            ));
+        }
+
+        // transform it to a built-in function call exec or exec_raw:
+        let builtin_call = if node.is_raw {
+            self.transform_to_builtin("exec_raw".to_string(), node.arg_str.clone())
+        } else {
+            self.transform_to_builtin("exec".to_string(), node.arg_str.clone())
+        };
+
+        return self.compile_call(&builtin_call);
+    }
+
     #[allow(unused_variables)]
     fn compile_expression(
         &mut self,
@@ -1079,51 +1110,39 @@ impl BytecodeCompiler {
             }
             ast::ExpressionKind::Literal(lt) => {
                 let result = self.compile_literal(&lt);
-                if result.is_some() {
-                    return Some(result.unwrap());
-                }
+                return result;
             }
             ast::ExpressionKind::Identifier(id) => {
                 let result = self.compile_identifier(&id, false);
-                if result.is_some() {
-                    return Some(result.unwrap());
-                }
+                return result;
             }
             ast::ExpressionKind::Infix(expr) => {
                 let result = self.compile_infix_expression(&expr);
-                if result.is_some() {
-                    return Some(result.unwrap());
-                }
+                return result;
             }
             ast::ExpressionKind::Prefix(expr) => {
                 let result = self.compile_prefix_expression(&expr);
-                if result.is_some() {
-                    return Some(result.unwrap());
-                }
+                return result;
             }
             ast::ExpressionKind::Suffix(expr) => {
                 let result = self.compile_suffix_expression(&expr);
-                if result.is_some() {
-                    return Some(result.unwrap());
-                }
+                return result;
             }
             ast::ExpressionKind::Call(ct) => {
                 let result = self.compile_call(&ct);
-                if result.is_some() {
-                    return Some(result.unwrap());
-                }
+                return result;
+            }
+            ast::ExpressionKind::Shell(sh) => {
+                let result = self.compile_shell_expr(&sh);
+                return result;
             }
             ast::ExpressionKind::Lambda(lm) => {
                 let result = self.compile_lambda(&lm);
-                if result.is_some() {
-                    return Some(result.unwrap());
-                }
+                return result;
             }
             ast::ExpressionKind::Index(idx) => {
                 let result = self.compile_index(&idx);
-                if result.is_some() {
-                    return Some(result.unwrap());
-                }
+                return result;
             }
             _ => return None,
         }
