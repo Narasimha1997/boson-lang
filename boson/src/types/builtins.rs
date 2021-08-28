@@ -506,7 +506,7 @@ impl BuiltinKind {
                     }
 
                     Object::Str(st) => {
-                        let result = st.parse::<i64>();
+                        let result = st.trim().replace("\n", "").parse::<i64>();
                         if result.is_err() {
                             return Err(format!("String {} cannot be converted to integer.", st));
                         }
@@ -610,7 +610,7 @@ impl BuiltinKind {
                     }
 
                     Object::Str(st) => {
-                        let result = st.parse::<f64>();
+                        let result = st.trim().replace("\n", "").parse::<f64>();
                         if result.is_err() {
                             return Err(format!("String {} cannot be converted to integer.", st));
                         }
