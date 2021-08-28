@@ -1,0 +1,8 @@
+
+
+func count_files() {
+    const n = $ "ls | wc -l";
+    return int(string(n[1][0]));
+}
+
+println(count_files());

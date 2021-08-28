@@ -459,6 +459,42 @@ impl BosonVM {
                     }
                 }
 
+                InstructionKind::IShell => {
+                    let result = Controls::exec_shell(
+                        &inst,
+                        &mut self.data_stack,
+                        platform,
+                        &mut self.globals,
+                        &mut self.constants,
+                        &mut self.threads,
+                        false
+                    );
+
+                    if result.is_some() {
+                        return Err(result.unwrap());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
+                InstructionKind::IShellRaw => {
+                    let result = Controls::exec_shell(
+                        &inst,
+                        &mut self.data_stack,
+                        platform,
+                        &mut self.globals,
+                        &mut self.constants,
+                        &mut self.threads,
+                        true
+                    );
+
+                    if result.is_some() {
+                        return Err(result.unwrap());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
                 _ => {
                     return Err(VMError::new(
                         format!("{} not yet implemented", inst.as_string()),

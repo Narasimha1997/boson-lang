@@ -56,6 +56,7 @@ pub enum BuiltinKind {
     CreateArray,
     Exec,
     ExecRaw,
+    ExecShell,
     SleepMs,
     SleepSec,
     CallFunc,
@@ -76,6 +77,10 @@ fn repr_is_big_endian(args: &Vec<Rc<Object>>) -> bool {
 impl BuiltinKind {
     pub fn get_size() -> usize {
         return BuiltinKind::EndMark as usize;
+    }
+
+    pub fn get_idx(kind: BuiltinKind) -> Option<usize> {
+        Some(kind as usize)
     }
 
     pub fn desribe(&self) -> String {

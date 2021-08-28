@@ -30,6 +30,7 @@ pub struct Platform {
     pub get_unix_time: fn() -> Result<f64, String>,
     pub get_platform_info: fn() -> Vec<String>,
     pub sleep: fn(duration_ms: &f64),
+    pub sys_shell: fn() -> String,
 }
 
 impl fmt::Debug for Platform {
@@ -66,6 +67,7 @@ impl BosonLang {
             get_unix_time: native::get_unix_time,
             get_platform_info: native::get_platform_info,
             sleep: native::sleep,
+            sys_shell: native::sys_shell,
         };
     }
 

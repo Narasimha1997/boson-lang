@@ -119,7 +119,11 @@ pub enum InstructionKind {
 
     // indexing
     IGetIndex,
-    ISetIndex
+    ISetIndex,
+
+    // shell call
+    IShell,
+    IShellRaw,
 }
 
 
@@ -250,6 +254,8 @@ impl InstructionKind {
             InstructionKind::IPushExcHandle => "IPushExcHandle".to_string(),
             InstructionKind::IRaise => "IRaise".to_string(),
             InstructionKind::ICallThread => "ICallThread".to_string(),
+            InstructionKind::IShell => "IShell".to_string(),
+            InstructionKind::IShellRaw => "IShellRaw".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -303,6 +309,8 @@ impl InstructionKind {
             | InstructionKind::IGetIndex
             | InstructionKind::ISetIndex
             | InstructionKind::IRaise
+            | InstructionKind::IShellRaw
+            | InstructionKind::IShell
             | InstructionKind::IPopExcHandle => vec![],
 
             InstructionKind::IClosure => vec![2, 2],

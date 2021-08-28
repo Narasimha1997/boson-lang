@@ -147,21 +147,15 @@ impl Parser {
         }
 
         // parse the next expression:
-        match &self.lexer.current_token.token {
-            TokenKind::Str(st) => {
-                let arg_str: Vec<ast::ExpressionKind> = st
-                    .split_whitespace()
-                    .map(|spl| ast::ExpressionKind::Literal(ast::LiteralKind::Str(spl.to_string())))
-                    .collect();
-                return Ok(ast::ExpressionKind::Shell(ast::ShellType {
-                    arg_str,
-                    is_raw,
-                }));
-            }
-            _ => {
-                return Err(self.new_invalid_token_err("Invalid shell expression.".to_string()));
-            }
+        let right_expr_res = self.parse_expression(exp::ExpOrder::Zero);
+        if right_expr_res.is_err() {
+            return right_expr_res;
         }
+
+        return Ok(ast::ExpressionKind::Shell(ast::ShellType {
+            shell: Box::new(right_expr_res.unwrap()),
+            is_raw,
+        }));
     }
 
     fn parse_function_statement(&mut self) -> Result<ast::StatementKind, ParserError> {

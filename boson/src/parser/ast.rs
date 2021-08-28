@@ -11,7 +11,7 @@ pub struct Node {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct ShellType {
-    pub arg_str: Vec<ExpressionKind>,
+    pub shell: Box<ExpressionKind>,
     pub is_raw: bool,
 }
 

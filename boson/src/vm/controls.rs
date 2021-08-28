@@ -372,7 +372,7 @@ impl Controls {
         global_pool: &mut GlobalPool,
         constants: &mut ConstantPool,
         platform: &Platform,
-        threads: &mut thread::BosonThreads
+        threads: &mut thread::BosonThreads,
     ) -> Result<Option<RefCell<ExecutionFrame>>, VMError> {
         // pop the function:
 
@@ -824,7 +824,7 @@ impl Controls {
                 let thread_obj = ThreadBlock::new(create_result.unwrap(), subroutine.name.clone());
                 let push_result = ds.push_object(
                     Rc::new(Object::Thread(RefCell::new(thread_obj))),
-                    inst.clone()
+                    inst.clone(),
                 );
 
                 if push_result.is_err() {
@@ -842,5 +842,67 @@ impl Controls {
         }
 
         return None;
+    }
+
+    pub fn exec_shell(
+        inst: &InstructionKind,
+        ds: &mut DataStack,
+        platform: &Platform,
+        gp: &mut GlobalPool,
+        c: &mut ConstantPool,
+        th: &mut thread::BosonThreads,
+        is_raw: bool,
+    ) -> Option<VMError> {
+        let builtin = if is_raw {
+            BuiltinKind::ExecRaw
+        } else {
+            BuiltinKind::Exec
+        };
+
+        let pop_res = ds.pop_object(inst.clone());
+        if pop_res.is_err() {
+            return Some(pop_res.unwrap_err());
+        }
+
+        let popped_obj = pop_res.unwrap();
+        match popped_obj.as_ref() {
+            Object::Str(_) => {
+                // split it to args:
+                let shell_fn = platform.sys_shell;
+                let mut args: Vec<Rc<Object>> = shell_fn()
+                    .split_whitespace()
+                    .map(|s| Rc::new(Object::Str(s.to_string())))
+                    .collect();
+
+                args.push(popped_obj);
+                let exec_result = builtin.exec(args, platform, gp, c, th);
+                if exec_result.is_err() {
+                    return Some(VMError::new(
+                        exec_result.unwrap_err(),
+                        VMErrorKind::BuiltinFunctionError,
+                        Some(inst.clone()),
+                        0,
+                    ));
+                }
+
+                let push_res = ds.push_object(exec_result.unwrap(), inst.clone());
+                if push_res.is_err() {
+                    return Some(push_res.unwrap_err());
+                }
+                return None;
+            }
+
+            _ => {
+                return Some(VMError::new(
+                    format!(
+                        "shell requires a string as argument, but got {}",
+                        popped_obj.get_type()
+                    ),
+                    VMErrorKind::TypeError,
+                    Some(inst.clone()),
+                    0,
+                ));
+            }
+        }
     }
 }

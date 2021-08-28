@@ -90,3 +90,18 @@ pub fn sleep(duration_ms: &f64) {
     let ns_time = (*duration_ms * 1000000 as f64).round() as u64;
     thread::sleep(Duration::from_nanos(ns_time));
 }
+
+pub fn sys_shell() -> String {
+    // get the shell from ENV BOSON_SHELL
+    // for native implementation, shell is sh by default
+    let shell_var = env::var("BOSON_SHELL");
+    return if shell_var.is_err() {
+        match env::consts::OS {
+            "windows" => "cmd /C".to_string(),
+            "macos" => "zsh -c".to_string(),
+            _ => "sh -c".to_string(),
+        }
+    } else {
+        shell_var.unwrap()
+    };
+}

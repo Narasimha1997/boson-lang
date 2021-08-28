@@ -4,6 +4,7 @@ pub mod errors;
 pub mod loader;
 pub mod symtab;
 
+
 use crate::isa;
 use crate::parser::ast;
 use crate::parser::exp;
@@ -1065,37 +1066,20 @@ impl BytecodeCompiler {
         return None;
     }
 
-    fn transform_to_builtin(
-        &self,
-        name: String,
-        arguments: Vec<ast::ExpressionKind>,
-    ) -> ast::CallType {
-        return ast::CallType {
-            function: Box::new(ast::ExpressionKind::Literal(ast::LiteralKind::Str(
-                name.to_string(),
-            ))),
-            arguments,
-            is_thread: false,
-        };
-    }
-
     fn compile_shell_expr(&mut self, node: &ast::ShellType) -> Option<errors::CompileError> {
-        if node.arg_str.len() == 0 {
-            return Some(errors::CompileError::new(
-                "Shell expressions cannot be empty".to_string(),
-                errors::CompilerErrorKind::InvalidOperand,
-                0,
-            ));
+        // compile the expression
+        let error = self.compile_expression(&node.shell);
+        if error.is_some() {
+            return error;
         }
 
-        // transform it to a built-in function call exec or exec_raw:
-        let builtin_call = if node.is_raw {
-            self.transform_to_builtin("exec_raw".to_string(), node.arg_str.clone())
+        if node.is_raw {
+            self.save(isa::InstructionKind::IShellRaw, &vec![]);
         } else {
-            self.transform_to_builtin("exec".to_string(), node.arg_str.clone())
-        };
+            self.save(isa::InstructionKind::IShell, &vec![]);
+        }
 
-        return self.compile_call(&builtin_call);
+        return None;
     }
 
     #[allow(unused_variables)]
