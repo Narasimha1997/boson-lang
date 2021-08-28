@@ -9,7 +9,7 @@ pub const EOF_BYTE: u8 = 0x00;
 pub const SYMBOLS: &'static [&'static str] = &[
     "invalid", "+", "-", "*", "/", "(", ")", "<", ">", "<=", ">=", ";", ",", "%", "!", "=", "==",
     "!=", "{", "}", "&", "|", "~", "&&", "||", "+=", "-=", "++", "--", "*=", "/=", "%=", "[", "]",
-    "=>", ":", ".",
+    "=>", ":", ".", "$"
 ];
 
 #[allow(dead_code)]
@@ -62,6 +62,7 @@ pub enum SymbolKind {
     SColon = 37,
     SDot = 38,
     SResolve = 39,
+    SDollar = 40,
 }
 
 #[allow(dead_code)]
@@ -653,6 +654,8 @@ impl ProgramLexer {
 
             b';' => TokenKind::Operator(SymbolKind::SSemiColon),
 
+            b'$' => TokenKind::Operator(SymbolKind::SDollar),
+
             b':' => {
                 let next_char = self.look_next_byte();
                 let combined_token = match next_char {
@@ -697,6 +700,7 @@ impl ProgramLexer {
                     }
                 }
             }
+
             EOF_BYTE => TokenKind::EOF,
             _ => TokenKind::Invalid,
         };

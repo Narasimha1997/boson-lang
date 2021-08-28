@@ -149,7 +149,10 @@ impl Parser {
         // parse the next expression:
         match &self.lexer.current_token.token {
             TokenKind::Str(st) => {
-                let arg_str = st.clone();
+                let arg_str: Vec<ast::ExpressionKind> = st
+                    .split_whitespace()
+                    .map(|spl| ast::ExpressionKind::Literal(ast::LiteralKind::Str(spl.to_string())))
+                    .collect();
                 return Ok(ast::ExpressionKind::Shell(ast::ShellType {
                     arg_str,
                     is_raw,
@@ -1000,6 +1003,7 @@ impl Parser {
                     | SymbolKind::SNeg
                     | SymbolKind::SExcl => self.parse_prefix_expression(),
                     SymbolKind::SLParen => self.parse_sub_expression(),
+                    SymbolKind::SDollar => self.parse_shell_expression(),
                     _ => Err(self.new_invalid_token_err(String::from("Invalid symbol"))),
                 };
 
