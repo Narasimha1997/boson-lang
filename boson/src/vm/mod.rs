@@ -329,6 +329,28 @@ impl BosonVM {
                         &mut self.constants,
                         platform,
                         &mut self.threads,
+                        false,
+                    );
+
+                    if result.is_some() {
+                        return Err(result.unwrap());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
+
+                InstructionKind::ICallAsync => {
+                    let n_args = operands[0];
+                    let result = Controls::execute_thread(
+                        &inst,
+                        &mut self.data_stack,
+                        n_args,
+                        &mut self.globals,
+                        &mut self.constants,
+                        platform,
+                        &mut self.threads,
+                        true,
                     );
 
                     if result.is_some() {

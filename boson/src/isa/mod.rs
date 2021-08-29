@@ -82,6 +82,7 @@ pub enum InstructionKind {
     // Call
     ICall,
     ICallThread,
+    ICallAsync,
 
     // Call builtin
     ILoadBuiltIn,
@@ -256,6 +257,7 @@ impl InstructionKind {
             InstructionKind::ICallThread => "ICallThread".to_string(),
             InstructionKind::IShell => "IShell".to_string(),
             InstructionKind::IShellRaw => "IShellRaw".to_string(),
+            InstructionKind::ICallAsync => "ICallAsync".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -276,7 +278,8 @@ impl InstructionKind {
             | InstructionKind::ICall
             | InstructionKind::ICallThread
             | InstructionKind::ILoadFree
-            | InstructionKind::IPushExcHandle => vec![2],
+            | InstructionKind::IPushExcHandle
+            | InstructionKind::ICallAsync => vec![2],
 
             InstructionKind::IAdd
             | InstructionKind::ISub

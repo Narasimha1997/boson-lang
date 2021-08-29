@@ -1324,7 +1324,7 @@ impl BytecodeCompiler {
         if node.is_thread {
             self.save(isa::InstructionKind::ICallThread, &vec![args.len()]);
         } else if node.is_async {
-            self.save(isa::InstructionKind::ICallThread, &vec![args.len()]);
+            self.save(isa::InstructionKind::ICallAsync, &vec![args.len()]);
         } else {
             self.save(isa::InstructionKind::ICall, &vec![args.len()]);
         }

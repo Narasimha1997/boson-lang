@@ -770,6 +770,7 @@ impl Controls {
         constants: &mut ConstantPool,
         platform: &Platform,
         threads: &mut thread::BosonThreads,
+        join: bool,
     ) -> Option<VMError> {
         // pop the closure:
         let popped_result = ds.pop_object(inst.clone());
@@ -820,15 +821,40 @@ impl Controls {
                     ));
                 }
 
-                // create a thread ID object and push it to the stack:
-                let thread_obj = ThreadBlock::new(create_result.unwrap(), subroutine.name.clone());
-                let push_result = ds.push_object(
-                    Rc::new(Object::Thread(RefCell::new(thread_obj))),
-                    inst.clone(),
-                );
+                let th = create_result.unwrap();
 
-                if push_result.is_err() {
-                    return Some(push_result.unwrap_err());
+                if !join {
+                    // create a thread ID object
+                    let thread_obj = ThreadBlock::new(th, subroutine.name.clone());
+                    let push_result = ds.push_object(
+                        Rc::new(Object::Thread(RefCell::new(thread_obj))),
+                        inst.clone(),
+                    );
+                    if push_result.is_err() {
+                        return Some(push_result.unwrap_err());
+                    }
+                } else {
+                    let thread_result = threads.wait_and_return(th);
+                    if thread_result.is_err() {
+                        return Some(VMError::new(
+                            thread_result.unwrap_err(),
+                            VMErrorKind::ThreadWaitError,
+                            Some(inst.clone()),
+                            0,
+                        ));
+                    }
+
+                    // unwrap the resut object
+                    let sandbox_result = thread_result.unwrap().result;
+                    if sandbox_result.is_err() {
+                        return Some(sandbox_result.unwrap_err());
+                    }
+
+                    // push the result to the stack:
+                    let push_res = ds.push_object(sandbox_result.unwrap(), inst.clone());
+                    if push_res.is_err() {
+                        return Some(push_res.unwrap_err());
+                    }
                 }
             }
             _ => {
