@@ -28,6 +28,7 @@ pub struct CallType {
     pub function: Box<ExpressionKind>,
     pub arguments: Vec<ExpressionKind>,
     pub is_thread: bool,
+    pub is_async: bool,
 }
 
 #[derive(Debug, PartialEq, Clone)]

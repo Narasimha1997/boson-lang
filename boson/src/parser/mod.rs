@@ -786,6 +786,27 @@ impl Parser {
         }
     }
 
+    fn parse_async_expr(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        self.lexer.iterate();
+        let suffix_exp_res = self.parse_expression(exp::ExpOrder::Zero);
+        if suffix_exp_res.is_err() {
+            return suffix_exp_res;
+        }
+
+        let exp = suffix_exp_res.unwrap();
+        match exp {
+            ast::ExpressionKind::Call(mut ct) => {
+                ct.is_async = true;
+                return Ok(ast::ExpressionKind::Call(ct));
+            }
+            _ => {
+                return Err(self.new_invalid_token_err(
+                    "thread expression requires a callable prefix".to_string(),
+                ));
+            }
+        }
+    }
+
     fn parse_infix_expression(
         &mut self,
         expr_left: ast::ExpressionKind,
@@ -981,6 +1002,7 @@ impl Parser {
                     KeywordKind::KLambda => self.parse_lambda_exp(),
                     KeywordKind::KNone => Ok(ast::ExpressionKind::Noval),
                     KeywordKind::KThread => self.parse_thread_exp(),
+                    KeywordKind::KAsync => self.parse_async_expr(),
                     _ => Err(self
                         .new_invalid_token_err(String::from("Functionality not yet implemented"))),
                 };
@@ -1069,6 +1091,7 @@ impl Parser {
                 function: Box::new(caller_expr),
                 arguments: vec![],
                 is_thread: false,
+                is_async: false
             }));
         }
 
@@ -1082,6 +1105,7 @@ impl Parser {
             function: Box::new(caller_expr),
             arguments: args_list_result.unwrap(),
             is_thread: false,
+            is_async: false,
         };
 
         return Ok(ast::ExpressionKind::Call(call_type));
