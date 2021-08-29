@@ -12,5 +12,9 @@ func add_with_sleep(n) {
     return sum;
 }
 
-var result = call_async(add_with_sleep, [10]);
-println(result);
+const t1 = unix_time();
+var result_1 = async add_with_sleep(10);
+var result_2 = async add_with_sleep(10);
+const t2 = unix_time();
+
+println(result_1, result_2, t2 - t1);
