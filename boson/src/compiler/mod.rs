@@ -4,16 +4,17 @@ pub mod errors;
 pub mod loader;
 pub mod symtab;
 
-
 use crate::isa;
 use crate::parser::ast;
 use crate::parser::exp;
+use crate::types::builtins;
 use crate::types::object::Object;
 use crate::types::subroutine::Subroutine;
 
 use isa::InstructionPacker;
 use isa::Operands;
 
+use builtins::BuiltinKind;
 use symtab::ConstantPool;
 
 pub type CompiledInstructions = Vec<u8>;
@@ -1324,6 +1325,8 @@ impl BytecodeCompiler {
 
         // place the call instruction:
         if node.is_thread {
+            self.save(isa::InstructionKind::ICallThread, &vec![args.len()]);
+        } else if node.is_async {
             self.save(isa::InstructionKind::ICallThread, &vec![args.len()]);
         } else {
             self.save(isa::InstructionKind::ICall, &vec![args.len()]);
