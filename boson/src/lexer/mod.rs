@@ -16,7 +16,7 @@ pub const SYMBOLS: &'static [&'static str] = &[
 pub const KEYWORDS: &'static [&'static str] = &[
     "invalid", "if", "else", "while", "for", "break", "continue", "const", "var", "none", "func",
     "return", "try", "catch", "finally", "rethrow", "throw", "as", "true", "false", "foreach",
-    "in", "use", "pure", "lambda", "assert", "thread",
+    "in", "use", "pure", "lambda", "assert", "thread", "async"
 ];
 
 #[allow(dead_code)]
@@ -95,6 +95,7 @@ pub enum KeywordKind {
     KLambda = 24,
     KAssert = 25,
     KThread = 26,
+    KAsync = 27,
 }
 
 #[allow(dead_code)]
@@ -383,6 +384,7 @@ impl ProgramLexer {
             "lambda" => TokenKind::Keyword(KeywordKind::KLambda),
             "assert" => TokenKind::Keyword(KeywordKind::KAssert),
             "thread" => TokenKind::Keyword(KeywordKind::KThread),
+            "async" => TokenKind::Keyword(KeywordKind::KAsync),
             _ => TokenKind::Identifier(id_string),
         };
 
