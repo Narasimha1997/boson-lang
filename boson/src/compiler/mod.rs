@@ -7,7 +7,6 @@ pub mod symtab;
 use crate::isa;
 use crate::parser::ast;
 use crate::parser::exp;
-use crate::types::builtins;
 use crate::types::object::Object;
 use crate::types::subroutine::Subroutine;
 
