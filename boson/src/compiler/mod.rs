@@ -13,8 +13,6 @@ use crate::types::subroutine::Subroutine;
 
 use isa::InstructionPacker;
 use isa::Operands;
-
-use builtins::BuiltinKind;
 use symtab::ConstantPool;
 
 pub type CompiledInstructions = Vec<u8>;
