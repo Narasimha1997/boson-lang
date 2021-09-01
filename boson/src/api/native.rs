@@ -5,6 +5,7 @@ use std::process::Command;
 use std::rc::Rc;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
+use std::fs;
 
 use object::Object;
 use std::thread;
@@ -104,4 +105,37 @@ pub fn sys_shell() -> String {
     } else {
         shell_var.unwrap()
     };
+}
+
+// These are alpha functions, built just to satisfy
+// the immediate feature addition. In future, these will be
+// replaced by modules. (FS module)
+
+// Note: These are stateless functions.
+// Every operation will result in a new fd being opened.
+
+// Can be used in three ways:
+// 1. Read all, pass no argument
+// 2. Read from X first bytes, pass X as the argument.
+// 3. Read X and Y bytes - [X, Y) Pass X and Y as arguments
+// If parameter is not to be passed pass None, or pass an Option.
+pub fn fread(path: String, start: Option<u64>, end: Option<u64>) -> Result<Vec<u8>, String> {
+    return Ok(vec![]);
+}
+
+// Writes content and returns the new size of the file.
+// This function will always create a new file.
+pub fn fwrite(path: String, data: Vec<u8>) -> Result<u64, String> {
+    return Ok(0);
+}
+
+// Writes content and returns the new size of the file.
+// This function append to a file, if exists or creates a new file.
+pub fn fappend(path: String, data: Vec<u8>) -> Result<u64, String> {
+    return Ok(0)
+}
+
+// Returns the size of a file.
+pub fn fsize(path: String) -> Result<u64, String> {
+    return Ok(0)
 }

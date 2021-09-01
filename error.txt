@@ -1,0 +1,4 @@
+Error: cannot open /usr/local/share/lite-xl/core/start.lua: No such file or directory
+stack traceback:
+	[C]: in function 'xpcall'
+	[string "local core..."]:2: in main chunk
