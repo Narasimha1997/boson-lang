@@ -6,6 +6,7 @@ use std::rc::Rc;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 use std::fs;
+use std::io;
 
 use object::Object;
 use std::thread;
@@ -138,4 +139,14 @@ pub fn fappend(path: String, data: Vec<u8>) -> Result<u64, String> {
 // Returns the size of a file.
 pub fn fsize(path: String) -> Result<u64, String> {
     return Ok(0)
+}
+
+// Read stdin input:
+pub fn stdin_read() -> Result<Vec<u8>, String> {
+    return Ok(vec![]);
+}
+
+// Write stdout output:
+pub fn stdout_write() {
+    
 }
