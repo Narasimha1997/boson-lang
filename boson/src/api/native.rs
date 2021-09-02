@@ -5,8 +5,10 @@ use std::process::Command;
 use std::rc::Rc;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
-use std::fs;
 use std::io;
+
+use io::Write;
+use io::Read;
 
 use object::Object;
 use std::thread;
@@ -143,10 +145,34 @@ pub fn fsize(path: String) -> Result<u64, String> {
 
 // Read stdin input:
 pub fn stdin_read() -> Result<Vec<u8>, String> {
-    return Ok(vec![]);
+    let mut buffer = vec![];
+    let result = io::stdin().read(&mut buffer);
+    if result.is_err() {
+        return Err(format!("IO Error"));
+    }
+
+    return Ok(buffer);
+}
+
+// Read a line as string:
+pub fn read_line(display: String) -> Result<String, String> {
+    print(&display);
+    let mut string_buffer = String::new();
+    let result = io::stdin().read_line(&mut string_buffer);
+    if result.is_err() {
+        return Err(format!("IO Error"));
+    }
+    return Ok(string_buffer);
 }
 
 // Write stdout output:
-pub fn stdout_write() {
-    
+pub fn stdout_write(data: &Vec<u8>) -> Result<(), String> {
+    let stdout = io::stdout();
+    let mut lock = stdout.lock();
+    let result = lock.write_all(&data);
+    if result.is_err() {
+        return Err(format!("IO Error"));
+    }
+
+    return Ok(result.unwrap());
 }
