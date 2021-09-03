@@ -31,6 +31,14 @@ pub struct Platform {
     pub get_platform_info: fn() -> Vec<String>,
     pub sleep: fn(duration_ms: &f64),
     pub sys_shell: fn() -> String,
+    pub fread:
+        fn(path: String, start: Option<u64>, n_b: Option<u64>) -> Result<(Vec<u8>, u64), String>,
+    pub fwrite: fn(path: String, data: Vec<u8>) -> Result<u64, String>,
+    pub fappend: fn(path: String, data: Vec<u8>) -> Result<u64, String>,
+    pub finfo: fn(path: String) -> Result<Rc<Object>, String>,
+    pub stdin_read: fn() -> Result<Vec<u8>, String>,
+    pub stdout_write: fn(data: &Vec<u8>) -> Result<(), String>,
+    pub read_line: fn(display: String) -> Result<String, String>,
 }
 
 impl fmt::Debug for Platform {
@@ -68,6 +76,13 @@ impl BosonLang {
             get_platform_info: native::get_platform_info,
             sleep: native::sleep,
             sys_shell: native::sys_shell,
+            fread: native::fread,
+            fwrite: native::fwrite,
+            fappend: native::fappend,
+            finfo: native::finfo,
+            stdin_read: native::stdin_read,
+            stdout_write: native::stdout_write,
+            read_line: native::read_line,
         };
     }
 
