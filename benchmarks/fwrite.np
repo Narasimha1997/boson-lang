@@ -1,0 +1,5 @@
+
+const data = "Hello, world!!!";
+
+const w_bytes = fwrite("hello.txt", bytes(data));
+println(w_bytes);

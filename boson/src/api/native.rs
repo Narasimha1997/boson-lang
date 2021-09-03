@@ -173,7 +173,7 @@ pub fn fread(path: String, start: Option<u64>, n_b: Option<u64>) -> Result<(Vec<
 // Writes content and returns the new size of the file.
 // This function will always create a new file.
 pub fn fwrite(path: String, data: &Vec<u8>) -> Result<u64, String> {
-    let f_handle_res = fs::OpenOptions::new().write(true).open(&path);
+    let f_handle_res = fs::OpenOptions::new().create(true).write(true).open(&path);
     if f_handle_res.is_err() {
         return Err(format!(
             "Cannot open {}, Reason: {:?}",
