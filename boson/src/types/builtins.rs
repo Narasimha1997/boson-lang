@@ -62,6 +62,7 @@ pub enum BuiltinKind {
     CallFunc,
     CallAsync,
     FStat,
+    FWrite,
     Wait,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
@@ -119,6 +120,7 @@ impl BuiltinKind {
             BuiltinKind::CallAsync => "call_async".to_string(),
             BuiltinKind::Wait => "wait".to_string(),
             BuiltinKind::FStat => "fstat".to_string(),
+            BuiltinKind::FWrite => "fwrite".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -1082,6 +1084,35 @@ impl BuiltinKind {
                     }
                 }
             }
+
+            BuiltinKind::FWrite => {
+                if args.len() != 2 {
+                    return Err(format!(
+                        "fwrite() takes 2 arguments, provided {}",
+                        args.len()
+                    ));
+                }
+
+                match (args[0].as_ref(), args[1].as_ref()) {
+                    (Object::Str(st), Object::ByteBuffer(buffer)) => {
+                        let fwrite_fn = platform.fwrite;
+                        let result = fwrite_fn(st.clone(), &buffer.borrow().data);
+                        if result.is_err() {
+                            return Err(result.unwrap_err());
+                        }
+
+                        return Ok(Rc::new(Object::Int(result.unwrap() as i64)));
+                    }
+                    _ => {
+                        return Err(format!(
+                            "fwrite() takes string and bytes as arguments, provided {}, {}",
+                            args[0].get_type(),
+                            args[1].get_type()
+                        ));
+                    }
+                }
+            }
+
             _ => return Err("Trying to invoke invalid builtin".to_string()),
         }
     }
