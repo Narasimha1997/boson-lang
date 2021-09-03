@@ -1,0 +1,11 @@
+
+const info = fstat("README.md");
+println(info);
+
+const dir_info = fstat("target");
+println(dir_info);
+
+const err = fstat("NO_FILE");
+
+# should throw error
+println(err);

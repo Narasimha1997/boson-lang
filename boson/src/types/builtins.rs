@@ -61,6 +61,7 @@ pub enum BuiltinKind {
     SleepSec,
     CallFunc,
     CallAsync,
+    FStat,
     Wait,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
@@ -117,6 +118,7 @@ impl BuiltinKind {
             BuiltinKind::CallFunc => "call_func".to_string(),
             BuiltinKind::CallAsync => "call_async".to_string(),
             BuiltinKind::Wait => "wait".to_string(),
+            BuiltinKind::FStat => "fstat".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -1050,6 +1052,33 @@ impl BuiltinKind {
                             "wait() takes thread as argument, provided {}",
                             args[0].get_type()
                         ));
+                    }
+                }
+            }
+
+            BuiltinKind::FStat => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "fstat() takes at 1 argument, {} provided",
+                        args.len()
+                    ));
+                }
+
+                match args[0].as_ref() {
+                    Object::Str(path) => {
+                        let platform_finfo = platform.finfo;
+                        let result = platform_finfo(path.clone());
+                        if result.is_err() {
+                            return Err(result.unwrap_err());
+                        }
+
+                        return Ok(result.unwrap());
+                    }
+                    _ => {
+                        return Err(format!(
+                            "fstat() takes string as argument, provided {}",
+                            args[0].get_type()
+                        ))
                     }
                 }
             }
