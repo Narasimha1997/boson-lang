@@ -1,0 +1,5 @@
+
+const data = "\nHello, world!!!";
+
+const w_bytes = fappend("hello.txt", bytes(data));
+println(w_bytes);

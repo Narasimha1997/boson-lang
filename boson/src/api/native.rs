@@ -184,7 +184,12 @@ pub fn fwrite(path: String, data: &Vec<u8>) -> Result<u64, String> {
 
     // write:
     let mut f_handle = f_handle_res.unwrap();
-    let result = f_handle.write_all(&data);
+    let mut result = f_handle.write_all(&data);
+    if result.is_err() {
+        return Err(format!("IO Error"));
+    }
+
+    result = f_handle.flush();
     if result.is_err() {
         return Err(format!("IO Error"));
     }
@@ -206,7 +211,12 @@ pub fn fappend(path: String, data: &Vec<u8>) -> Result<u64, String> {
 
     // write:
     let mut f_handle = f_handle_res.unwrap();
-    let result = f_handle.write_all(&data);
+    let mut result = f_handle.write_all(&data);
+    if result.is_err() {
+        return Err(format!("IO Error"));
+    }
+
+    result = f_handle.flush();
     if result.is_err() {
         return Err(format!("IO Error"));
     }
@@ -287,6 +297,7 @@ pub fn read_line(display: String) -> Result<String, String> {
     if result.is_err() {
         return Err(format!("IO Error"));
     }
+
     return Ok(string_buffer);
 }
 
@@ -294,7 +305,13 @@ pub fn read_line(display: String) -> Result<String, String> {
 pub fn stdout_write(data: &Vec<u8>) -> Result<(), String> {
     let stdout = io::stdout();
     let mut lock = stdout.lock();
-    let result = lock.write_all(&data);
+    let mut result = lock.write_all(&data);
+
+    if result.is_err() {
+        return Err(format!("IO Error"));
+    }
+
+    result = lock.flush();
     if result.is_err() {
         return Err(format!("IO Error"));
     }
