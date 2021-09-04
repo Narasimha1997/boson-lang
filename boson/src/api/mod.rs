@@ -34,7 +34,7 @@ pub struct Platform {
     pub fread:
         fn(path: String, start: Option<u64>, n_b: Option<u64>) -> Result<(Vec<u8>, u64), String>,
     pub fwrite: fn(path: String, data: &Vec<u8>) -> Result<u64, String>,
-    pub fappend: fn(path: String, data: Vec<u8>) -> Result<u64, String>,
+    pub fappend: fn(path: String, data: &Vec<u8>) -> Result<u64, String>,
     pub finfo: fn(path: String) -> Result<Rc<Object>, String>,
     pub stdin_read: fn() -> Result<Vec<u8>, String>,
     pub stdout_write: fn(data: &Vec<u8>) -> Result<(), String>,

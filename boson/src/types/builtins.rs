@@ -63,6 +63,7 @@ pub enum BuiltinKind {
     CallAsync,
     FStat,
     FWrite,
+    FAppend,
     Wait,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
@@ -121,6 +122,7 @@ impl BuiltinKind {
             BuiltinKind::Wait => "wait".to_string(),
             BuiltinKind::FStat => "fstat".to_string(),
             BuiltinKind::FWrite => "fwrite".to_string(),
+            BuiltinKind::FAppend => "fappend".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -1106,6 +1108,34 @@ impl BuiltinKind {
                     _ => {
                         return Err(format!(
                             "fwrite() takes string and bytes as arguments, provided {}, {}",
+                            args[0].get_type(),
+                            args[1].get_type()
+                        ));
+                    }
+                }
+            }
+
+            BuiltinKind::FAppend => {
+                if args.len() != 2 {
+                    return Err(format!(
+                        "fappend() takes 2 arguments, provided {}",
+                        args.len()
+                    ));
+                }
+
+                match (args[0].as_ref(), args[1].as_ref()) {
+                    (Object::Str(st), Object::ByteBuffer(buffer)) => {
+                        let fappend_fn = platform.fappend;
+                        let result = fappend_fn(st.clone(), &buffer.borrow().data);
+                        if result.is_err() {
+                            return Err(result.unwrap_err());
+                        }
+
+                        return Ok(Rc::new(Object::Int(result.unwrap() as i64)));
+                    }
+                    _ => {
+                        return Err(format!(
+                            "fappend() takes string and bytes as arguments, provided {}, {}",
                             args[0].get_type(),
                             args[1].get_type()
                         ));

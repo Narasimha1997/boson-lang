@@ -194,7 +194,7 @@ pub fn fwrite(path: String, data: &Vec<u8>) -> Result<u64, String> {
 
 // Writes content and returns the new size of the file.
 // This function append to a file, if exists or creates a new file.
-pub fn fappend(path: String, data: Vec<u8>) -> Result<u64, String> {
+pub fn fappend(path: String, data: &Vec<u8>) -> Result<u64, String> {
     let f_handle_res = fs::OpenOptions::new().write(true).append(true).open(&path);
     if f_handle_res.is_err() {
         return Err(format!(
