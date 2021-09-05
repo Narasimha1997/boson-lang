@@ -38,7 +38,7 @@ pub struct Platform {
     pub finfo: fn(path: String) -> Result<Rc<Object>, String>,
     pub stdin_read: fn() -> Result<Vec<u8>, String>,
     pub stdout_write: fn(data: &Vec<u8>) -> Result<(), String>,
-    pub read_line: fn(display: String) -> Result<String, String>,
+    pub read_line: fn(display: Option<String>) -> Result<String, String>,
 }
 
 impl fmt::Debug for Platform {

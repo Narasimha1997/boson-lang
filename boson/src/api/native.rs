@@ -290,8 +290,12 @@ pub fn stdin_read() -> Result<Vec<u8>, String> {
 }
 
 // Read a line as string:
-pub fn read_line(display: String) -> Result<String, String> {
-    print(&display);
+pub fn read_line(display: Option<String>) -> Result<String, String> {
+    
+    if display.is_some() {
+        print(&display.unwrap());
+    }
+
     let mut string_buffer = String::new();
     let result = io::stdin().read_line(&mut string_buffer);
     if result.is_err() {

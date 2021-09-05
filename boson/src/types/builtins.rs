@@ -64,7 +64,9 @@ pub enum BuiltinKind {
     FStat,
     FWrite,
     FAppend,
+    FRead,
     Wait,
+    ReadLine,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -1140,6 +1142,87 @@ impl BuiltinKind {
                             args[1].get_type()
                         ));
                     }
+                }
+            }
+
+            BuiltinKind::FRead => {
+                fn __read(
+                    path: String,
+                    start: Option<u64>,
+                    n: Option<u64>,
+                    p: &Platform,
+                ) -> Result<Rc<Object>, String> {
+                    let read_fn = p.fread;
+                    let result = read_fn(path, start, n);
+                    if result.is_err() {
+                        return Err(result.unwrap_err());
+                    }
+
+                    let (data, nb) = result.unwrap();
+                    // return the array:
+                    let arr = Array {
+                        name: "fread_data".to_string(),
+                        elements: vec![
+                            Rc::new(Object::Int(nb as i64)),
+                            Rc::new(Object::ByteBuffer(RefCell::new(buffer::Buffer::from_u8(
+                                data,
+                                "fread_data".to_string(),
+                                false,
+                            )))),
+                        ],
+                    };
+
+                    return Ok(Rc::new(Object::Array(RefCell::new(arr))));
+                }
+
+                if args.len() == 1 {
+                    // only the file path is provided
+                    match args[0].as_ref() {
+                        Object::Str(st) => {
+                            let result = __read(st.clone(), None, None, &platform);
+                            return result;
+                        }
+                        _ => {
+                            return Err(format!(
+                                "fread() takes string as first argument, but got {}",
+                                args[0].get_type()
+                            ))
+                        }
+                    }
+                } else if args.len() == 2 {
+                    match (args[0].as_ref(), args[1].as_ref()) {
+                        (Object::Str(st), Object::Int(i)) => {
+                            let result = __read(st.clone(), Some(*i as u64), None, &platform);
+                            return result;
+                        }
+                        _ => {
+                            return Err(format!(
+                            "fread() takes string and int as first arguments, but got {} and {}",
+                            args[0].get_type(),
+                            args[1].get_type()
+                        ))
+                        }
+                    }
+                } else if args.len() == 3 { 
+                    match (args[0].as_ref(), args[1].as_ref(), args[2].as_ref()) {
+                        (Object::Str(st), Object::Int(i), Object::Int(j)) => {
+                            let result = __read(st.clone(), Some(*i as u64), Some(*j as u64), &platform);
+                            return result;
+                        }
+                        _ => {
+                            return Err(format!(
+                            "fread() takes string and int as first arguments, but got {}, {} and {}",
+                            args[0].get_type(),
+                            args[1].get_type(),
+                            args[2].get_type()
+                        ))
+                        }
+                    }
+                 }else {
+                    return Err(format!(
+                        "fread() takes 1, 2 or 3 arguments, but got {}",
+                        args.len()
+                    ));
                 }
             }
 
