@@ -2,4 +2,4 @@ const ip = input()
 
 const ip2 = input("Enter your name: ");
 const greeting = "Hello! " + ip2;
-println(greeting);
+print(greeting);

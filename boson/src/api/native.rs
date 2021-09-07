@@ -313,6 +313,7 @@ pub fn read_line(display: Option<String>) -> Result<String, String> {
         return Err(format!("IO Error"));
     }
 
+    string_buffer = string_buffer.replace("\n", "");
     return Ok(string_buffer);
 }
 
