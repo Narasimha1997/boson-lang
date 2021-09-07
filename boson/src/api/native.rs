@@ -293,7 +293,7 @@ pub fn stdin_read() -> Result<Vec<u8>, String> {
 pub fn read_line(display: Option<String>) -> Result<String, String> {
     
     if display.is_some() {
-        print(&display.unwrap());
+        print!("{}", &display.unwrap());
     }
 
     let mut string_buffer = String::new();

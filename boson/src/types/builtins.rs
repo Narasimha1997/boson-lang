@@ -65,8 +65,8 @@ pub enum BuiltinKind {
     FWrite,
     FAppend,
     FRead,
-    Wait,
     ReadLine,
+    Wait,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -125,6 +125,7 @@ impl BuiltinKind {
             BuiltinKind::FStat => "fstat".to_string(),
             BuiltinKind::FWrite => "fwrite".to_string(),
             BuiltinKind::FAppend => "fappend".to_string(),
+            BuiltinKind::ReadLine => "input".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -1024,6 +1025,23 @@ impl BuiltinKind {
                         ));
                     }
                 }
+            }
+            BuiltinKind::ReadLine => {
+                if args.len() > 1 {
+                    return Err(format!(
+                        "input() takes at max 1 argument, provided {}",
+                        args.len()
+                    ));
+                }
+
+                let display_obj = args.get(0).map(|o| o.describe());
+                let readline_fn = platform.read_line;
+                let result = readline_fn(display_obj);
+                if result.is_err() {
+                    return Err(result.unwrap());
+                }
+
+                return Ok(Rc::new(Object::Str(result.unwrap())));
             }
             BuiltinKind::Wait => {
                 if args.len() != 1 {
