@@ -25,6 +25,18 @@ use std::time::Duration;
     Contains all the implementation of native built-ins
 */
 
+
+// Used in read_line function
+macro_rules! print_flush {
+    ( $($t:tt)* ) => {
+        {
+            let mut h = io::stdout();
+            write!(h, $($t)* ).unwrap();
+            h.flush().unwrap();
+        }
+    }
+}
+
 pub fn print(st: &String) {
     print!("{}", st);
 }
@@ -291,9 +303,8 @@ pub fn stdin_read() -> Result<Vec<u8>, String> {
 
 // Read a line as string:
 pub fn read_line(display: Option<String>) -> Result<String, String> {
-    
     if display.is_some() {
-        print!("{}", &display.unwrap());
+        print_flush!("{}", &display.unwrap())
     }
 
     let mut string_buffer = String::new();

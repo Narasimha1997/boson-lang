@@ -1221,7 +1221,7 @@ impl BuiltinKind {
                         ))
                         }
                     }
-                } else if args.len() == 3 { 
+                } else if args.len() == 3 {
                     match (args[0].as_ref(), args[1].as_ref(), args[2].as_ref()) {
                         (Object::Str(st), Object::Int(i), Object::Int(j)) => {
                             let result = __read(st.clone(), Some(*i as u64), Some(*j as u64), &platform);
@@ -1236,7 +1236,7 @@ impl BuiltinKind {
                         ))
                         }
                     }
-                 }else {
+                } else {
                     return Err(format!(
                         "fread() takes 1, 2 or 3 arguments, but got {}",
                         args.len()
