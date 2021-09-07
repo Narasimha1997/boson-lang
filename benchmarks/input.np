@@ -1,5 +1,4 @@
 const ip = input()
-
-const ip2 = input("Enter your name: ");
-const greeting = "Hello! " + ip2;
+const ip2 = input();
+const greeting = "Hello! " + ip2 + " " + ip;
 print(greeting);
