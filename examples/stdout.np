@@ -1,0 +1,4 @@
+const d = bytes("Hello, World!!");
+stdout(d);
+
+# boso-eval ./examples/stdout.np | wc
