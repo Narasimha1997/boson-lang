@@ -318,7 +318,7 @@ pub fn read_line(display: Option<String>) -> Result<String, String> {
 }
 
 // Write stdout output:
-pub fn stdout_write(data: &Vec<u8>) -> Result<(), String> {
+pub fn stdout_write(data: &Vec<u8>) -> Result<usize, String> {
     let stdout = io::stdout();
     let mut lock = stdout.lock();
     let mut result = lock.write_all(&data);
@@ -332,5 +332,5 @@ pub fn stdout_write(data: &Vec<u8>) -> Result<(), String> {
         return Err(format!("IO Error"));
     }
 
-    return Ok(result.unwrap());
+    return Ok(data.len());
 }
