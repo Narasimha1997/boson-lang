@@ -156,14 +156,14 @@ pub fn fread(path: String, start: Option<u64>, n_b: Option<u64>) -> Result<(Vec<
         read_buffer.resize(b_to_read as usize, 0u8);
         let read_result = f_handle.read_exact(&mut read_buffer);
         if read_result.is_err() {
-            return Err(format!("Read Error {:?}", read_result.unwrap()));
+            return Err(format!("Read Error {:?}", read_result.unwrap_err()));
         }
 
         return Ok((read_buffer, b_to_read));
     } else {
         let read_result = f_handle.read_to_end(&mut read_buffer);
         if read_result.is_err() {
-            return Err(format!("Read Error {:?}", read_result.unwrap()));
+            return Err(format!("Read Error {:?}", read_result.unwrap_err()));
         }
 
         return Ok((read_buffer, read_result.unwrap() as u64));
@@ -291,7 +291,6 @@ pub fn stdin_read() -> Result<Vec<u8>, String> {
 
 // Read a line as string:
 pub fn read_line(display: Option<String>) -> Result<String, String> {
-    
     if display.is_some() {
         print(&display.unwrap());
     }

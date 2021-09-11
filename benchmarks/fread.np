@@ -1,0 +1,42 @@
+
+
+func read_as_chunks(fname, chunk_size) {
+    var d;
+    const size = fstat(fname)["size"];
+    var s = 0;
+
+    var data = "";
+    while (s < size) {
+        if (size - s < chunk_size) {
+            d = fread(fname, s);
+            s = s + d[0];
+        } else {
+            d = fread(fname, s, chunk_size);
+            s = s + d[0];
+        }
+
+        data = data + string(d[1]);
+    }
+
+    return data;
+}
+
+func read_whole(fname) {
+    return string(fread(fname)[1]);
+}
+
+func read_cat(fname) {
+    return ($ "cat " + fname)[1];
+}
+
+println(read_as_chunks(
+    "dump.txt", 100
+));
+
+println(read_whole(
+    "dump.txt"
+));
+
+println(read_cat(
+    "dump.txt"
+));
