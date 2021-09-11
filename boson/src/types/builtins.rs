@@ -130,6 +130,7 @@ impl BuiltinKind {
             BuiltinKind::ReadLine => "input".to_string(),
             BuiltinKind::SRead => "stdin".to_string(),
             BuiltinKind::SWrite => "stdout".to_string(),
+            BuiltinKind::FRead => "fread".to_string(),
             _ => "undef".to_string(),
         }
     }
