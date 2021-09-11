@@ -65,8 +65,10 @@ pub enum BuiltinKind {
     FWrite,
     FAppend,
     FRead,
-    Wait,
     ReadLine,
+    SWrite,
+    SRead,
+    Wait,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -125,7 +127,9 @@ impl BuiltinKind {
             BuiltinKind::FStat => "fstat".to_string(),
             BuiltinKind::FWrite => "fwrite".to_string(),
             BuiltinKind::FAppend => "fappend".to_string(),
-            BuiltinKind::FRead => "fread".to_string(),
+            BuiltinKind::ReadLine => "input".to_string(),
+            BuiltinKind::SRead => "stdin".to_string(),
+            BuiltinKind::SWrite => "stdout".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -1026,6 +1030,23 @@ impl BuiltinKind {
                     }
                 }
             }
+            BuiltinKind::ReadLine => {
+                if args.len() > 1 {
+                    return Err(format!(
+                        "input() takes at max 1 argument, provided {}",
+                        args.len()
+                    ));
+                }
+
+                let display_obj = args.get(0).map(|o| o.describe());
+                let readline_fn = platform.read_line;
+                let result = readline_fn(display_obj);
+                if result.is_err() {
+                    return Err(result.unwrap());
+                }
+
+                return Ok(Rc::new(Object::Str(result.unwrap())));
+            }
             BuiltinKind::Wait => {
                 if args.len() != 1 {
                     return Err(format!("wait() takes 1 argument, given {}", args.len()));
@@ -1226,6 +1247,54 @@ impl BuiltinKind {
                         args.len()
                     ));
                 }
+            }
+
+            BuiltinKind::SWrite => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "stdout() takes 1 argument, provided {}",
+                        args.len()
+                    ));
+                }
+
+                let data_obj = args[0].as_ref();
+                match data_obj {
+                    Object::ByteBuffer(buffer) => {
+                        let stdout_fn = platform.stdout_write;
+                        let result = stdout_fn(&buffer.borrow().data);
+                        if result.is_err() {
+                            return Err(result.unwrap_err());
+                        }
+
+                        return Ok(Rc::new(Object::Int(result.unwrap() as i64)));
+                    }
+                    _ => {
+                        return Err(format!(
+                            "stdout() takes bytes as argument, provided {}",
+                            data_obj.get_type()
+                        ))
+                    }
+                }
+            }
+
+            BuiltinKind::SRead => {
+                if args.len() != 0 {
+                    return Err(format!(
+                        "stdin() takes no arguments, provided {}",
+                        args.len()
+                    ));
+                }
+
+                let stdin_fn = platform.stdin_read;
+                let result = stdin_fn();
+
+                if result.is_err() {
+                    return Err(result.unwrap_err());
+                }
+
+                let data = result.unwrap();
+                let byte_buffer = buffer::Buffer::from_u8(data, "stdout".to_string(), true);
+                return Ok(Rc::new(Object::ByteBuffer(RefCell::new(byte_buffer))));
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),

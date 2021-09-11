@@ -25,6 +25,18 @@ use std::time::Duration;
     Contains all the implementation of native built-ins
 */
 
+
+// Used in read_line function
+macro_rules! print_flush {
+    ( $($t:tt)* ) => {
+        {
+            let mut h = io::stdout();
+            write!(h, $($t)* ).unwrap();
+            h.flush().unwrap();
+        }
+    }
+}
+
 pub fn print(st: &String) {
     print!("{}", st);
 }
@@ -292,7 +304,7 @@ pub fn stdin_read() -> Result<Vec<u8>, String> {
 // Read a line as string:
 pub fn read_line(display: Option<String>) -> Result<String, String> {
     if display.is_some() {
-        print(&display.unwrap());
+        print_flush!("{}", &display.unwrap())
     }
 
     let mut string_buffer = String::new();
@@ -301,11 +313,12 @@ pub fn read_line(display: Option<String>) -> Result<String, String> {
         return Err(format!("IO Error"));
     }
 
+    string_buffer = string_buffer.replace("\n", "");
     return Ok(string_buffer);
 }
 
 // Write stdout output:
-pub fn stdout_write(data: &Vec<u8>) -> Result<(), String> {
+pub fn stdout_write(data: &Vec<u8>) -> Result<usize, String> {
     let stdout = io::stdout();
     let mut lock = stdout.lock();
     let mut result = lock.write_all(&data);
@@ -319,5 +332,5 @@ pub fn stdout_write(data: &Vec<u8>) -> Result<(), String> {
         return Err(format!("IO Error"));
     }
 
-    return Ok(result.unwrap());
+    return Ok(data.len());
 }

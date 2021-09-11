@@ -37,7 +37,7 @@ pub struct Platform {
     pub fappend: fn(path: String, data: &Vec<u8>) -> Result<u64, String>,
     pub finfo: fn(path: String) -> Result<Rc<Object>, String>,
     pub stdin_read: fn() -> Result<Vec<u8>, String>,
-    pub stdout_write: fn(data: &Vec<u8>) -> Result<(), String>,
+    pub stdout_write: fn(data: &Vec<u8>) -> Result<usize, String>,
     pub read_line: fn(display: Option<String>) -> Result<String, String>,
 }
 
