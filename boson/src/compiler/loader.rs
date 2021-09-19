@@ -20,7 +20,6 @@ const MAGIC: &str = "000BOSON";
 pub enum TypeCode {
     NONE,
     CHAR,
-    BYTE,
     INT,
     STR,
     FLOAT,
@@ -223,6 +222,29 @@ impl BytecodeWriter {
                 Object::Str(st) => {
                     let b_val = st.as_bytes();
                     self.new_data_idx(current_count as i32, TypeCode::STR, &b_val);
+                }
+
+                Object::Char(ch) => {
+                    let b_val = vec![*ch as u8];
+                    self.new_data_idx(current_count as i32, TypeCode::CHAR, &b_val);
+                }
+
+                Object::Int(i) => {
+                    let b_res = ByteOps::repr_boson_int(i);
+                    if b_res.is_none() {
+                        return Err(format!("Failed to serialize int {}", i));
+                    }
+
+                    self.new_data_idx(current_count as i32, TypeCode::INT, &b_res.unwrap());
+                }
+
+                Object::Float(f) => {
+                    let b_res = ByteOps::repr_boson_float(f);
+                    if b_res.is_none() {
+                        return Err(format!("Failed to serialize int {}", f));
+                    }
+
+                    self.new_data_idx(current_count as i32, TypeCode::FLOAT, &b_res.unwrap());
                 }
 
                 _ => {
