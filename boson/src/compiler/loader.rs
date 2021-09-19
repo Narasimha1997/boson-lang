@@ -205,7 +205,7 @@ impl BytecodeWriter {
         return self.subroutine_items.len() as u64;
     }
 
-    pub fn encode_to_binary(&mut self, bytecode: &CompiledBytecode) {
+    pub fn encode_to_binary(&mut self, bytecode: &CompiledBytecode) -> Result<Vec<u8>, String> {
         // prepare the main function subroutine pool:
 
         // main function:
@@ -219,8 +219,17 @@ impl BytecodeWriter {
                     let b_val = if *b { vec![1u8] } else { vec![0u8] };
                     self.new_data_idx(current_count as i32, TypeCode::BOOL, &b_val);
                 }
+
+                _ => {
+                    return Err(format!(
+                        "Object {} cannot be serialized.",
+                        object.get_type()
+                    ));
+                }
             }
             current_count += 1;
         }
+
+        return Ok(vec![]);
     }
 }
