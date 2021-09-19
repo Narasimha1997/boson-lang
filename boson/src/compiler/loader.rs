@@ -21,7 +21,7 @@ pub struct BytecodeLoader {}
 pub struct ByteOps {}
 
 // takes a sized struct and returns the in-memory byte representation
-// zero-copy
+// zero-copy, see: https://stackoverflow.com/questions/28127165/how-to-convert-struct-to-u8
 #[allow(dead_code)]
 unsafe fn to_bytes<S:Sized>(s: &S) -> &[u8] {
     let byte_slice_repr = slice::from_raw_parts(
