@@ -5,10 +5,13 @@ use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 use byteorder::WriteBytesExt;
 
+use crate::compiler::CompiledBytecode;
+
 use std::mem;
 use std::slice;
 
 const USE_BIG_ENDIAN_REPR: bool = false;
+const MAGIC: &str = "000BOSON";
 
 #[allow(dead_code)]
 #[repr(u8)]
@@ -82,6 +85,15 @@ impl ByteOps {
 
         return Some(bytes.to_vec());
     }
+
+    pub fn generate_magic() -> u64 {
+        let result = unsafe { ByteOps::as_type::<u64>(MAGIC.as_bytes()) };
+
+        match result {
+            Some(u64_magic) => *u64_magic,
+            None => 0,
+        }
+    }
 }
 
 #[repr(packed)]
@@ -117,3 +129,29 @@ pub struct SubroutineIndexItem {
     | data-index = contains mapping of data in bytes area|
     | bytes-area |
 */
+
+pub struct BytecodeWriter {
+    pub current_size: usize,
+    pub data_items: Vec<DataIndexItem>,
+    pub subroutine_items: Vec<SubroutineIndexItem>,
+    pub header: Header,
+}
+
+impl BytecodeWriter {
+    pub fn new() -> BytecodeWriter {
+        BytecodeWriter {
+            current_size: 0,
+            data_items: vec![],
+            subroutine_items: vec![],
+            header: Header {
+                magic: ByteOps::generate_magic(),
+                num_data: 0,
+                num_sub: 0,
+                data_end_idx: 0,
+                sub_end_idx: 0,
+            },
+        }
+    }
+
+    pub fn encode_to_binary(_bytecode: &CompiledBytecode) {}
+}
