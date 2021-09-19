@@ -7,6 +7,7 @@ use byteorder::WriteBytesExt;
 
 use crate::compiler::CompiledBytecode;
 use crate::compiler::CompiledInstructions;
+use crate::types::object::Object;
 
 use std::mem;
 use std::slice;
@@ -45,7 +46,7 @@ impl ByteOps {
     // zero-copy, this just returns the typed reference, does not copy any data.
     pub unsafe fn as_type<T: Sized>(buf: &[u8]) -> Option<T> {
         if buf.len() == mem::size_of::<T>() {
-            let typed_ref_repr: T = mem::transmute(&buf[0]);
+            let typed_ref_repr: T = mem::transmute_copy(&buf[0]);
             return Some(typed_ref_repr);
         } else {
             return None;
@@ -210,6 +211,16 @@ impl BytecodeWriter {
         // main function:
         self.new_subroutine_idx(-1, "main".to_string(), 0, 0, &bytecode.instructions);
 
+        let mut current_count = 0;
         // now compile the constant pool:
+        for object in &bytecode.constant_pool.objects {
+            match object.as_ref() {
+                Object::Bool(b) => {
+                    let b_val = if *b { vec![1u8] } else { vec![0u8] };
+                    self.new_data_idx(current_count as i32, TypeCode::BOOL, &b_val);
+                }
+            }
+            current_count += 1;
+        }
     }
 }
