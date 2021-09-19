@@ -247,6 +247,20 @@ impl BytecodeWriter {
                     self.new_data_idx(current_count as i32, TypeCode::FLOAT, &b_res.unwrap());
                 }
 
+                Object::Subroutine(sub) => {
+                    self.new_subroutine_idx(
+                        current_count as i32,
+                        sub.get_name().clone(),
+                        sub.gen_n_parameters(),
+                        sub.get_n_locals(),
+                        &sub.as_ref().bytecode,
+                    );
+                }
+
+                Object::Noval => {
+                    self.new_data_idx(current_count as i32, TypeCode::NONE, &vec![0u8]);
+                }
+
                 _ => {
                     return Err(format!(
                         "Object {} cannot be serialized.",
