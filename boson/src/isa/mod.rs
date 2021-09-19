@@ -140,7 +140,7 @@ impl InstructionPacker {
         let x1 = ((operand >> 8) & 0x00FF) as u8;
         let x2 = (operand & 0x00FF) as u8;
 
-        if BYTE_ENDIAN == "big" {
+        if BYTE_ENDIAN != "big" {
             return (x2, x1);
         }
 
@@ -148,7 +148,7 @@ impl InstructionPacker {
     }
 
     fn pack_u16(x1: u8, x2: u8) -> u16 {
-        if BYTE_ENDIAN == "big" {
+        if BYTE_ENDIAN != "big" {
             return (((x2 as u16) & 0x00FF) << 8) | ((x1 as u16) & 0x00FF);
         } else {
             return (((x1 as u16) & 0x00FF) << 8) | ((x2 as u16) & 0x00FF);
