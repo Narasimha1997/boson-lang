@@ -1,13 +1,21 @@
-use crate::isa::InstructionKind;
-use crate::isa::InstructionPacker;
+extern crate byteorder;
+
+use byteorder::BigEndian;
+use byteorder::LittleEndian;
+use byteorder::ReadBytesExt;
+use byteorder::WriteBytesExt;
 
 use std::mem;
 use std::slice;
+
+const USE_BIG_ENDIAN_REPR: bool = false;
 
 #[allow(dead_code)]
 #[repr(u8)]
 pub enum TypeCode {
     NONE,
+    CHAR,
+    BYTE,
     INT,
     STR,
     FLOAT,
@@ -21,13 +29,59 @@ pub struct BytecodeLoader {}
 
 pub struct ByteOps {}
 
-// takes a sized struct and returns the in-memory byte representation
-// zero-copy, see: https://stackoverflow.com/questions/28127165/how-to-convert-struct-to-u8
-#[allow(dead_code)]
-unsafe fn to_bytes<S: Sized>(s: &S) -> &[u8] {
-    let byte_slice_repr = slice::from_raw_parts((s as *const S) as *const u8, mem::size_of::<S>());
+impl ByteOps {
+    // takes a sized struct and returns the in-memory byte representation
+    // zero-copy, see: https://stackoverflow.com/questions/28127165/how-to-convert-struct-to-u8
+    pub unsafe fn as_bytes<S: Sized>(s: &S) -> &[u8] {
+        let byte_slice_repr =
+            slice::from_raw_parts((s as *const S) as *const u8, mem::size_of::<S>());
+        return byte_slice_repr;
+    }
 
-    return byte_slice_repr;
+    // returns the typed representation of a slice of bytes
+    // zero-copy, this just returns the typed reference, does not copy any data.
+    pub unsafe fn as_type<T: Sized>(buf: &[u8]) -> Option<&T> {
+        if buf.len() == mem::size_of::<T>() {
+            let typed_ref_repr: &T = mem::transmute(&buf[0]);
+            return Some(typed_ref_repr);
+        } else {
+            return None;
+        }
+    }
+
+    pub fn repr_boson_float(f: &f64) -> Option<Vec<u8>> {
+        let mut bytes = [0u8; mem::size_of::<f64>()];
+        if USE_BIG_ENDIAN_REPR {
+            let result = bytes.as_mut().write_f64::<BigEndian>(*f);
+            if result.is_err() {
+                return None;
+            }
+        } else {
+            let result = bytes.as_mut().write_f64::<LittleEndian>(*f);
+            if result.is_err() {
+                return None;
+            }
+        }
+
+        return Some(bytes.to_vec());
+    }
+
+    pub fn repr_boson_int(i: &i64) -> Option<Vec<u8>> {
+        let mut bytes = [0u8; mem::size_of::<f64>()];
+        if USE_BIG_ENDIAN_REPR {
+            let result = bytes.as_mut().write_i64::<BigEndian>(*i);
+            if result.is_err() {
+                return None;
+            }
+        } else {
+            let result = bytes.as_mut().write_i64::<LittleEndian>(*i);
+            if result.is_err() {
+                return None;
+            }
+        }
+
+        return Some(bytes.to_vec());
+    }
 }
 
 #[repr(packed)]
