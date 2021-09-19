@@ -6,6 +6,7 @@ use byteorder::ReadBytesExt;
 use byteorder::WriteBytesExt;
 
 use crate::compiler::CompiledBytecode;
+use crate::compiler::CompiledInstructions;
 
 use std::mem;
 use std::slice;
@@ -24,7 +25,6 @@ pub enum TypeCode {
     FLOAT,
     BOOL,
     SUBROUTINE,
-    CODE,
 }
 
 pub struct BytecodeSaver {}
@@ -43,9 +43,9 @@ impl ByteOps {
 
     // returns the typed representation of a slice of bytes
     // zero-copy, this just returns the typed reference, does not copy any data.
-    pub unsafe fn as_type<T: Sized>(buf: &[u8]) -> Option<&T> {
+    pub unsafe fn as_type<T: Sized>(buf: &[u8]) -> Option<T> {
         if buf.len() == mem::size_of::<T>() {
-            let typed_ref_repr: &T = mem::transmute(&buf[0]);
+            let typed_ref_repr: T = mem::transmute(&buf[0]);
             return Some(typed_ref_repr);
         } else {
             return None;
@@ -90,7 +90,7 @@ impl ByteOps {
         let result = unsafe { ByteOps::as_type::<u64>(MAGIC.as_bytes()) };
 
         match result {
-            Some(u64_magic) => *u64_magic,
+            Some(u64_magic) => u64_magic,
             None => 0,
         }
     }
@@ -98,9 +98,9 @@ impl ByteOps {
 
 #[repr(packed)]
 pub struct DataIndexItem {
-    pub const_idx: u32,
-    pub start: u32,
-    pub end: u32,
+    pub const_idx: i32,
+    pub start: u64,
+    pub end: u64,
     pub t_code: TypeCode,
 }
 
@@ -116,9 +116,10 @@ pub struct Header {
 #[repr(packed)]
 pub struct SubroutineIndexItem {
     pub name_data_idx: u64,
-    pub n_locals_data_idx: u64,
-    pub n_params_data_idx: u64,
+    pub n_locals: u64,
+    pub n_params: u64,
     pub code_idx: u64,
+    pub const_idx: i32,
 }
 
 // organization of bytecode file:
@@ -135,6 +136,7 @@ pub struct BytecodeWriter {
     pub data_items: Vec<DataIndexItem>,
     pub subroutine_items: Vec<SubroutineIndexItem>,
     pub header: Header,
+    pub bin_pool: Vec<u8>,
 }
 
 impl BytecodeWriter {
@@ -150,8 +152,64 @@ impl BytecodeWriter {
                 data_end_idx: 0,
                 sub_end_idx: 0,
             },
+            bin_pool: vec![],
         }
     }
 
-    pub fn encode_to_binary(_bytecode: &CompiledBytecode) {}
+    fn new_data_idx(&mut self, idx: i32, t: TypeCode, data: &[u8]) -> u64 {
+        let bin_start = self.bin_pool.len();
+
+        // extend the bin pool with new data:
+        self.bin_pool.extend(data);
+
+        let bin_end = self.bin_pool.len();
+        let data_item = DataIndexItem {
+            const_idx: idx,
+            start: bin_start as u64,
+            end: bin_end as u64,
+            t_code: t,
+        };
+
+        self.current_size = bin_end;
+        self.data_items.push(data_item);
+
+        return self.data_items.len() as u64;
+    }
+
+    fn new_subroutine_idx(
+        &mut self,
+        const_idx: i32,
+        name: String,
+        n_p: usize,
+        n_l: usize,
+        code: &CompiledInstructions,
+    ) -> u64 {
+        // create a data-index for name:
+        let name_data_idx = self.new_data_idx(const_idx, TypeCode::STR, &name.as_bytes());
+        let code_idx = self.new_data_idx(const_idx, TypeCode::SUBROUTINE, &code);
+
+        let subroutine = SubroutineIndexItem {
+            name_data_idx,
+            n_locals: n_l as u64,
+            n_params: n_p as u64,
+            code_idx,
+            const_idx,
+        };
+
+        // push to subroutine pool:
+        self.subroutine_items.push(subroutine);
+
+        // ad
+
+        return self.subroutine_items.len() as u64;
+    }
+
+    pub fn encode_to_binary(&mut self, bytecode: &CompiledBytecode) {
+        // prepare the main function subroutine pool:
+
+        // main function:
+        self.new_subroutine_idx(-1, "main".to_string(), 0, 0, &bytecode.instructions);
+
+        // now compile the constant pool:
+    }
 }
