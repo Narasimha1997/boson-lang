@@ -220,6 +220,11 @@ impl BytecodeWriter {
                     self.new_data_idx(current_count as i32, TypeCode::BOOL, &b_val);
                 }
 
+                Object::Str(st) => {
+                    let b_val = st.as_bytes();
+                    self.new_data_idx(current_count as i32, TypeCode::STR, &b_val);
+                }
+
                 _ => {
                     return Err(format!(
                         "Object {} cannot be serialized.",
