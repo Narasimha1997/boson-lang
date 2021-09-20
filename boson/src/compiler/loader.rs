@@ -351,10 +351,26 @@ impl BytecodeLoader {
     }
 
     fn __build_subroutine_map(&mut self, h: &Header) -> Result<(), String> {
+        let sub_section = &self.bin[mem::size_of::<Header>()..(h.sub_end_idx as usize)];
+        let item_size = mem::size_of::<SubroutineIndexItem>();
 
-        let sub_section = &self.bin[
-            mem::size_of::<Header>()..(h.sub_end_idx as usize)
-        ];
+        for idx in 0..h.num_sub {
+            let item_slice =
+                &sub_section[(idx as usize * item_size)..((idx + 1) as usize * item_size)];
+            let sub_item_res = unsafe { ByteOps::as_type::<SubroutineIndexItem>(&item_slice) };
+            if sub_item_res.is_none() {
+                return Err(format!(
+                    "SubroutineIndexItem cannot be derived from {:?}",
+                    item_slice
+                ));
+            }
+
+            let sub_item: SubroutineIndexItem = sub_item_res.unwrap();
+            self.subroutine_table
+                .entry(sub_item.const_idx)
+                .or_insert(vec![])
+                .push(sub_item);
+        }
 
         return Ok(());
     }
@@ -386,8 +402,28 @@ impl BytecodeLoader {
             return Err(format!("Invalid header {:?}", header_slice));
         }
 
-        let header = header_res.unwrap();
-        // build subroutine idx:
+        let header: Header = header_res.unwrap();
+        // make some checks:
+        let has_aligned_subs = (header.sub_end_idx as usize - mem::size_of::<Header>())
+            / mem::size_of::<SubroutineIndexItem>()
+            == header.num_sub as usize;
+
+        let has_aligned_data = (header.data_end_idx as usize
+            - (mem::size_of::<Header>() + header.sub_end_idx as usize))
+            / mem::size_of::<DataIndexItem>()
+            == header.num_data as usize;
+
+        if !has_aligned_data || !has_aligned_subs {
+            return Err(format!(
+                "Improper bytecode file {}, data and subroutine sections are not aligned.",
+                self.name
+            ));
+        }
+
+        let sub_build_res = self.__build_subroutine_map(&header);
+        if sub_build_res.is_err() {
+            return Err(sub_build_res.unwrap_err());
+        }
 
         return Ok(());
     }
