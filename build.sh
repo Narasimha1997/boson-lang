@@ -50,5 +50,5 @@ else
     build_repl
     build_dis
     install
-    echo "All Done, you can start using boson, boson-eval and boson-dis"
+    echo "All Done, you can start using boson, boson-compile, boson-eval and boson-dis"
 fi
