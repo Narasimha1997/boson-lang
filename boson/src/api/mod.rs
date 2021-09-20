@@ -1,6 +1,6 @@
 use crate::compiler::errors::CompileError;
-use crate::compiler::loader::BytecodeWriter;
 use crate::compiler::loader::BytecodeLoader;
+use crate::compiler::loader::BytecodeWriter;
 use crate::compiler::BytecodeCompiler;
 use crate::compiler::BytecodeDecompiler;
 use crate::compiler::CompiledBytecode;
@@ -277,5 +277,32 @@ impl BosonLang {
         // run disassembly:
         let disasm = BytecodeDecompiler::disassemble(&result.unwrap());
         return Some(disasm);
+    }
+
+    pub fn eval_bytecode(fname: String) -> Option<Rc<Object>> {
+        let mut loader = BytecodeLoader::new(fname);
+        let result = loader.load_bytecode();
+        if result.is_err() {
+            println!("Bytecode Load Error: {}", result.unwrap_err());
+            return None;
+        }
+
+        // create VM and run:
+        let mut boson_vm = BosonVM::new(&result.unwrap());
+        let platform = BosonLang::prepare_native_platform();
+
+        let result = boson_vm.eval_bytecode(&platform, true, false);
+        if result.is_err() {
+            let vm_error = result.unwrap_err();
+            println!("Runtime Error:");
+            println!(
+                "{:?}: {} at {}, Instruction: {:?}",
+                vm_error.t, vm_error.message, vm_error.pos, vm_error.instruction
+            );
+
+            return None;
+        }
+
+        return Some(result.unwrap());
     }
 }

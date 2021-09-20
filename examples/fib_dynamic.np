@@ -37,5 +37,5 @@ func fib(n) {
 
 println(type_of(fib));
 
-const result = fib(100);
+const result = fib(20);
 println(result);

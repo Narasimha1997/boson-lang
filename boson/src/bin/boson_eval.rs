@@ -23,10 +23,17 @@ pub fn main() {
     }
 
     // run evaluator:
-    let ret = BosonLang::eval_file(f_name.clone());
-    if ret.is_some() {
-        process::exit(0);
+    if f_name.ends_with(".b") {
+        let ret = BosonLang::eval_bytecode(f_name.clone());
+        if ret.is_some() {
+            process::exit(0);
+        }
+        process::exit(-1);
+    } else {
+        let ret = BosonLang::eval_file(f_name.clone());
+        if ret.is_some() {
+            process::exit(0);
+        }
+        process::exit(-1);
     }
-
-    process::exit(-1);
 }
