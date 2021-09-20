@@ -30,6 +30,7 @@ function install() {
     sudo cp ./target/release/boson /usr/local/bin/
     sudo cp ./target/release/boson-eval /usr/local/bin/
     sudo cp ./target/release/boson-dis /usr/local/bin/
+    sudo cp ./target/release/boson-compile /usr/local/bin/
 }
 
 if [[ "$arg" == "eval" ]]; then
