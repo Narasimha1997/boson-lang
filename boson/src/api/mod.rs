@@ -2,6 +2,7 @@ use crate::compiler::errors::CompileError;
 use crate::compiler::BytecodeCompiler;
 use crate::compiler::BytecodeDecompiler;
 use crate::compiler::CompiledBytecode;
+use crate::compiler::loader::BytecodeWriter;
 use crate::lexer::LexerAPI;
 use crate::parser::debug::ParserError;
 use crate::parser::Parser;
@@ -236,5 +237,24 @@ impl BosonLang {
             let vm_inst = self.vm.as_ref().unwrap();
             println!("Globals:\n{}", vm_inst.dump_globals());
         }
+    }
+
+    pub fn save_bytecode(&mut self, fname: String) -> Option<usize> {
+        let bytecode_res = self.__get_bytecode();
+        if bytecode_res.is_err() {
+            self.__display_error(bytecode_res.unwrap_err());
+            return None;
+        }
+
+        // save the bytecode:
+        let mut b_writer = BytecodeWriter::new();
+        let result = b_writer.save_bytecode(fname, &bytecode_res.unwrap());
+        if result.is_err() {
+            println!("Error: {}\n", result.unwrap_err());
+            return None;
+        }
+
+        // return the result:
+        return Some(result.unwrap());
     }
 }

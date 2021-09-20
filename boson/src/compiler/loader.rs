@@ -27,8 +27,6 @@ pub enum TypeCode {
     SUBROUTINE,
 }
 
-pub struct BytecodeSaver {}
-pub struct BytecodeLoader {}
 
 pub struct ByteOps {}
 
