@@ -15,6 +15,10 @@ name = "boson-dis"
 path = "src/bin/boson_dis.rs"
 
 [[bin]]
+name = "boson-compile"
+path = "src/bin/boson_compile.rs"
+
+[[bin]]
 name = "boson"
 path = "src/bin/boson_repl.rs"
 required-features = ["repl"]

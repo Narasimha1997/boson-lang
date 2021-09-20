@@ -20,6 +20,11 @@ function build_dis () {
     cargo build --verbose --release --bin boson-dis
 }
 
+function build_compile () {
+    echo "Building Boson Compiler..."
+    cargo build --verbose --release --bin boson-compile
+}
+
 function install() {
     echo "Installing binaries in system root /usr/local/bin..."
     sudo cp ./target/release/boson /usr/local/bin/
@@ -33,11 +38,14 @@ elif [[ "$arg" == "repl" ]]; then
     build_repl
 elif [[ "$arg" == "dis" ]]; then
     build_dis
+elif [[ "$arg" == "compile" ]]; then
+    build_compile
 elif [[ "$arg" == "install" ]]; then
     install
 else
     echo "Building all the binaries..."
     build_eval
+    build_compile
     build_repl
     build_dis
     install
