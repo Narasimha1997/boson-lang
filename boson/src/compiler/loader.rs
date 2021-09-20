@@ -2,15 +2,19 @@ extern crate byteorder;
 
 use byteorder::BigEndian;
 use byteorder::LittleEndian;
+use byteorder::ReadBytesExt;
 use byteorder::WriteBytesExt;
 
+use crate::compiler::symtab::ConstantPool;
 use crate::compiler::CompiledBytecode;
 use crate::compiler::CompiledInstructions;
 use crate::types::object::Object;
+use crate::types::subroutine::Subroutine;
 
 use std::collections::HashMap;
 use std::fs;
 use std::mem;
+use std::rc::Rc;
 use std::slice;
 
 const USE_BIG_ENDIAN_REPR: bool = false;
@@ -84,6 +88,38 @@ impl ByteOps {
         return Some(bytes.to_vec());
     }
 
+    pub fn get_as_f64(data: &[u8]) -> Result<f64, String> {
+        if !USE_BIG_ENDIAN_REPR {
+            let f64_repr_result = data.as_ref().read_f64::<LittleEndian>();
+            if f64_repr_result.is_err() {
+                return Err(format!("{}", f64_repr_result.unwrap_err()));
+            }
+            return Ok(f64_repr_result.unwrap());
+        } else {
+            let f64_repr_result = data.as_ref().read_f64::<BigEndian>();
+            if f64_repr_result.is_err() {
+                return Err(format!("{}", f64_repr_result.unwrap_err()));
+            }
+            return Ok(f64_repr_result.unwrap());
+        }
+    }
+
+    pub fn get_as_i64(data: &[u8]) -> Result<i64, String> {
+        if !USE_BIG_ENDIAN_REPR {
+            let i64_repr_result = data.as_ref().read_i64::<LittleEndian>();
+            if i64_repr_result.is_err() {
+                return Err(format!("{}", i64_repr_result.unwrap_err()));
+            }
+            return Ok(i64_repr_result.unwrap());
+        } else {
+            let i64_repr_result = data.as_ref().read_i64::<BigEndian>();
+            if i64_repr_result.is_err() {
+                return Err(format!("{}", i64_repr_result.unwrap_err()));
+            }
+            return Ok(i64_repr_result.unwrap());
+        }
+    }
+
     pub fn generate_magic() -> u64 {
         let result = unsafe { ByteOps::as_type::<u64>(MAGIC.as_bytes()) };
 
@@ -118,6 +154,7 @@ pub struct SubroutineIndexItem {
     pub n_params: u64,
     pub code_idx: u64,
     pub const_idx: i32,
+    pub is_local: bool,
 }
 
 // organization of bytecode file:
@@ -180,10 +217,11 @@ impl BytecodeWriter {
         name: String,
         n_p: usize,
         n_l: usize,
+        is_local: bool,
         code: &CompiledInstructions,
     ) -> u64 {
         // create a data-index for name:
-        let name_data_idx = self.new_data_idx(const_idx, TypeCode::STR, &name.as_bytes());
+        let name_data_idx = self.new_data_idx(const_idx, TypeCode::SUBROUTINE, &name.as_bytes());
         let code_idx = self.new_data_idx(const_idx, TypeCode::SUBROUTINE, &code);
 
         let subroutine = SubroutineIndexItem {
@@ -192,6 +230,7 @@ impl BytecodeWriter {
             n_params: n_p as u64,
             code_idx,
             const_idx,
+            is_local,
         };
 
         // push to subroutine pool:
@@ -206,7 +245,7 @@ impl BytecodeWriter {
         // prepare the main function subroutine pool:
 
         // main function:
-        self.new_subroutine_idx(-1, "main".to_string(), 0, 0, &bytecode.instructions);
+        self.new_subroutine_idx(-1, "main".to_string(), 0, 0, false, &bytecode.instructions);
 
         let mut current_count = 0;
         // now compile the constant pool:
@@ -239,7 +278,7 @@ impl BytecodeWriter {
                 Object::Float(f) => {
                     let b_res = ByteOps::repr_boson_float(f);
                     if b_res.is_none() {
-                        return Err(format!("Failed to serialize int {}", f));
+                        return Err(format!("Failed to serialize float {}", f));
                     }
 
                     self.new_data_idx(current_count as i32, TypeCode::FLOAT, &b_res.unwrap());
@@ -251,6 +290,7 @@ impl BytecodeWriter {
                         sub.get_name().clone(),
                         sub.gen_n_parameters(),
                         sub.get_n_locals(),
+                        sub.is_local_scope,
                         &sub.as_ref().bytecode,
                     );
                 }
@@ -329,6 +369,7 @@ pub struct BytecodeLoader {
     pub bin: Vec<u8>,
     pub data_table: HashMap<i32, Vec<DataIndexItem>>,
     pub subroutine_table: HashMap<i32, Vec<SubroutineIndexItem>>,
+    pub bin_pool_start: usize,
 }
 
 impl BytecodeLoader {
@@ -338,6 +379,7 @@ impl BytecodeLoader {
             bin: vec![],
             data_table: HashMap::new(),
             subroutine_table: HashMap::new(),
+            bin_pool_start: 0,
         }
     }
 
@@ -370,6 +412,32 @@ impl BytecodeLoader {
                 .entry(sub_item.const_idx)
                 .or_insert(vec![])
                 .push(sub_item);
+        }
+
+        return Ok(());
+    }
+
+    fn __build_data_map(&mut self, h: &Header) -> Result<(), String> {
+        let data_section = &self.bin
+            [mem::size_of::<Header>() + h.data_end_idx as usize..(h.data_end_idx as usize)];
+        let item_size = mem::size_of::<DataIndexItem>();
+
+        for idx in 0..h.num_data {
+            let item_slice =
+                &data_section[(idx as usize * item_size)..((idx + 1) as usize * item_size)];
+            let data_item_res = unsafe { ByteOps::as_type::<DataIndexItem>(&item_slice) };
+            if data_item_res.is_none() {
+                return Err(format!(
+                    "DataIndexItem cannot be derived from {:?}",
+                    item_slice
+                ));
+            }
+
+            let data_item: DataIndexItem = data_item_res.unwrap();
+            self.data_table
+                .entry(data_item.const_idx)
+                .or_insert(vec![])
+                .push(data_item);
         }
 
         return Ok(());
@@ -425,6 +493,124 @@ impl BytecodeLoader {
             return Err(sub_build_res.unwrap_err());
         }
 
+        let data_build_res = self.__build_data_map(&header);
+        if data_build_res.is_err() {
+            return Err(data_build_res.unwrap_err());
+        }
+
+        self.bin_pool_start = header.data_end_idx as usize;
         return Ok(());
+    }
+
+    pub fn load_bytecode(&mut self) -> Result<CompiledBytecode, String> {
+        let init_res = self.__init();
+        if init_res.is_err() {
+            return Err(init_res.unwrap_err());
+        }
+
+        // get code-slice:
+        let bin_pool = &self.bin[self.bin_pool_start..];
+
+        let mut cp = vec![];
+        let mut instructions = vec![];
+        // iterate over data pool:
+        for (const_idx, data_item) in &self.data_table {
+            let base_data_item: &DataIndexItem = &data_item[0];
+            match base_data_item.t_code {
+                TypeCode::NONE => {
+                    cp.push(Rc::new(Object::Noval));
+                }
+                TypeCode::CHAR => {
+                    let data = bin_pool[base_data_item.start as usize];
+                    cp.push(Rc::new(Object::Char(data as char)));
+                }
+                TypeCode::BOOL => {
+                    let data = bin_pool[base_data_item.start as usize];
+                    cp.push(Rc::new(Object::Bool(if data != 0u8 {
+                        true
+                    } else {
+                        false
+                    })));
+                }
+                TypeCode::STR => {
+                    let str_slice =
+                        &bin_pool[base_data_item.start as usize..base_data_item.end as usize];
+                    let string_res = String::from_utf8(str_slice.to_vec());
+                    if string_res.is_err() {
+                        return Err(format!("Invalid utf-8 string {:?}", str_slice));
+                    }
+
+                    cp.push(Rc::new(Object::Str(string_res.unwrap())));
+                }
+                TypeCode::INT => {
+                    let b_slice =
+                        &bin_pool[base_data_item.start as usize..base_data_item.end as usize];
+                    let result = ByteOps::get_as_i64(&b_slice);
+                    if result.is_err() {
+                        return Err(result.unwrap_err());
+                    }
+
+                    cp.push(Rc::new(Object::Int(result.unwrap())));
+                }
+                TypeCode::FLOAT => {
+                    let b_slice =
+                        &bin_pool[base_data_item.start as usize..base_data_item.end as usize];
+                    let result = ByteOps::get_as_f64(&b_slice);
+                    if result.is_err() {
+                        return Err(result.unwrap_err());
+                    }
+
+                    cp.push(Rc::new(Object::Float(result.unwrap())));
+                }
+                TypeCode::SUBROUTINE => {
+                    let subroutine_item_res = self.subroutine_table.get(const_idx);
+                    if subroutine_item_res.is_none() {
+                        return Err(format!("Invalid subroutine with entry index {}", const_idx));
+                    }
+
+                    let subroutine_item: &SubroutineIndexItem = &subroutine_item_res.unwrap()[0];
+                    // get the name index:
+                    let sub_name_res = String::from_utf8(
+                        bin_pool[base_data_item.start as usize..base_data_item.end as usize]
+                            .to_vec(),
+                    );
+                    if sub_name_res.is_err() {
+                        return Err(format!(
+                            "Subroutine with index {} has invalid name",
+                            const_idx
+                        ));
+                    }
+
+                    let bytecode_item: &DataIndexItem = &data_item[1];
+                    let bytecode_vector =
+                        bin_pool[bytecode_item.start as usize..bytecode_item.end as usize].to_vec();
+                    // load the subroutine:
+                    if *const_idx == -1 {
+                        // the main function:
+                        instructions = bytecode_vector;
+                    } else {
+                        // child function
+                        let subroutine_obj = Subroutine {
+                            name: sub_name_res.unwrap(),
+                            bytecode: bytecode_vector,
+                            num_locals: subroutine_item.n_locals as usize,
+                            num_parameters: subroutine_item.n_params as usize,
+                            is_local_scope: subroutine_item.is_local,
+                        };
+
+                        cp.push(Rc::new(Object::Subroutine(Rc::new(subroutine_obj))));
+                    }
+                }
+            }
+        }
+
+        let n_objs = cp.len();
+        return Ok(CompiledBytecode {
+            constant_pool: ConstantPool {
+                objects: cp,
+                size: n_objs,
+            },
+            instructions,
+        });
     }
 }
