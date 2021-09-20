@@ -370,6 +370,8 @@ pub struct BytecodeLoader {
     pub data_table: HashMap<i32, Vec<DataIndexItem>>,
     pub subroutine_table: HashMap<i32, Vec<SubroutineIndexItem>>,
     pub bin_pool_start: usize,
+    pub n_data_items: usize,
+    pub n_sub_items: usize,
 }
 
 impl BytecodeLoader {
@@ -380,6 +382,8 @@ impl BytecodeLoader {
             data_table: HashMap::new(),
             subroutine_table: HashMap::new(),
             bin_pool_start: 0,
+            n_data_items: 0,
+            n_sub_items: 0,
         }
     }
 
@@ -418,8 +422,7 @@ impl BytecodeLoader {
     }
 
     fn __build_data_map(&mut self, h: &Header) -> Result<(), String> {
-        let data_section = &self.bin
-            [h.sub_end_idx as usize..(h.data_end_idx as usize)];
+        let data_section = &self.bin[h.sub_end_idx as usize..(h.data_end_idx as usize)];
         let item_size = mem::size_of::<DataIndexItem>();
 
         for idx in 0..h.num_data {
@@ -497,6 +500,9 @@ impl BytecodeLoader {
             return Err(data_build_res.unwrap_err());
         }
 
+        self.n_data_items = header.num_data as usize;
+        self.n_sub_items = header.num_sub as usize;
+
         self.bin_pool_start = header.data_end_idx as usize;
         return Ok(());
     }
@@ -511,25 +517,23 @@ impl BytecodeLoader {
         let bin_pool = &self.bin[self.bin_pool_start..];
 
         let mut cp = vec![];
+        cp.resize(self.n_data_items - self.n_sub_items, Rc::new(Object::Noval));
         let mut instructions = vec![];
         // iterate over data pool:
         for (const_idx, data_item) in &self.data_table {
             let base_data_item: &DataIndexItem = &data_item[0];
             match base_data_item.t_code {
                 TypeCode::NONE => {
-                    cp.push(Rc::new(Object::Noval));
+                    cp[*const_idx as usize] = Rc::new(Object::Noval);
                 }
                 TypeCode::CHAR => {
                     let data = bin_pool[base_data_item.start as usize];
-                    cp.push(Rc::new(Object::Char(data as char)));
+                    cp[*const_idx as usize] = Rc::new(Object::Char(data as char));
                 }
                 TypeCode::BOOL => {
                     let data = bin_pool[base_data_item.start as usize];
-                    cp.push(Rc::new(Object::Bool(if data != 0u8 {
-                        true
-                    } else {
-                        false
-                    })));
+                    cp[*const_idx as usize] =
+                        Rc::new(Object::Bool(if data != 0u8 { true } else { false }));
                 }
                 TypeCode::STR => {
                     let str_slice =
@@ -539,7 +543,7 @@ impl BytecodeLoader {
                         return Err(format!("Invalid utf-8 string {:?}", str_slice));
                     }
 
-                    cp.push(Rc::new(Object::Str(string_res.unwrap())));
+                    cp[*const_idx as usize] = Rc::new(Object::Str(string_res.unwrap()));
                 }
                 TypeCode::INT => {
                     let b_slice =
@@ -549,7 +553,7 @@ impl BytecodeLoader {
                         return Err(result.unwrap_err());
                     }
 
-                    cp.push(Rc::new(Object::Int(result.unwrap())));
+                    cp[*const_idx as usize] = Rc::new(Object::Int(result.unwrap()));
                 }
                 TypeCode::FLOAT => {
                     let b_slice =
@@ -559,7 +563,7 @@ impl BytecodeLoader {
                         return Err(result.unwrap_err());
                     }
 
-                    cp.push(Rc::new(Object::Float(result.unwrap())));
+                    cp[*const_idx as usize] = Rc::new(Object::Float(result.unwrap()));
                 }
                 TypeCode::SUBROUTINE => {
                     let subroutine_item_res = self.subroutine_table.get(const_idx);
@@ -597,7 +601,8 @@ impl BytecodeLoader {
                             is_local_scope: subroutine_item.is_local,
                         };
 
-                        cp.push(Rc::new(Object::Subroutine(Rc::new(subroutine_obj))));
+                        cp[*const_idx as usize] =
+                            Rc::new(Object::Subroutine(Rc::new(subroutine_obj)));
                     }
                 }
             }
