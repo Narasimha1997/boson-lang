@@ -1,11 +1,12 @@
 use boson::api::BosonLang;
 
 use std::env::args;
+use std::process;
 
 fn info() {
     println!("boson-eval v0.1.0");
     println!("Boson is an educational general purpose programming language written in Rust.");
-    println!("This binary evaluates program files. Usage: boson-eval file-name");   
+    println!("This binary evaluates program files. Usage: boson-eval file-name");
 }
 
 pub fn main() {
@@ -22,5 +23,10 @@ pub fn main() {
     }
 
     // run evaluator:
-    let _ = BosonLang::eval_file(f_name.clone());
+    let ret = BosonLang::eval_file(f_name.clone());
+    if ret.is_some() {
+        process::exit(0);
+    }
+
+    process::exit(-1);
 }

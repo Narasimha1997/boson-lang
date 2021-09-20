@@ -1,8 +1,8 @@
 use crate::compiler::errors::CompileError;
+use crate::compiler::loader::BytecodeWriter;
 use crate::compiler::BytecodeCompiler;
 use crate::compiler::BytecodeDecompiler;
 use crate::compiler::CompiledBytecode;
-use crate::compiler::loader::BytecodeWriter;
 use crate::lexer::LexerAPI;
 use crate::parser::debug::ParserError;
 use crate::parser::Parser;
@@ -239,7 +239,7 @@ impl BosonLang {
         }
     }
 
-    pub fn save_bytecode(&mut self, fname: String) -> Option<usize> {
+    pub fn __save_bytecode(&mut self, fname: String) -> Option<usize> {
         let bytecode_res = self.__get_bytecode();
         if bytecode_res.is_err() {
             self.__display_error(bytecode_res.unwrap_err());
@@ -256,5 +256,12 @@ impl BosonLang {
 
         // return the result:
         return Some(result.unwrap());
+    }
+
+    pub fn save_bytecode_from_file(fname: String) -> Option<usize> {
+        let mut bytecode_fname = String::from(&fname);
+        bytecode_fname.push_str(".b");
+        let mut lang = BosonLang::new_from_file(fname);
+        return lang.__save_bytecode(bytecode_fname);
     }
 }
