@@ -8,9 +8,10 @@ use crate::compiler::CompiledBytecode;
 use crate::compiler::CompiledInstructions;
 use crate::types::object::Object;
 
+use std::collections::HashMap;
+use std::fs;
 use std::mem;
 use std::slice;
-use std::fs;
 
 const USE_BIG_ENDIAN_REPR: bool = false;
 const MAGIC: &str = "000BOSON";
@@ -26,7 +27,6 @@ pub enum TypeCode {
     BOOL,
     SUBROUTINE,
 }
-
 
 pub struct ByteOps {}
 
@@ -302,7 +302,11 @@ impl BytecodeWriter {
     }
 
     // returns the size of bytecode returned or an error string
-    pub fn save_bytecode(&mut self, fname: String, bytecode: &CompiledBytecode) -> Result<usize, String> {
+    pub fn save_bytecode(
+        &mut self,
+        fname: String,
+        bytecode: &CompiledBytecode,
+    ) -> Result<usize, String> {
         let ser_result = self.encode_to_binary(bytecode);
         if ser_result.is_err() {
             return Err(ser_result.unwrap_err());
@@ -317,5 +321,74 @@ impl BytecodeWriter {
 
         // return the data
         return Ok(content.len());
+    }
+}
+
+pub struct BytecodeLoader {
+    pub name: String,
+    pub bin: Vec<u8>,
+    pub data_table: HashMap<i32, Vec<DataIndexItem>>,
+    pub subroutine_table: HashMap<i32, Vec<SubroutineIndexItem>>,
+}
+
+impl BytecodeLoader {
+    pub fn new(fname: String) -> BytecodeLoader {
+        BytecodeLoader {
+            name: fname,
+            bin: vec![],
+            data_table: HashMap::new(),
+            subroutine_table: HashMap::new(),
+        }
+    }
+
+    fn __verify_magic(&self, magic_slice: &[u8]) -> Result<(), String> {
+        let stringified_magic = String::from_utf8_lossy(magic_slice);
+        if stringified_magic.as_ref() != MAGIC {
+            return Err(format!("{} is not a valid Boson magic", stringified_magic));
+        }
+
+        return Ok(());
+    }
+
+    fn __build_subroutine_map(&mut self, h: &Header) -> Result<(), String> {
+
+        let sub_section = &self.bin[
+            mem::size_of::<Header>()..(h.sub_end_idx as usize)
+        ];
+
+        return Ok(());
+    }
+
+    fn __init(&mut self) -> Result<(), String> {
+        let bin_read_res = fs::read(&self.name);
+        if bin_read_res.is_err() {
+            return Err(format!(
+                "Error loading {}, file could not be read.",
+                self.name
+            ));
+        }
+
+        let bin = bin_read_res.unwrap();
+
+        // verify magic:
+        let v_res = self.__verify_magic(&bin[0..8]);
+        if v_res.is_err() {
+            return Err(v_res.unwrap_err());
+        }
+
+        self.bin = bin;
+
+        // read header:
+        let header_slice = &self.bin[0..mem::size_of::<Header>()];
+        let header_res = unsafe { ByteOps::as_type::<Header>(header_slice) };
+
+        if header_res.is_none() {
+            return Err(format!("Invalid header {:?}", header_slice));
+        }
+
+        let header = header_res.unwrap();
+        // build subroutine idx:
+
+        return Ok(());
     }
 }
