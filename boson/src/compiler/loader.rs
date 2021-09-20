@@ -2,7 +2,6 @@ extern crate byteorder;
 
 use byteorder::BigEndian;
 use byteorder::LittleEndian;
-use byteorder::ReadBytesExt;
 use byteorder::WriteBytesExt;
 
 use crate::compiler::CompiledBytecode;
@@ -11,6 +10,7 @@ use crate::types::object::Object;
 
 use std::mem;
 use std::slice;
+use std::fs;
 
 const USE_BIG_ENDIAN_REPR: bool = false;
 const MAGIC: &str = "000BOSON";
@@ -96,7 +96,7 @@ impl ByteOps {
     }
 }
 
-#[repr(packed)]
+#[repr(C, packed)]
 pub struct DataIndexItem {
     pub const_idx: i32,
     pub start: u64,
@@ -104,16 +104,16 @@ pub struct DataIndexItem {
     pub t_code: TypeCode,
 }
 
-#[repr(packed)]
+#[repr(C, packed)]
 pub struct Header {
     pub magic: u64,
-    pub num_data: u32,
-    pub num_sub: u32,
+    pub num_data: u64,
+    pub num_sub: u64,
     pub data_end_idx: u64,
     pub sub_end_idx: u64,
 }
 
-#[repr(packed)]
+#[repr(C, packed)]
 pub struct SubroutineIndexItem {
     pub name_data_idx: u64,
     pub n_locals: u64,
@@ -204,7 +204,7 @@ impl BytecodeWriter {
         return self.subroutine_items.len() as u64;
     }
 
-    pub fn encode_to_binary(&mut self, bytecode: &CompiledBytecode) -> Result<Vec<u8>, String> {
+    fn encode_to_binary(&mut self, bytecode: &CompiledBytecode) -> Result<Vec<u8>, String> {
         // prepare the main function subroutine pool:
 
         // main function:
@@ -271,6 +271,53 @@ impl BytecodeWriter {
             current_count += 1;
         }
 
-        return Ok(vec![]);
+        let mut data_idx_bin: Vec<u8> = vec![];
+        let mut sub_idx_bin: Vec<u8> = vec![];
+
+        // serialize data-index:
+        for data_idx in &self.data_items {
+            let sliced_repr = unsafe { ByteOps::as_bytes::<DataIndexItem>(data_idx) };
+            data_idx_bin.extend(sliced_repr);
+        }
+
+        for sub_idx in &self.subroutine_items {
+            let sliced_repr = unsafe { ByteOps::as_bytes::<SubroutineIndexItem>(sub_idx) };
+            sub_idx_bin.extend(sliced_repr);
+        }
+
+        self.header.num_data = self.data_items.len() as u64;
+        self.header.num_sub = self.subroutine_items.len() as u64;
+
+        self.header.sub_end_idx = (mem::size_of::<Header>() + sub_idx_bin.len()) as u64;
+        self.header.data_end_idx = self.header.sub_end_idx + (data_idx_bin.len() as u64);
+
+        // serialize header:
+        let header_slice = unsafe { ByteOps::as_bytes::<Header>(&self.header) };
+
+        let mut ser_bytecode: Vec<u8> = vec![];
+        ser_bytecode.extend(header_slice);
+        ser_bytecode.extend(sub_idx_bin);
+        ser_bytecode.extend(data_idx_bin);
+        ser_bytecode.extend(&self.bin_pool);
+
+        return Ok(ser_bytecode);
+    }
+
+    // returns the size of bytecode returned or an error string
+    pub fn save_bytecode(&mut self, fname: String, bytecode: &CompiledBytecode) -> Result<usize, String> {
+        let ser_result = self.encode_to_binary(bytecode);
+        if ser_result.is_err() {
+            return Err(ser_result.unwrap_err());
+        }
+
+        // save bytecode to fine:
+        let content = ser_result.unwrap();
+        let io_result = fs::write(&fname, &content);
+        if io_result.is_err() {
+            return Err(format!("Failed to write bytecode to file {}", fname));
+        }
+
+        // return the data
+        return Ok(content.len());
     }
 }
