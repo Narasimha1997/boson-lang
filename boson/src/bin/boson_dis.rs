@@ -21,9 +21,16 @@ pub fn main() {
         return;
     }
 
-    // run evaluator:
-    let result = BosonLang::disasm_file(f_name.clone());
-    if result.is_some() {
-        println!("{}", result.unwrap());
+    if f_name.ends_with(".b") {
+        let result = BosonLang::disasm_bytecode(f_name.clone());
+        if result.is_some() {
+            println!("{}", result.unwrap());
+        }
+    } else {
+        // run evaluator:
+        let result = BosonLang::disasm_file(f_name.clone());
+        if result.is_some() {
+            println!("{}", result.unwrap());
+        }
     }
 }

@@ -1,5 +1,6 @@
 use crate::compiler::errors::CompileError;
 use crate::compiler::loader::BytecodeWriter;
+use crate::compiler::loader::BytecodeLoader;
 use crate::compiler::BytecodeCompiler;
 use crate::compiler::BytecodeDecompiler;
 use crate::compiler::CompiledBytecode;
@@ -263,5 +264,18 @@ impl BosonLang {
         bytecode_fname.push_str(".b");
         let mut lang = BosonLang::new_from_file(fname);
         return lang.__save_bytecode(bytecode_fname);
+    }
+
+    pub fn disasm_bytecode(fname: String) -> Option<String> {
+        let mut loader = BytecodeLoader::new(fname);
+        let result = loader.load_bytecode();
+        if result.is_err() {
+            println!("Bytecode Load Error: {}", result.unwrap_err());
+            return None;
+        }
+
+        // run disassembly:
+        let disasm = BytecodeDecompiler::disassemble(&result.unwrap());
+        return Some(disasm);
     }
 }

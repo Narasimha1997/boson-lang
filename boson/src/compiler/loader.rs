@@ -419,7 +419,7 @@ impl BytecodeLoader {
 
     fn __build_data_map(&mut self, h: &Header) -> Result<(), String> {
         let data_section = &self.bin
-            [mem::size_of::<Header>() + h.data_end_idx as usize..(h.data_end_idx as usize)];
+            [h.sub_end_idx as usize..(h.data_end_idx as usize)];
         let item_size = mem::size_of::<DataIndexItem>();
 
         for idx in 0..h.num_data {
@@ -476,8 +476,7 @@ impl BytecodeLoader {
             / mem::size_of::<SubroutineIndexItem>()
             == header.num_sub as usize;
 
-        let has_aligned_data = (header.data_end_idx as usize
-            - (mem::size_of::<Header>() + header.sub_end_idx as usize))
+        let has_aligned_data = (header.data_end_idx as usize - header.sub_end_idx as usize)
             / mem::size_of::<DataIndexItem>()
             == header.num_data as usize;
 
