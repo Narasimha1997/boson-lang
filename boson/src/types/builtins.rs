@@ -69,6 +69,7 @@ pub enum BuiltinKind {
     SWrite,
     SRead,
     Wait,
+    BytecodeEval,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -131,6 +132,7 @@ impl BuiltinKind {
             BuiltinKind::SRead => "stdin".to_string(),
             BuiltinKind::SWrite => "stdout".to_string(),
             BuiltinKind::FRead => "fread".to_string(),
+            BuiltinKind::BytecodeEval => "eval_bytecode".to_string(),
             _ => "undef".to_string(),
         }
     }
