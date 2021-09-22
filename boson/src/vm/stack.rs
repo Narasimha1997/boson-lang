@@ -16,14 +16,17 @@ use std::cell::RefCell;
 use std::cell::RefMut;
 use std::rc::Rc;
 
-pub struct CallStack {
-    pub stack: Vec<RefCell<ExecutionFrame>>,
-    pub stack_pointer: i64,
-    pub max_size: usize,
-}
+// aliasing I to I
+type I = InstructionKind;
 
-pub struct DataStack {
-    pub stack: Vec<Rc<Object>>,
+// aliasing RefCell<ExecutionFrame>
+type E = RefCell<ExecutionFrame>;
+
+// aliasing O:
+type O = Rc<Object>;
+
+pub struct CallStack {
+    pub stack: Vec<E>,
     pub stack_pointer: i64,
     pub max_size: usize,
 }
@@ -37,12 +40,12 @@ impl CallStack {
         };
     }
 
-    pub fn push_frame(&mut self, frame: RefCell<ExecutionFrame>) -> Result<i64, VMError> {
+    pub fn push_frame(&mut self, frame: E) -> Result<i64, VMError> {
         if (self.stack_pointer + 1) >= self.max_size as i64 {
             return Err(VMError::new(
                 "Stack Overflow!".to_string(),
                 VMErrorKind::CallStackOverflow,
-                Some(InstructionKind::ICall),
+                Some(I::ICall),
                 0,
             ));
         }
@@ -52,12 +55,12 @@ impl CallStack {
         return Ok(self.stack_pointer);
     }
 
-    pub fn pop_frame(&mut self) -> Result<RefCell<ExecutionFrame>, VMError> {
+    pub fn pop_frame(&mut self) -> Result<E, VMError> {
         if self.stack_pointer == -1 {
             return Err(VMError::new(
                 "Stack underflow".to_string(),
                 VMErrorKind::CallStackUnderflow,
-                Some(InstructionKind::IRet),
+                Some(I::IRet),
                 0,
             ));
         }
@@ -89,6 +92,13 @@ impl CallStack {
     }
 }
 
+
+pub struct DataStack {
+    pub stack: Vec<O>,
+    pub stack_pointer: i64,
+    pub max_size: usize,
+}
+
 impl DataStack {
     pub fn new() -> DataStack {
         return DataStack {
@@ -97,9 +107,11 @@ impl DataStack {
             max_size: DATA_STACK_SIZE,
         };
     }
+}
 
-    pub fn push_object(&mut self, obj: Rc<Object>, inst: InstructionKind) -> Result<i64, VMError> {
+impl DataStack {
 
+    pub fn push_object(&mut self, obj: O, inst: I) -> Result<i64, VMError> {
         if (self.stack_pointer + 1) as usize >= self.max_size {
             return Err(VMError::new(
                 "Stack Overflow!".to_string(),
@@ -114,11 +126,7 @@ impl DataStack {
         return Ok(self.stack_pointer);
     }
 
-    pub fn push_objects(
-        &mut self,
-        inst: InstructionKind,
-        objects: Vec<Rc<Object>>,
-    ) -> Result<i64, VMError> {
+    pub fn push_objects(&mut self, inst: I, objects: Vec<O>) -> Result<i64, VMError> {
         let n_objects = objects.len();
 
         if self.stack_pointer + n_objects as i64 >= self.max_size as i64 {
@@ -135,7 +143,7 @@ impl DataStack {
         return Ok(self.stack_pointer);
     }
 
-    pub fn pop_object(&mut self, inst: InstructionKind) -> Result<Rc<Object>, VMError> {
+    pub fn pop_object(&mut self, inst: I) -> Result<O, VMError> {
         if self.stack_pointer == -1 {
             return Err(VMError::new(
                 "Stack underflow".to_string(),
@@ -150,7 +158,7 @@ impl DataStack {
         return Ok(popped.unwrap());
     }
 
-    pub fn get_top_ref(&mut self, inst: InstructionKind) -> Result<&Rc<Object>, VMError> {
+    pub fn get_top_ref(&mut self, inst: I) -> Result<&O, VMError> {
         if self.stack_pointer == -1 {
             return Err(VMError::new(
                 "Stack underflow".to_string(),
