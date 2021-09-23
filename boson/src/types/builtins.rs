@@ -71,6 +71,7 @@ pub enum BuiltinKind {
     SWrite,
     SRead,
     Wait,
+    BytecodeEval,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -133,6 +134,7 @@ impl BuiltinKind {
             BuiltinKind::SRead => "stdin".to_string(),
             BuiltinKind::SWrite => "stdout".to_string(),
             BuiltinKind::FRead => "fread".to_string(),
+            BuiltinKind::BytecodeEval => "eval_bytecode".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -1181,7 +1183,6 @@ impl BuiltinKind {
             }
 
             BuiltinKind::FRead => {
-
                 fn __read(
                     path: String,
                     start: Option<u64>,
@@ -1308,6 +1309,30 @@ impl BuiltinKind {
                 let data = result.unwrap();
                 let byte_buffer = buffer::Buffer::from_u8(data, "stdout".to_string(), true);
                 return Ok(Rc::new(Object::ByteBuffer(RefCell::new(byte_buffer))));
+            }
+
+            BuiltinKind::BytecodeEval => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "eval_bytecode() takes 1 argument, provided {}.",
+                        args.len()
+                    ));
+                }
+
+                let obj = args[0].as_ref();
+                match obj {
+                    Object::Str(st) => {
+                        let result = BosonLang::eval_bytecode(st.clone());
+                        if result.is_none() {
+                            return Ok(Rc::new(Object::Noval));
+                        }
+
+                        return Ok(result.unwrap());
+                    }
+                    _ => {
+                        return Err(format!(""));
+                    }
+                }
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),
