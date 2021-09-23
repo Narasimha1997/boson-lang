@@ -2,8 +2,37 @@
 
 # Provide pre-build commands here
 
+mode=$2
 arg=$1
-fname=$2
+fname=$3
+
+function check_install_docker () {
+    if ! command -v docker &> /dev/null; then
+        echo "Docker not found on the system, installing...."
+        if ! command -v curl &> /dev/null; then
+            sudo apt update && apt install curl
+        fi
+
+        # install docker:
+        curl https://get.docker.com/ | sh
+        echo "Docker installed."
+    fi
+}
+
+function use_docker_build () {
+    check_install_docker
+    local_arg="no-install"
+
+    if [[ "$arg" != "" ]]; then
+        local_arg=$arg
+    fi
+
+    # mount the pwd inside docker and run build:
+    docker run --rm -ti -v $PWD:/np rust bash -c "cd /np && ./build.sh $local_arg"
+    echo "Binaries are generated, now installing them locally..."
+    sh build.sh install
+}
+
 
 function build_eval () {
     echo "Building Boson Evaluator..."
@@ -33,6 +62,20 @@ function install() {
     sudo cp ./target/release/boson-compile /usr/local/bin/
 }
 
+if [[ "$arg" == "docker" ]]; then
+    arg=""
+    mode="docker"
+fi
+
+if [[ "$mode" == "" ]]; then
+    mode="local"
+fi
+
+if [[ "$mode" == "docker" ]]; then
+    use_docker_build
+    exit 0;
+fi
+
 if [[ "$arg" == "eval" ]]; then
     build_eval
 elif [[ "$arg" == "repl" ]]; then 
@@ -43,6 +86,12 @@ elif [[ "$arg" == "compile" ]]; then
     build_compile
 elif [[ "$arg" == "install" ]]; then
     install
+elif [[ "$arg" == "no-install" ]]; then
+    echo "Building all the binaries..."
+    build_eval
+    build_compile
+    build_repl
+    build_dis
 else
     echo "Building all the binaries..."
     build_eval
