@@ -977,7 +977,7 @@ impl BuiltinKind {
             BuiltinKind::CallAsync => {
 
                 if ! ENABLE_CONCURRENCY {
-                    return format!("BosonVM has concurrency disabled.");
+                    return Err(format!("BosonVM has concurrency disabled."));
                 }
 
                 if args.len() != 2 {
@@ -1058,7 +1058,7 @@ impl BuiltinKind {
             BuiltinKind::Wait => {
 
                 if ! ENABLE_CONCURRENCY {
-                    return format!("BosonVM has concurrency disabled.");
+                    return Err(format!("BosonVM has concurrency disabled."));
                 }
 
                 if args.len() != 1 {
