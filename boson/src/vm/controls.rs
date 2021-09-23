@@ -13,6 +13,7 @@ use crate::vm::frames;
 use crate::vm::global;
 use crate::vm::stack;
 use crate::vm::thread;
+use crate::config;
 
 use std::cell::Ref;
 use std::cell::RefCell;
@@ -39,6 +40,7 @@ use iter::ObjectIterator;
 use object::Object;
 use stack::DataStack;
 use th::ThreadBlock;
+use config::ENABLE_CONCURRENCY;
 
 pub struct Controls {}
 
@@ -772,7 +774,18 @@ impl Controls {
         threads: &mut thread::BosonThreads,
         join: bool,
     ) -> Option<VMError> {
+       
+        if ! ENABLE_CONCURRENCY {
+            return Some(VMError::new(
+                "BosonVM has concurrency disabled.".to_string(),
+                VMErrorKind::IllegalOperation, 
+                Some(inst.clone()),
+                0
+            ));
+        }
+
         // pop the closure:
+
         let popped_result = ds.pop_object(inst.clone());
         if popped_result.is_err() {
             return Some(popped_result.unwrap_err());
