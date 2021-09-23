@@ -12,6 +12,7 @@ use crate::types::array;
 use crate::types::buffer;
 use crate::types::hash;
 use crate::types::iter;
+use crate::config;
 use crate::types::object;
 use crate::vm;
 
@@ -20,6 +21,7 @@ use vm::global::GlobalPool;
 use vm::thread::BosonThreads;
 use vm::thread::ThreadParams;
 use vm::BosonVM;
+use config::ENABLE_CONCURRENCY;
 
 use api::Platform;
 use array::Array;
@@ -973,6 +975,11 @@ impl BuiltinKind {
             }
 
             BuiltinKind::CallAsync => {
+
+                if ! ENABLE_CONCURRENCY {
+                    return format!("BosonVM has concurrency disabled.");
+                }
+
                 if args.len() != 2 {
                     return Err(format!(
                         "call_async takes 2 arguments, provided {}.",
@@ -1049,6 +1056,11 @@ impl BuiltinKind {
                 return Ok(Rc::new(Object::Str(result.unwrap())));
             }
             BuiltinKind::Wait => {
+
+                if ! ENABLE_CONCURRENCY {
+                    return format!("BosonVM has concurrency disabled.");
+                }
+
                 if args.len() != 1 {
                     return Err(format!("wait() takes 1 argument, given {}", args.len()));
                 }

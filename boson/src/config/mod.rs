@@ -13,5 +13,5 @@ pub const USE_STATIC_DATA_STACK: bool = true;
 
 // enable-concurrency
 // Enabl-concurrency features, if disabled
-// multi-threading code will run sequentially
+// multi-threading code will run sequentially and join/async will throw errors.
 pub const ENABLE_CONCURRENCY: bool = true;

@@ -5,6 +5,7 @@ use crate::vm::frames;
 
 use crate::config::DATA_STACK_SIZE;
 use crate::config::FRAME_STACK_SIZE;
+use crate::config::USE_STATIC_DATA_STACK;
 
 use errors::VMError;
 use errors::VMErrorKind;
@@ -101,6 +102,12 @@ pub struct DataStack {
 
 impl DataStack {
     pub fn new() -> DataStack {
+
+        let mut stack = vec![];
+        if USE_STATIC_DATA_STACK {
+            stack.resize(DATA_STACK_SIZE, Object::Noval);
+        }
+
         return DataStack {
             stack: vec![],
             stack_pointer: -1,
