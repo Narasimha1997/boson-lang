@@ -125,3 +125,47 @@ pub fn indexing() {
         true
     );
 }
+
+#[test]
+pub fn object_equality() {
+    assert_eq!(Object::Int(20) == Object::Int(20), true);
+
+    assert_eq!(Object::Int(20) != Object::Int(25), true);
+
+    assert_eq!(Object::Float(3.144) == Object::Float(3.144), true);
+
+    assert_eq!(Object::Float(3.144) != Object::Float(3.140), true);
+
+    assert_eq!(
+        Object::Str(String::from("Hey String!")) == Object::Str(String::from("Hey String!")),
+        true
+    );
+
+    assert_eq!(
+        Object::Str(String::from("Hey String!")) != Object::Str(String::from("Heyy String!")),
+        true
+    );
+
+    // arrays:
+    assert_eq!(
+        Object::Array(RefCell::new(types::array::Array {
+            elements: vec![Rc::new(Object::Int(10))],
+            name: "test".to_string(),
+        })) == Object::Array(RefCell::new(types::array::Array {
+            elements: vec![Rc::new(Object::Int(10))],
+            name: "test2".to_string(),
+        })),
+        true
+    );
+
+    assert_eq!(
+        Object::Array(RefCell::new(types::array::Array {
+            elements: vec![Rc::new(Object::Int(10))],
+            name: "test".to_string(),
+        })) != Object::Array(RefCell::new(types::array::Array {
+            elements: vec![Rc::new(Object::Int(10)), Rc::new(Object::Int(3))],
+            name: "test".to_string(),
+        })),
+        true
+    );
+}
