@@ -58,3 +58,70 @@ pub fn truthy() {
     hash_table.entries = HashMap::new();
     assert_eq!(Object::HashTable(RefCell::new(hash_table)).is_true(), false);
 }
+
+#[test]
+pub fn indexing() {
+    // check indexing - GET and SET
+    let array = types::array::Array {
+        elements: vec![Rc::new(Object::Int(10))],
+        name: "test".to_string(),
+    };
+
+    let mut arr_object = Object::Array(RefCell::new(array));
+    let result = arr_object.get_indexed(&Rc::new(Object::Int(0)));
+    assert_eq!(result.is_ok(), true);
+    assert_eq!(*result.unwrap().as_ref(), Object::Int(10));
+
+    // out of bounds:
+    let result = arr_object.get_indexed(&Rc::new(Object::Int(1)));
+    assert_eq!(result.is_err(), true);
+
+    // set indexed:
+    let result = arr_object.set_indexed(&Rc::new(Object::Int(0)), Rc::new(Object::Int(20)));
+    assert_eq!(result.is_none(), true);
+
+    // set indexed out of bounds:
+    let result = arr_object.set_indexed(&Rc::new(Object::Int(1)), Rc::new(Object::Int(20)));
+    assert_eq!(result.is_some(), true);
+
+    // hash map set and get operations:
+    let hm = types::hash::HashTable {
+        entries: HashMap::new(),
+        name: "test".to_string(),
+    };
+
+    let mut h_obj = Object::HashTable(RefCell::new(hm));
+
+    // set:
+    let result = h_obj.set_indexed(
+        &Rc::new(Object::Str("Age".to_string())),
+        Rc::new(Object::Int(23)),
+    );
+    assert_eq!(result.is_none(), true);
+
+    // get
+    let result = h_obj.get_indexed(&Rc::new(Object::Str("Age".to_string())));
+    assert_eq!(result.is_ok(), true);
+    assert_eq!(*result.unwrap().as_ref(), Object::Int(23));
+
+    // get key error
+    let result = h_obj.get_indexed(&Rc::new(Object::Str("NotAge".to_string())));
+    assert_eq!(result.is_err(), true);
+
+    let string_obj = Object::Str("Prasanna".to_string());
+    let result = string_obj.get_indexed(&Rc::new(Object::Int(3)));
+    assert_eq!(result.is_ok(), true);
+    assert_eq!(*result.unwrap().as_ref(), Object::Char('s'));
+
+    // out of bounds:
+    let result = string_obj.get_indexed(&Rc::new(Object::Int(30)));
+    assert_eq!(result.is_ok(), false);
+
+    // unsupported object
+    assert_eq!(
+        Object::Int(20)
+            .get_indexed(&Rc::new(Object::Int(30)))
+            .is_err(),
+        true
+    );
+}

@@ -10,8 +10,8 @@ use crate::types::closure::ClosureContext;
 use crate::types::exception::Exception;
 use crate::types::hash::HashTable;
 use crate::types::iter::ObjectIterator;
-use crate::types::th::ThreadBlock;
 use crate::types::subroutine::Subroutine;
+use crate::types::th::ThreadBlock;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Object {
@@ -179,7 +179,10 @@ impl Object {
                 }
 
                 // set object at index:
-                arr.borrow_mut().set_object(*i as usize, data);
+                let result = arr.borrow_mut().set_object(*i as usize, data);
+                if result.is_some() {
+                    return Some(result.unwrap());
+                }
                 return None;
             }
             (Object::ByteBuffer(buffer), Object::Int(i)) => {
@@ -224,7 +227,6 @@ impl fmt::Display for Object {
         write!(f, "{}", self.describe())
     }
 }
-
 
 // make Object capable of sharing between threads.
 // by design, Object will always be thread safe as each thread will
