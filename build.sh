@@ -71,6 +71,10 @@ function install() {
     sudo cp ./target/release/boson-compile /usr/local/bin/
 }
 
+function run_tests () {
+    cargo test
+}
+
 if [[ "$arg" == "docker" ]]; then
     arg=""
     mode="docker"
@@ -85,7 +89,9 @@ if [[ "$mode" == "docker" ]]; then
     exit 0;
 fi
 
-if [[ "$arg" == "eval" ]]; then
+if [[ "$arg" == "test" ]]; then
+    run_tests
+elif [[ "$arg" == "eval" ]]; then
     build_eval
 elif [[ "$arg" == "repl" ]]; then 
     build_repl
