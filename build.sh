@@ -6,6 +6,11 @@ mode=$2
 arg=$1
 fname=$3
 
+# this is the location where cargo saves all the indexes..
+# this path will be mounted to the container to ensure the same indexes are reused.
+# CARGO_HOME env is injected into the container to make this path as cargo home directory.
+CARGO_INDEX_PATH=$HOME/.boson_cargo_index
+
 function check_install_docker () {
     if ! command -v docker &> /dev/null; then
         echo "Docker not found on the system, installing...."
@@ -28,9 +33,13 @@ function use_docker_build () {
     fi
 
     # mount the pwd inside docker and run build:
-    docker run --rm -ti -v $PWD:/np rust bash -c "cd /np && ./build.sh $local_arg"
+    docker run --rm -ti \
+        -v $PWD:/np -v $CARGO_INDEX_PATH:/root/.cargo \
+        --env "CARGO_HOME=/root/.cargo" \
+        rust bash -c "cd /np && ./build.sh $local_arg" \
+
     echo "Binaries are generated, now installing them locally..."
-    sh build.sh install
+    bash ./build.sh install
 }
 
 
