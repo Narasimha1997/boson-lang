@@ -94,7 +94,7 @@ impl Buffer {
 
     pub fn from_i64(number: &i64, little_endian: bool) -> Result<Buffer, String> {
         let mut bytes_view = [0u8; mem::size_of::<i64>()];
-        if little_endian {
+        if !little_endian {
             let result = bytes_view.as_mut().write_i64::<BigEndian>(*number);
             if result.is_err() {
                 return Err(format!("{}", result.unwrap_err()));
@@ -115,7 +115,7 @@ impl Buffer {
 
     pub fn from_f64(number: &f64, little_endian: bool) -> Result<Buffer, String> {
         let mut bytes_view = [0u8; mem::size_of::<i64>()];
-        if little_endian {
+        if !little_endian {
             let result = bytes_view.as_mut().write_f64::<BigEndian>(*number);
             if result.is_err() {
                 return Err(format!("{}", result.unwrap_err()));

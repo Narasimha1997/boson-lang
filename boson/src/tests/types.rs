@@ -2,6 +2,7 @@ use crate::types;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::mem;
 use std::rc::Rc;
 
 use types::object::Object;
@@ -181,4 +182,45 @@ pub fn builtin_resolution() {
     let non_existing_fn = String::from("create_function");
     let result = types::builtins::BuiltinKind::get_by_name(&non_existing_fn);
     assert_eq!(result.is_none(), true);
+}
+
+#[test]
+pub fn buffer_endian_encoding() {
+    let i64_number: i64 = 2584970882;
+    let buffer_truth = vec![0u8, 0u8, 0u8, 0u8, 154u8, 19u8, 134u8, 130u8];
+    // check encoding in bytes:
+    // big endian:
+    let buffer_res_big = types::buffer::Buffer::from_i64(&i64_number, false);
+    assert_eq!(buffer_res_big.is_ok(), true);
+    let buffer = buffer_res_big.unwrap();
+
+    assert_eq!(buffer.length, mem::size_of::<i64>());
+    // check repr:
+    for idx in 0..buffer_truth.len() {
+        assert_eq!(buffer.data[idx], buffer_truth[idx]);
+    }
+
+    // check conversion back to integer:
+    let back_conv = buffer.get_as_i64();
+    assert_eq!(back_conv.is_ok(), true);
+    assert_eq!(back_conv.unwrap(), i64_number);
+
+    // little endian:
+    let buffer_res_little = types::buffer::Buffer::from_i64(&i64_number, true);
+    assert_eq!(buffer_res_little.is_ok(), true);
+    let buffer = buffer_res_little.unwrap();
+
+    assert_eq!(buffer.length, mem::size_of::<i64>());
+    // check repr:
+    for idx in 0..buffer_truth.len() {
+        assert_eq!(
+            buffer.data[idx],
+            buffer_truth[mem::size_of::<i64>() - idx - 1]
+        );
+    }
+
+    // check conversion back to integer:
+    let back_conv = buffer.get_as_i64();
+    assert_eq!(back_conv.is_ok(), true);
+    assert_eq!(back_conv.unwrap(), i64_number);
 }
