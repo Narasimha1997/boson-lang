@@ -169,3 +169,16 @@ pub fn object_equality() {
         true
     );
 }
+
+#[test]
+pub fn builtin_resolution() {
+    // check an existing builtin:
+    let existing_fn = String::from("println");
+    let result = types::builtins::BuiltinKind::get_by_name(&existing_fn);
+    assert_eq!(result.is_some(), true);
+    assert_eq!(result.unwrap(), types::builtins::BuiltinKind::Println);
+
+    let non_existing_fn = String::from("create_function");
+    let result = types::builtins::BuiltinKind::get_by_name(&non_existing_fn);
+    assert_eq!(result.is_none(), true);
+}
