@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::mem;
 use std::rc::Rc;
 
 use crate::types::array::Array;
@@ -217,6 +218,46 @@ impl Object {
                     self.get_type(),
                     idx.get_type()
                 ))
+            }
+        }
+    }
+
+    // attributes:
+    pub fn attrs() -> Vec<Rc<Object>> {
+        return vec![
+            Rc::new(Object::Str(String::from("__address__"))),
+            Rc::new(Object::Str(String::from("__size__"))),
+        ];
+    }
+
+    fn __resolve_attr(&self, st: &String) -> Option<Rc<Object>> {
+        match st.as_ref() {
+            "__address__" => Some(Rc::new(Object::Str(format!("{:p}", self)))),
+            "__size__" => Some(Rc::new(Object::Int(mem::size_of::<Self>() as i64))),
+            _ => None,
+        }
+    }
+
+    // get attribute
+    pub fn get_attribute(&self, key: Rc<Object>) -> Result<Rc<Object>, String> {
+        match key.as_ref() {
+            Object::Str(st) => {
+                let obj_val = self.__resolve_attr(st);
+                if obj_val.is_none() {
+                    return Err(format!(
+                        "Attribute {} not found for type {}",
+                        st,
+                        self.get_type()
+                    ));
+                }
+
+                return Ok(obj_val.unwrap());
+            }
+            _ => {
+                return Err(format!(
+                    "Attribute must be a string, got {}.",
+                    key.get_type()
+                ));
             }
         }
     }
