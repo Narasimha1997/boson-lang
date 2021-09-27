@@ -155,6 +155,12 @@ pub enum LiteralKind {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct AttributeResolver {
+    pub parent: Box<ExpressionKind>,
+    pub child_attrs: Box<ExpressionKind>,
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum ExpressionKind {
     Noval,
     Identifier(IdentifierType),
@@ -167,6 +173,7 @@ pub enum ExpressionKind {
     Lambda(LambdaExpType),
     Boolean(bool),
     Shell(ShellType),
+    Attribute(AttributeResolver),
 }
 
 #[derive(Debug, PartialEq, Clone)]

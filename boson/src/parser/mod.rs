@@ -972,6 +972,23 @@ impl Parser {
         }
     }
 
+    fn parse_dot_expression(
+        &mut self,
+        parent: ast::ExpressionKind,
+    ) -> Result<ast::ExpressionKind, ParserError> {
+        self.lexer.iterate();
+        let exp_recur_result = self.parse_expression(exp::ExpOrder::Zero);
+        if exp_recur_result.is_err() {
+            return Err(exp_recur_result.unwrap_err());
+        }
+        let attribute_resolver = ast::AttributeResolver {
+            parent: Box::new(parent),
+            child_attrs: Box::new(exp_recur_result.unwrap()),
+        };
+
+        return Ok(ast::ExpressionKind::Attribute(attribute_resolver));
+    }
+
     fn parse_expression(&mut self, pre: ExpOrder) -> Result<ast::ExpressionKind, ParserError> {
         // when an expression is called, the current_token should be at the starting
         // the next_token should point to the next token after start.
@@ -1050,6 +1067,9 @@ impl Parser {
             } else if self.next_symbol_is(SymbolKind::SLBox) {
                 self.lexer.iterate();
                 matched_prefix = self.parse_index_expression(matched_prefix.unwrap());
+            } else if self.next_symbol_is(SymbolKind::SDot) {
+                self.lexer.iterate();
+                matched_prefix = self.parse_dot_expression(matched_prefix.unwrap());
             } else {
                 break;
             }
@@ -1091,7 +1111,7 @@ impl Parser {
                 function: Box::new(caller_expr),
                 arguments: vec![],
                 is_thread: false,
-                is_async: false
+                is_async: false,
             }));
         }
 
