@@ -58,6 +58,7 @@ pub enum ExpOrder {
     IncrDecr,
     Call,
     Index,
+    Dot,
 }
 
 #[allow(dead_code)]
@@ -94,6 +95,7 @@ pub fn get_eval_order(sym: &SymbolKind) -> ExpOrder {
 
         SymbolKind::SLParen => return ExpOrder::Call,
         SymbolKind::SLBox => return ExpOrder::Index,
+        SymbolKind::SDot => return ExpOrder::Dot,
         _ => return ExpOrder::Zero,
     }
 }

@@ -972,21 +972,37 @@ impl Parser {
         }
     }
 
-    fn parse_dot_expression(
-        &mut self,
-        parent: ast::ExpressionKind,
-    ) -> Result<ast::ExpressionKind, ParserError> {
-        self.lexer.iterate();
-        let exp_recur_result = self.parse_expression(exp::ExpOrder::Zero);
-        if exp_recur_result.is_err() {
-            return Err(exp_recur_result.unwrap_err());
+    fn parse_dot_expression(&mut self) -> Result<ast::ExpressionKind, ParserError> {
+        let parent_id_res = self.get_identifier();
+        if parent_id_res.is_err() {
+            return Err(parent_id_res.unwrap_err());
         }
-        let attribute_resolver = ast::AttributeResolver {
-            parent: Box::new(parent),
-            child_attrs: Box::new(exp_recur_result.unwrap()),
-        };
 
-        return Ok(ast::ExpressionKind::Attribute(attribute_resolver));
+        let parent_id = ast::ExpressionKind::Identifier(ast::IdentifierType {
+            name: parent_id_res.unwrap(),
+            t: None,
+        });
+
+        if !self.next_symbol_is(SymbolKind::SDot) {
+            return Ok(parent_id);
+        }
+
+        let mut attrs = vec![];
+
+        while self.next_symbol_is(SymbolKind::SDot) {
+            self.lexer.iterate();
+            self.lexer.iterate();
+            let id_res = self.get_identifier();
+            if id_res.is_err() {
+                return Err(id_res.unwrap_err());
+            }
+            attrs.push(id_res.unwrap());
+        }
+
+        return Ok(ast::ExpressionKind::Attribute(ast::AttributeResolver {
+            parent: Box::new(parent_id),
+            child_attrs: attrs,
+        }));
     }
 
     fn parse_expression(&mut self, pre: ExpOrder) -> Result<ast::ExpressionKind, ParserError> {
@@ -996,13 +1012,7 @@ impl Parser {
         let current_token = self.lexer.get_current_token();
         let mut matched_prefix = match current_token.token {
             // literals:
-            TokenKind::Identifier(_) => match self.get_identifier() {
-                Ok(ident) => Ok(ast::ExpressionKind::Identifier(ast::IdentifierType {
-                    name: ident,
-                    t: None,
-                })),
-                _ => Err(self.new_invalid_token_err(String::from("Invalid identifier"))),
-            },
+            TokenKind::Identifier(_) => self.parse_dot_expression(),
             TokenKind::Integer(_) => self.parse_integer_expression(),
             TokenKind::Float(_) => self.parse_floating_expression(),
             TokenKind::Char(_) => self.parse_char_expression(),
@@ -1067,9 +1077,6 @@ impl Parser {
             } else if self.next_symbol_is(SymbolKind::SLBox) {
                 self.lexer.iterate();
                 matched_prefix = self.parse_index_expression(matched_prefix.unwrap());
-            } else if self.next_symbol_is(SymbolKind::SDot) {
-                self.lexer.iterate();
-                matched_prefix = self.parse_dot_expression(matched_prefix.unwrap());
             } else {
                 break;
             }

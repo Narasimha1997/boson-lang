@@ -157,7 +157,7 @@ pub enum LiteralKind {
 #[derive(Debug, PartialEq, Clone)]
 pub struct AttributeResolver {
     pub parent: Box<ExpressionKind>,
-    pub child_attrs: Box<ExpressionKind>,
+    pub child_attrs: Vec<String>,
 }
 
 #[derive(Debug, PartialEq, Clone)]

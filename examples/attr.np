@@ -1,0 +1,4 @@
+var x = 10;
+x.hey = 10;
+
+println(x.hey);

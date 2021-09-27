@@ -856,6 +856,33 @@ impl BytecodeCompiler {
         return None;
     }
 
+    fn compile_attribute_resolver(
+        &mut self,
+        resolver: &ast::AttributeResolver,
+        is_get: bool,
+    ) -> Option<errors::CompileError> {
+
+        // compile parent:
+        let expr_result = self.compile_expression(&resolver.parent);
+        if expr_result.is_some() {
+            return expr_result;
+        }
+
+        // substitute all the resovlers as constant pools:
+        for attr in &resolver.child_attrs {
+            let idx = self.register_constant(Object::Str(attr.clone()));
+            self.save(isa::InstructionKind::IConstant, &vec![idx]);
+        }
+
+        if is_get {
+            self.save(isa::InstructionKind::IGetAttr, &vec![resolver.child_attrs.len()]);
+        } else {
+            self.save(isa::InstructionKind::ISetAttr, &vec![resolver.child_attrs.len()]);
+        }
+        
+        return None;
+    }
+
     fn compile_prefix_expression(
         &mut self,
         expr: &ast::PrefixType,
@@ -999,6 +1026,34 @@ impl BytecodeCompiler {
                         }
                     }
                 }
+                ast::ExpressionKind::Attribute(attr) => {
+                    let parent_attr = attr.parent.clone();
+                    // compile the resolver:
+                    let expr_result = self.compile_attribute_resolver(&attr, false);
+                    if expr_result.is_some() {
+                        return expr_result;
+                    }
+
+                    // create load instruction:
+                    match parent_attr.as_ref() {
+                        ast::ExpressionKind::Identifier(id) => {
+                            let assign_result = self.compile_item_assignment(&id);
+                            if assign_result.is_some() {
+                                return assign_result;
+                            }
+                        }
+                        _ => {
+                            return Some(errors::CompileError::new(
+                                format!(
+                                    "Failed to resolve attribute assignment for type {:?}",
+                                    parent_attr
+                                ),
+                                errors::CompilerErrorKind::InvalidOperand,
+                                0,
+                            ));
+                        }
+                    }
+                }
                 _ => {
                     return Some(errors::CompileError::new(
                         "Invalid assignment".to_string(),
@@ -1124,6 +1179,10 @@ impl BytecodeCompiler {
             }
             ast::ExpressionKind::Index(idx) => {
                 let result = self.compile_index(&idx);
+                return result;
+            }
+            ast::ExpressionKind::Attribute(attr) => {
+                let result = self.compile_attribute_resolver(&attr, true);
                 return result;
             }
             _ => return None,
