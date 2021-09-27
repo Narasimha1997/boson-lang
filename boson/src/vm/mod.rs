@@ -517,6 +517,21 @@ impl BosonVM {
                     frame.farword_ip(next);
                 }
 
+                InstructionKind::IGetAttr => {
+                    let n_attrs = operands[0];
+                    let result = Controls::get_attr(
+                        &mut self.data_stack,
+                        &inst,
+                        n_attrs
+                    );
+
+                    if result.is_some() {
+                        return Err(result.unwrap());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
                 _ => {
                     return Err(VMError::new(
                         format!("{} not yet implemented", inst.as_string()),

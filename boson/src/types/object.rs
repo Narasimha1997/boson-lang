@@ -239,7 +239,7 @@ impl Object {
     }
 
     // get attribute
-    pub fn get_attribute(&self, key: Rc<Object>) -> Result<Rc<Object>, String> {
+    pub fn get_attribute(&self, key: &Rc<Object>) -> Result<Rc<Object>, String> {
         match key.as_ref() {
             Object::Str(st) => {
                 let obj_val = self.__resolve_attr(st);

@@ -34,6 +34,7 @@ pub enum VMErrorKind {
     ThreadKillError,
     ThreadCreateError,
     ThreadWaitError,
+    AttributeError,
 }
 
 #[derive(Debug, Clone)]

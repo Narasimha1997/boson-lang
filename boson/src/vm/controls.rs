@@ -944,4 +944,42 @@ impl Controls {
             }
         }
     }
+
+    pub fn get_attr(ds: &mut DataStack, inst: &InstructionKind, n_attrs: usize) -> Option<VMError> {
+        let attrs_popped_res = Controls::pop_n(ds, n_attrs, &inst);
+        if attrs_popped_res.is_err() {
+            return Some(attrs_popped_res.unwrap_err());
+        }
+
+        let attrs = attrs_popped_res.unwrap();
+        let pop_obj_res = ds.pop_object(inst.clone());
+
+        if pop_obj_res.is_err() {
+            return Some(pop_obj_res.unwrap_err());
+        }
+
+        let mut obj = pop_obj_res.unwrap();
+        // resolve attributes:
+        for idx in 0..n_attrs {
+            let attr_res = obj.get_attribute(&attrs[n_attrs - idx - 1]);
+            if attr_res.is_err() {
+                return Some(VMError::new(
+                    attr_res.unwrap_err(),
+                    VMErrorKind::AttributeError,
+                    Some(inst.clone()),
+                    0
+                ));
+            }
+
+            obj = attr_res.unwrap();
+        }
+
+        // save the operator to back to the stack
+        let push_res = ds.push_object(obj, inst.clone());
+        if push_res.is_err() {
+            return Some(push_res.unwrap_err());
+        }
+
+        return None;
+    }
 }
