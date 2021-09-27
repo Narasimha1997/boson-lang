@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -5,6 +6,7 @@ use std::iter::FromIterator;
 use std::rc::Rc;
 use std::vec::Vec;
 
+use crate::types::array::Array;
 use crate::types::object::Object;
 
 #[derive(Clone, Debug)]
@@ -55,6 +57,74 @@ impl HashTable {
         }
 
         return Ok(result.unwrap());
+    }
+
+    // attrs:
+    pub fn attrs(&self) -> Vec<Rc<Object>> {
+        return vec![
+            Rc::new(Object::Str(String::from("keys"))),
+            Rc::new(Object::Str(String::from("__name__"))),
+            Rc::new(Object::Str(String::from("values"))),
+        ];
+    }
+
+    pub fn get_attribute(&self, key: &String) -> Result<Rc<Object>, String> {
+        match key.as_ref() {
+            "__name__" => return Ok(Rc::new(Object::Str(self.name.clone()))),
+            _ => {
+                return Err(format!(
+                    "Attribute {} not found for type {}",
+                    key, "HashTable"
+                ));
+            }
+        }
+    }
+
+    pub fn call_attribute(
+        &mut self,
+        key: &String,
+        args: &Vec<Rc<Object>>,
+    ) -> Result<Rc<Object>, String> {
+        match key.as_ref() {
+            "keys" => {
+                if args.len() != 0 {
+                    return Err(format!(
+                        "keys() takes zero arguments, provided {}.",
+                        args.len()
+                    ));
+                }
+
+                let key_array = self.keys();
+                let array_obj = Array {
+                    elements: key_array,
+                    name: self.name.clone(),
+                };
+
+                return Ok(Rc::new(Object::Array(RefCell::new(array_obj))));
+            }
+            "values" => {
+                if args.len() != 0 {
+                    return Err(format!(
+                        "keys() takes zero arguments, provided {}.",
+                        args.len()
+                    ));
+                }
+
+                let key_array = self.values();
+                let array_obj = Array {
+                    elements: key_array,
+                    name: self.name.clone(),
+                };
+
+                return Ok(Rc::new(Object::Array(RefCell::new(array_obj))));
+            }
+            _ => {
+                return Err(format!(
+                    "Attribute {} not found for type {}",
+                    key, "HashTable"
+                ));
+            }
+        }
     }
 }
 

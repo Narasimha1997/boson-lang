@@ -223,18 +223,39 @@ impl Object {
     }
 
     // attributes:
-    pub fn attrs() -> Vec<Rc<Object>> {
-        return vec![
+    pub fn attrs(&self) -> Vec<Rc<Object>> {
+        let mut main_attrs = vec![
             Rc::new(Object::Str(String::from("__address__"))),
             Rc::new(Object::Str(String::from("__size__"))),
         ];
+
+        match self {
+            Object::HashTable(ht) => {
+                main_attrs.extend(ht.borrow().attrs());
+            }
+            _ => {}
+        }
+
+        return main_attrs;
     }
 
-    fn __resolve_attr(&self, st: &String) -> Option<Rc<Object>> {
+    fn __resolve_attr(&self, st: &String) -> Result<Rc<Object>, String> {
         match st.as_ref() {
-            "__address__" => Some(Rc::new(Object::Str(format!("{:p}", self)))),
-            "__size__" => Some(Rc::new(Object::Int(mem::size_of::<Self>() as i64))),
-            _ => None,
+            "__address__" => return Ok(Rc::new(Object::Str(format!("{:p}", self)))),
+            "__size__" => return Ok(Rc::new(Object::Int(mem::size_of::<Self>() as i64))),
+            _ => {}
+        }
+
+        // type based attribute resolution:
+        match self {
+            Object::HashTable(ht) => return ht.borrow_mut().get_attribute(&st),
+            _ => {
+                return Err(format!(
+                    "Attribute {} not found for type {}",
+                    st,
+                    self.get_type()
+                ))
+            }
         }
     }
 
@@ -243,12 +264,8 @@ impl Object {
         match key.as_ref() {
             Object::Str(st) => {
                 let obj_val = self.__resolve_attr(st);
-                if obj_val.is_none() {
-                    return Err(format!(
-                        "Attribute {} not found for type {}",
-                        st,
-                        self.get_type()
-                    ));
+                if obj_val.is_err() {
+                    return obj_val;
                 }
 
                 return Ok(obj_val.unwrap());
