@@ -126,9 +126,10 @@ pub enum InstructionKind {
     IShell,
     IShellRaw,
 
-    // SET and GET attr
+    // SET, GET and Call attr
     ISetAttr,
     IGetAttr,
+    ICallAttr,
 }
 
 
@@ -264,6 +265,7 @@ impl InstructionKind {
             InstructionKind::ICallAsync => "ICallAsync".to_string(),
             InstructionKind::ISetAttr => "ISetAttr".to_string(),
             InstructionKind::IGetAttr => "IGetAttr".to_string(),
+            InstructionKind::ICallAttr => "ICallAttr".to_string(),
             _ => "invalid".to_string(),
         }
     }
@@ -324,7 +326,8 @@ impl InstructionKind {
             | InstructionKind::IShell
             | InstructionKind::IPopExcHandle => vec![],
 
-            InstructionKind::IClosure => vec![2, 2],
+            InstructionKind::IClosure
+            | InstructionKind::ICallAttr => vec![2, 2],
 
             InstructionKind::IStoreLocal
             | InstructionKind::ILoadLocal => vec![1],

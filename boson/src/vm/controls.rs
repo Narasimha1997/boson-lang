@@ -1,5 +1,6 @@
 use crate::api;
 use crate::compiler::symtab::ConstantPool;
+use crate::config;
 use crate::isa;
 use crate::types::array;
 use crate::types::builtins;
@@ -13,7 +14,6 @@ use crate::vm::frames;
 use crate::vm::global;
 use crate::vm::stack;
 use crate::vm::thread;
-use crate::config;
 
 use std::cell::Ref;
 use std::cell::RefCell;
@@ -28,6 +28,7 @@ use alu::Logical;
 use api::Platform;
 use array::Array;
 use builtins::BuiltinKind;
+use config::ENABLE_CONCURRENCY;
 use errors::ISAError;
 use errors::ISAErrorKind;
 use errors::VMError;
@@ -40,7 +41,6 @@ use iter::ObjectIterator;
 use object::Object;
 use stack::DataStack;
 use th::ThreadBlock;
-use config::ENABLE_CONCURRENCY;
 
 pub struct Controls {}
 
@@ -774,13 +774,12 @@ impl Controls {
         threads: &mut thread::BosonThreads,
         join: bool,
     ) -> Option<VMError> {
-       
-        if ! ENABLE_CONCURRENCY {
+        if !ENABLE_CONCURRENCY {
             return Some(VMError::new(
                 "BosonVM has concurrency disabled.".to_string(),
-                VMErrorKind::IllegalOperation, 
+                VMErrorKind::IllegalOperation,
                 Some(inst.clone()),
-                0
+                0,
             ));
         }
 
@@ -967,7 +966,7 @@ impl Controls {
                     attr_res.unwrap_err(),
                     VMErrorKind::AttributeError,
                     Some(inst.clone()),
-                    0
+                    0,
                 ));
             }
 
@@ -981,5 +980,42 @@ impl Controls {
         }
 
         return None;
+    }
+
+    pub fn set_attribute(
+        ds: &mut DataStack,
+        inst: &InstructionKind,
+        n_attrs: usize,
+    ) -> Option<VMError> {
+
+        // pop N objects, which act as attributes
+        let pop_res = Controls::pop_n(ds, n_attrs, inst);
+        if pop_res.is_err() {
+            return Some(pop_res.unwrap_err())
+        }
+
+        let attrs = pop_res.unwrap();
+
+        // parent assign object:
+        let parent_obj_res = ds.pop_object(inst.clone());
+        if parent_obj_res.is_err() {
+            return Some(parent_obj_res.unwrap_err())
+        }
+
+        let mut parent_obj = parent_obj_res.unwrap();
+
+        match parent_obj.as_ref() {
+            Object::Array(_) | Object::HashTable(_) | Object::ByteBuffer(_) => {}
+            _ => {
+                return Some(VMError::new(
+                    format!("Object of type {} does not support attribute assignment.", parent_obj.get_type()),
+                    VMErrorKind::IllegalOperation,
+                    Some(inst.clone()),
+                    0
+                ));
+            }
+        }
+
+        return None
     }
 }
