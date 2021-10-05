@@ -14,6 +14,17 @@ use crate::types::iter::ObjectIterator;
 use crate::types::subroutine::Subroutine;
 use crate::types::th::ThreadBlock;
 
+pub trait AttributeResolver {
+    fn attrs(&self) -> Vec<Rc<Object>>;
+    fn resolve_set_attr(&self, _keys: &Vec<Rc<Object>>, _value: Rc<Object>) -> Option<String>;
+    fn resolve_get_attr(&self, keys: &Vec<Rc<Object>>) -> Result<Rc<Object>, String>;
+    fn resolve_call_attr(
+        &mut self,
+        keys: &Vec<Rc<Object>>,
+        args: &Vec<Rc<Object>>,
+    ) -> Result<Rc<Object>, String>;
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Object {
     Noval,
@@ -221,9 +232,71 @@ impl Object {
             }
         }
     }
+}
+
+impl fmt::Display for Object {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.describe())
+    }
+}
+
+impl AttributeResolver for Object {
+    fn resolve_set_attr(&self, _keys: &Vec<Rc<Object>>, _value: Rc<Object>) -> Option<String> {
+        // to be implemented
+        return None;
+    }
+
+    fn resolve_get_attr(&self, keys: &Vec<Rc<Object>>) -> Result<Rc<Object>, String> {
+        let f_key = &keys[0];
+
+        match f_key.as_ref() {
+            Object::Str(st) => {
+                match st.as_ref() {
+                    // base attributes
+                    "__address__" => return Ok(Rc::new(Object::Str(format!("{:p}", self)))),
+                    "__size__" => return Ok(Rc::new(Object::Int(mem::size_of::<Self>() as i64))),
+                    _ => {}
+                }
+
+                match self {
+                    Object::HashTable(ht) => {
+                        return ht.borrow().resolve_get_attr(keys);
+                    }
+                    _ => {
+                        return Err(format!(
+                            "Object of type {} does not have attribute resolver.",
+                            self.get_type()
+                        ))
+                    }
+                }
+            }
+
+            _ => {}
+        }
+
+        return Ok(Rc::new(Object::Noval));
+    }
+
+    fn resolve_call_attr(
+        &mut self,
+        keys: &Vec<Rc<Object>>,
+        args: &Vec<Rc<Object>>,
+    ) -> Result<Rc<Object>, String> {
+        match self {
+            Object::HashTable(ht) => {
+                return ht.borrow_mut().resolve_call_attr(&keys, &args)
+            }
+            _ => {
+                return Err(format!(
+                    "No function attributes found for type {}",
+                    self.get_type()
+                ))
+            }
+        }
+    }
 
     // attributes:
-    pub fn attrs(&self) -> Vec<Rc<Object>> {
+    fn attrs(&self) -> Vec<Rc<Object>> {
         let mut main_attrs = vec![
             Rc::new(Object::Str(String::from("__address__"))),
             Rc::new(Object::Str(String::from("__size__"))),
@@ -237,52 +310,6 @@ impl Object {
         }
 
         return main_attrs;
-    }
-
-    fn __resolve_attr(&self, st: &String) -> Result<Rc<Object>, String> {
-        match st.as_ref() {
-            "__address__" => return Ok(Rc::new(Object::Str(format!("{:p}", self)))),
-            "__size__" => return Ok(Rc::new(Object::Int(mem::size_of::<Self>() as i64))),
-            _ => {}
-        }
-
-        // type based attribute resolution:
-        match self {
-            Object::HashTable(ht) => return ht.borrow_mut().get_attribute(&st),
-            _ => {
-                return Err(format!(
-                    "Attribute {} not found for type {}",
-                    st,
-                    self.get_type()
-                ))
-            }
-        }
-    }
-
-    // get attribute
-    pub fn get_attribute(&self, key: &Rc<Object>) -> Result<Rc<Object>, String> {
-        match key.as_ref() {
-            Object::Str(st) => {
-                let obj_val = self.__resolve_attr(st);
-                if obj_val.is_err() {
-                    return obj_val;
-                }
-
-                return Ok(obj_val.unwrap());
-            }
-            _ => {
-                return Err(format!(
-                    "Attribute must be a string, got {}.",
-                    key.get_type()
-                ));
-            }
-        }
-    }
-}
-
-impl fmt::Display for Object {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.describe())
     }
 }
 

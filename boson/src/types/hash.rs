@@ -8,6 +8,7 @@ use std::vec::Vec;
 
 use crate::types::array::Array;
 use crate::types::object::Object;
+use crate::types::object::AttributeResolver;
 
 #[derive(Clone, Debug)]
 pub struct HashTable {
@@ -145,5 +146,93 @@ impl Eq for HashTable {}
 impl fmt::Display for HashTable {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.describe())
+    }
+}
+
+impl AttributeResolver for HashTable {
+
+    fn attrs(&self) -> Vec<Rc<Object>> {
+        return vec![
+            Rc::new(Object::Str(String::from("keys"))),
+            Rc::new(Object::Str(String::from("__name__"))),
+            Rc::new(Object::Str(String::from("values"))),
+        ];
+    }
+
+    fn resolve_get_attr(&self, keys: &Vec<Rc<Object>>) -> Result<Rc<Object>, String> {
+        let f_key = &keys[0];
+
+        match f_key.as_ref() {
+            Object::Str(st) => {
+                match st.as_ref() {
+                    // base attributes
+                    "__name__" => return Ok(Rc::new(Object::Str(self.name.clone()))),
+                    _ => {}
+                }
+            }
+
+            _ => {}
+        }
+
+        return Ok(Rc::new(Object::Noval));
+    }
+
+    fn resolve_set_attr(&self, _keys: &Vec<Rc<Object>>, _value: Rc<Object>) -> Option<String> {
+        return None;
+    }
+
+    fn resolve_call_attr(&mut self, keys: &Vec<Rc<Object>>, args: &Vec<Rc<Object>>) -> Result<Rc<Object>, String> {
+
+        let key = &keys[0];
+        match key.as_ref() {
+            Object::Str(st) => {
+                match st.as_ref() {
+                    "keys" => {
+                        if args.len() != 0 {
+                            return Err(format!(
+                                "keys() takes zero arguments, provided {}.",
+                                args.len()
+                            ));
+                        }
+        
+                        let key_array = self.keys();
+                        let array_obj = Array {
+                            elements: key_array,
+                            name: self.name.clone(),
+                        };
+        
+                        return Ok(Rc::new(Object::Array(RefCell::new(array_obj))));
+                    }
+                    "values" => {
+                        if args.len() != 0 {
+                            return Err(format!(
+                                "keys() takes zero arguments, provided {}.",
+                                args.len()
+                            ));
+                        }
+        
+                        let key_array = self.values();
+                        let array_obj = Array {
+                            elements: key_array,
+                            name: self.name.clone(),
+                        };
+        
+                        return Ok(Rc::new(Object::Array(RefCell::new(array_obj))));
+                    }
+                    _ => {
+                        return Err(format!(
+                            "Attribute {} not found for type {}",
+                            key, "HashTable"
+                        ));
+                    }
+                }
+            }
+            _ => {
+                return Err(format!(
+                    "Expected string attribute, got {}",
+                    key.get_type()
+                ));
+            }
+        }
     }
 }

@@ -108,6 +108,7 @@ pub struct BytecodeCompiler {
     scope_index: usize,
     loop_ctls: Vec<LoopControl>,
     n_lambdas: usize,
+    attr_ctls: Vec<usize>,
 }
 
 struct LoopControl {
@@ -130,6 +131,7 @@ impl BytecodeCompiler {
             scope_index: 0,
             loop_ctls: vec![],
             n_lambdas: 0,
+            attr_ctls: vec![],
         };
     }
 
@@ -146,6 +148,7 @@ impl BytecodeCompiler {
             scope_index: 0,
             loop_ctls: vec![],
             n_lambdas: 0,
+            attr_ctls: vec![],
         };
     }
 
@@ -874,6 +877,17 @@ impl BytecodeCompiler {
             self.save(isa::InstructionKind::IConstant, &vec![idx]);
         }
 
+        // check if the attribute is being called:
+        if self.attr_ctls.len() != 0 {
+            let attr_params = self.attr_ctls.pop().unwrap();
+            self.save(isa::InstructionKind::ICallAttr, &vec![
+                resolver.child_attrs.len(),
+                attr_params
+            ]);
+
+            return None;
+        }
+
         if is_get {
             self.save(isa::InstructionKind::IGetAttr, &vec![resolver.child_attrs.len()]);
         } else {
@@ -1373,10 +1387,26 @@ impl BytecodeCompiler {
         }
 
         // resolve function name:
+        
         let fn_expr = &node.function;
+
+        // check if it's a attribute call:
+        let mut is_attr = false;
+        match fn_expr.as_ref() {
+            ast::ExpressionKind::Attribute(_) => {
+                self.attr_ctls.push(args.len());
+                is_attr = true;
+            }
+            _ => {}
+        }
+
         let error = self.compile_expression(fn_expr);
         if error.is_some() {
             return error;
+        }
+
+        if is_attr {
+            return None
         }
 
         // place the call instruction:

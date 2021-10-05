@@ -41,6 +41,7 @@ use iter::ObjectIterator;
 use object::Object;
 use stack::DataStack;
 use th::ThreadBlock;
+use object::AttributeResolver;
 
 pub struct Controls {}
 
@@ -950,7 +951,8 @@ impl Controls {
             return Some(attrs_popped_res.unwrap_err());
         }
 
-        let attrs = attrs_popped_res.unwrap();
+        let mut attrs = attrs_popped_res.unwrap();
+        attrs.reverse();
         let pop_obj_res = ds.pop_object(inst.clone());
 
         if pop_obj_res.is_err() {
@@ -959,19 +961,18 @@ impl Controls {
 
         let mut obj = pop_obj_res.unwrap();
         // resolve attributes:
-        for idx in 0..n_attrs {
-            let attr_res = obj.get_attribute(&attrs[n_attrs - idx - 1]);
-            if attr_res.is_err() {
-                return Some(VMError::new(
-                    attr_res.unwrap_err(),
-                    VMErrorKind::AttributeError,
-                    Some(inst.clone()),
-                    0,
-                ));
-            }
 
-            obj = attr_res.unwrap();
+        let attr_get_result = obj.resolve_get_attr(&attrs);
+        if attr_get_result.is_err() {
+            return Some(VMError::new(
+                attr_get_result.unwrap_err(),
+                VMErrorKind::AttributeError,
+                Some(inst.clone()),
+                0
+            ));
         }
+
+        obj = attr_get_result.unwrap();
 
         // save the operator to back to the stack
         let push_res = ds.push_object(obj, inst.clone());
@@ -982,40 +983,73 @@ impl Controls {
         return None;
     }
 
-    pub fn set_attribute(
+    pub fn call_attribute(
         ds: &mut DataStack,
         inst: &InstructionKind,
         n_attrs: usize,
+        n_params: usize,
     ) -> Option<VMError> {
-
         // pop N objects, which act as attributes
         let pop_res = Controls::pop_n(ds, n_attrs, inst);
         if pop_res.is_err() {
-            return Some(pop_res.unwrap_err())
+            return Some(pop_res.unwrap_err());
         }
 
-        let attrs = pop_res.unwrap();
+        let mut attrs = pop_res.unwrap();
+        attrs.reverse();
 
         // parent assign object:
         let parent_obj_res = ds.pop_object(inst.clone());
         if parent_obj_res.is_err() {
-            return Some(parent_obj_res.unwrap_err())
+            return Some(parent_obj_res.unwrap_err());
         }
 
-        let mut parent_obj = parent_obj_res.unwrap();
+        let parent_obj = parent_obj_res.unwrap();
+
+        // pop all the parameters:
+        let param_pop_result = Controls::pop_n(ds, n_params, &inst);
+        if param_pop_result.is_err() {
+            return Some(param_pop_result.unwrap_err());
+        }
+
+        let mut params = param_pop_result.unwrap();
+        params.reverse();
 
         match parent_obj.as_ref() {
-            Object::Array(_) | Object::HashTable(_) | Object::ByteBuffer(_) => {}
+           Object::HashTable(ht) => {
+               let call_result = ht.borrow_mut().resolve_call_attr(
+                   &attrs, &params
+               );
+
+               if call_result.is_err() {
+                   return Some(VMError::new(
+                       call_result.unwrap_err(),
+                       VMErrorKind::AttributeError,
+                       Some(inst.clone()),
+                       0
+                   ));
+               }
+
+               let object = call_result.unwrap();
+               // push the object
+               let push_result = ds.push_object(object, inst.clone());
+               if push_result.is_err() {
+                   return Some(push_result.unwrap_err());
+               }
+           }
             _ => {
                 return Some(VMError::new(
-                    format!("Object of type {} does not support attribute assignment.", parent_obj.get_type()),
+                    format!(
+                        "Object of type {} does not support attribute assignment.",
+                        parent_obj.get_type()
+                    ),
                     VMErrorKind::IllegalOperation,
                     Some(inst.clone()),
-                    0
+                    0,
                 ));
             }
         }
 
-        return None
+        return None;
     }
 }
