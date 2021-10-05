@@ -983,7 +983,7 @@ impl Controls {
         return None;
     }
 
-    pub fn call_attribute(
+    pub fn call_attr(
         ds: &mut DataStack,
         inst: &InstructionKind,
         n_attrs: usize,

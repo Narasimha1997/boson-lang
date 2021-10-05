@@ -532,6 +532,23 @@ impl BosonVM {
                     frame.farword_ip(next);
                 }
 
+                InstructionKind::ICallAttr => {
+                    let n_attrs = operands[0];
+                    let n_params = operands[1];
+
+                    let result = Controls::call_attr(
+                        &mut self.data_stack,
+                        &inst,
+                        n_attrs, n_params
+                    );
+
+                    if result.is_none() {
+                        return Err(result.unwrap());
+                    }
+
+                    frame.farword_ip(next);
+                }
+
                 _ => {
                     return Err(VMError::new(
                         format!("{} not yet implemented", inst.as_string()),
