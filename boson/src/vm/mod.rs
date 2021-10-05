@@ -542,7 +542,7 @@ impl BosonVM {
                         n_attrs, n_params
                     );
 
-                    if result.is_none() {
+                    if result.is_some() {
                         return Err(result.unwrap());
                     }
 

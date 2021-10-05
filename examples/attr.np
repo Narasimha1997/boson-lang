@@ -1,10 +1,8 @@
 const x = "Hello, world";
 println(x.__address__);
 
-var d = {
+const d = {
     "age": 20
 };
 
-println(d.__name__);
-
-d.test(1, 2, 3)
+println(d.keys()[0]);
