@@ -35,7 +35,5 @@ func fib(n) {
     return left_result + right_result;
 }
 
-println(type_of(fib));
-
-const result = fib(20);
+const result = fib(50);
 println(result);

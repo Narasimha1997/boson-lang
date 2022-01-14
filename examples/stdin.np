@@ -1,0 +1,2 @@
+const d = stdin()
+println(d)
