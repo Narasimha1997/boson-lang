@@ -87,7 +87,7 @@ println(array) # Array([1, 2, 3, 4, 9678967, 6.455])
 ```
 
 7. Hash tables
-```
+```python
 var myHashMap = {
     "name": "Prasanna",
     "age": 24,
