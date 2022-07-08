@@ -1,8 +1,24 @@
 
-const array = [1, 2, 3, 4, "Hello", 6.455]
+var array = [1, 2, 3, 4, "Hello", 6.455]
 println(array[0] + 2) # 3
-println(array[4] + ", world")
+println(array[4] + ", world") # Hello, world
+println(array) # Array([1, 2, 3, 4, Hello, 6.455])
 
-foreach element in array {
-    println(element)
+array[4] = 9678967;
+println(array) # Array([1, 2, 3, 4, 9678967, 6.455])
+
+var myHashMap = {
+    "name": "Prasanna",
+    "age": 24,
+    "country": "India"
 }
+
+println(myHashMap) # HashTable({age: 24, country: India, name: Prasanna})
+println(myHashMap["age"] + 2) # 26
+
+const key = "name"
+println("Hey! " + myHashMap[key]) # Hey! Prasanna
+
+myHashMap["city"] = "Bengaluru"
+println(myHashMap["city"]) # Bengaluru
+

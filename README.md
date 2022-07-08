@@ -75,4 +75,31 @@ println(m > n, n < m, n > m + 5) # false, false, true
 println(m == n - 10, !0, !(m == n - 10)) # true true false
 ```
 
-6. 
+6. Arrays
+```python
+var array = [1, 2, 3, 4, "Hello", 6.455]
+println(array[0] + 2) # 3
+println(array[4] + ", world") # Hello, world
+println(array) # Array([1, 2, 3, 4, Hello, 6.455])
+
+array[4] = 9678967;
+println(array) # Array([1, 2, 3, 4, 9678967, 6.455])
+```
+
+7. Hash tables
+```
+var myHashMap = {
+    "name": "Prasanna",
+    "age": 24,
+    "country": "India"
+}
+
+println(myHashMap) # HashTable({age: 24, country: India, name: Prasanna})
+println(myHashMap["age"] + 2) # 26
+
+const key = "name"
+println("Hey! " + myHashMap[key]) # Hey! Prasanna
+
+myHashMap["city"] = "Bengaluru"
+println(myHashMap["city"]) # Bengaluru
+```
