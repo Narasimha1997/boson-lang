@@ -1,0 +1,25 @@
+const a = 1;
+const b = 2;
+const c = 3;
+
+# addition
+const d = a + b + c;
+const e = a * b - c;
+const f = ((a + b) * c * d) / (a + b);
+
+const g = (a + b) % c;
+
+println(a, b, c, d, e, f, g); # 1 2 3 6 -1 18 0
+
+
+const x = 10;
+const y = 20;
+
+var z = ((x & 0) | y);
+println(~z) # -21
+
+const m = 10;
+const n = 20;
+
+println(m > n, n < m, n > m + 5) # false, false, true
+println(m == n - 10, !0, !(m == n - 10)) # true true false

@@ -1,0 +1,8 @@
+
+const array = [1, 2, 3, 4, "Hello", 6.455]
+println(array[0] + 2) # 3
+println(array[4] + ", world")
+
+foreach element in array {
+    println(element)
+}

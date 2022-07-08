@@ -32,4 +32,47 @@ boson-eval examples/hello.np
 ```
 This should print `hello, world!` on screen.
 
-## Language documentation:
+## Language examples:
+1. Hello, world
+```python
+println('hello,world')
+```
+
+2. Keyboard input and display
+```python
+const ip = input()
+const ip2 = input();
+const greeting = "Hello! " + ip2 + " " + ip;
+println(greeting);
+```
+
+3. Arithmetic operators
+```python
+const d = a + b + c;
+const e = a * b - c;
+const f = ((a + b) * c * d) / (a + b);
+
+const g = (a + b) % c;
+
+println(a, b, c, d, e, f, g); # 1 2 3 6 -1 18 0
+```
+
+4. Bitwise operators
+```python
+const x = 10;
+const y = 20;
+
+var z = ((x & 0) | y);
+println(~z) # -21
+```
+
+5. Logical operators
+```python
+const m = 10;
+const n = 20;
+
+println(m > n, n < m, n > m + 5) # false, false, true
+println(m == n - 10, !0, !(m == n - 10)) # true true false
+```
+
+6. 
