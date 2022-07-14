@@ -13,6 +13,8 @@ An interpreted, dynamically-typed, multi-threaded, general purpose hobby program
 9. Iterators (psuedo iterators)
 10. Byte code generation, serialization and loading
 
+Note: The documentation of this project is still in early stages.
+
 ## Installation:
 Building the language from source requires a working rust toolchain installed on the host machine. Check out the tutorial [here](https://doc.rust-lang.org/cargo/getting-started/installation.html) to set-up Rust and Cargo.
 
