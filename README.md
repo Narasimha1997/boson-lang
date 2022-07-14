@@ -18,7 +18,7 @@ Building the language from source requires a working rust toolchain installed on
 
 1. Grab the source code:
 ```
-git clone git@github.com:Narasimha1997/np-lang.git
+git clone git@github.com:Narasimha1997/boson-lang.git
 ```
 2. Build boson:
 ```
@@ -31,6 +31,46 @@ The build script should install Boson suite of tools on your system. Explore dif
 boson-eval examples/hello.np
 ```
 This should print `hello, world!` on screen.
+
+### Using the tools
+If compilation is successful, it should generate four binary tools, these are:
+
+1. boson: This is the REPL of boson lang, you can execute boson language statements in the CLI.
+```
+Welcome to Boson REPL
+This is a REPL binary for boson - a general purpose programming language written in rust. (Ctrl + C to quit)
+Boson v0.0.1
+VM Check - Passed.
+>> println(10 + 20)
+30
+```
+
+2. boson-dis: This tool generates stringified representation of the compiled version of source file.
+```
+boson-dis examples/hello.np
+```
+
+This should generate the output:
+```
+Instructions: 
+00000000 IConstant 0
+00000003 ILoadBuiltIn 2
+00000006 ICall 1
+
+Constants: 
+00000000 hello, world!
+```
+
+3. boson-compile: This tool generates the compiled bytecode of the source file, which can then be executed.
+```
+boson-eval ./examples/hello.np
+```
+This should generates  a file called `hello.np.b` in the same folder `hello.np` was present, i.e `examples/hello.np.b`. This file has the binary representation of the compiled bytecode.
+
+4. boson-eval: Evaluates the source file or the bytecode file and stdouts the result.
+```
+boson-eval ./examples/hello.np
+```
 
 ## Language examples:
 1. Hello, world
@@ -103,3 +143,96 @@ println("Hey! " + myHashMap[key]) # Hey! Prasanna
 myHashMap["city"] = "Bengaluru"
 println(myHashMap["city"]) # Bengaluru
 ```
+
+8. While loop
+```python
+const N = 100;
+
+var n0 = 0;
+var n1 = 1;
+var n2 = 0;
+var idx = 2;
+
+while (idx <= N ) {
+    n2 = n0 + n1;
+    n0 = n1;
+    n1 = n2;
+    idx = idx + 1;
+}
+
+println(n1);
+```
+
+9. If else
+```python
+
+const x = 10;
+
+if (x > 20) {
+    println("X > 20");
+} else {
+    println("X < 20"); # this will be executed
+}
+
+```
+
+10. Functions
+```python
+func fib(N) {
+    
+    if (N == 0) {
+        return 0;
+    }
+
+    if (N == 1) {
+        return 1;
+    }
+
+    return fib(N - 1) + fib(N - 2);
+}
+
+const result = fib(10);
+println('got result: ', result);
+```
+
+11. Shell operator
+Shell operator can be used to execute shell commands within the program statements.
+```python
+
+# count the number of files in the given directory
+func count_files() {
+    const res = $ "ls | wc -l";
+    return int(res[1]);
+}
+
+# call the function and print it's output
+println(count_files());
+
+# count the number of occurences of a given pattern in the given file
+func count_occurences(file, pattern) {
+    const res = $ "cat "+file+" | grep -c "+pattern; 
+    return int(res[1])
+}
+
+const res = count_occurences("LICENSE", "GPL")
+println(res);
+```
+
+### Running tests
+You can use cargo test tools to run the test
+```
+cargo test
+```
+
+### Credits
+1. [Monkey lang](https://monkeylang.org/)
+2. [Monkey lang rust version](https://github.com/wadackel/rs-monkey-lang)
+
+### TODO:
+1. Web assembly port
+2. Proper documentation
+3. Proper test cases
+4. Bug fixes
+
+### Contributing
+Feel free to raise any issues, make Pull Requests, suggest changes, clone the project and make your own changes.
