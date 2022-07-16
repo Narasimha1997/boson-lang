@@ -1,0 +1,12 @@
+
+
+func adder_exec(fn, x, y) {
+    return fn(x, y)
+}
+
+func adder(x, y) {
+    return x + y
+}
+
+const result = adder_exec(adder, 10, 20)
+println(result)

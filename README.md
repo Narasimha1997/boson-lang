@@ -220,6 +220,25 @@ const res = count_occurences("LICENSE", "GPL")
 println(res);
 ```
 
+12. Functions as objects
+```python
+# here the adder function accepts a function as argument and executes it
+func adder_exec(fn, x, y) {
+    return fn(x, y)
+}
+
+# adder function is defined here
+func adder(x, y) {
+    return x + y
+}
+
+# adder function is passed as the parameter
+const result = adder_exec(adder, 10, 20)
+println(result) # 30
+```
+
+13. Closures
+
 ### Running tests
 You can use cargo test tools to run the test
 ```
