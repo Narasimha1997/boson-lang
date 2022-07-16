@@ -5,6 +5,7 @@ pub mod frames;
 pub mod global;
 pub mod stack;
 pub mod thread;
+pub mod ffi;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -32,6 +33,7 @@ pub struct BosonVM {
     pub data_stack: DataStack,
     pub call_stack: CallStack,
     pub threads: thread::BosonThreads,
+    pub vm_ffi: ffi::BosonFFI,
 }
 
 impl BosonVM {
@@ -51,6 +53,7 @@ impl BosonVM {
             data_stack: data_stack,
             globals: globals,
             threads: thread::BosonThreads::new_empty(),
+            vm_ffi: ffi::BosonFFI::empty(),
         };
     }
 
@@ -68,6 +71,7 @@ impl BosonVM {
             data_stack: data_stack,
             globals: globals,
             threads: thread::BosonThreads::new_empty(),
+            vm_ffi: ffi::BosonFFI::empty(),
         };
     }
 
@@ -81,6 +85,7 @@ impl BosonVM {
             data_stack: data_stack,
             globals: globals,
             threads: thread::BosonThreads::new_empty(),
+            vm_ffi: ffi::BosonFFI::empty(),
         };
     }
 
