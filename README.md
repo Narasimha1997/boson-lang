@@ -238,6 +238,25 @@ println(result) # 30
 ```
 
 13. Closures
+```python
+
+# this is the wrapper function that returns a adder function with enclosed local variables
+func wrap_adder(x, y) {
+    const z = 30
+    func adder() {
+        return x + y + z
+    }
+
+    return adder
+}
+
+# call the wrapper and obtain the inner child
+const adder = wrap_adder(10, 20)
+
+# call the inner child adder function
+const result = adder()
+println(result) # result = 60
+```
 
 ### Running tests
 You can use cargo test tools to run the test
