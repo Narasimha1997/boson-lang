@@ -1,0 +1,5 @@
+const arr = [1, 2, 3, 4]
+const iterator = iter(arr)
+while (has_next(iterator)) {
+    println(next(iterator))
+}

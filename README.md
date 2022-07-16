@@ -165,7 +165,8 @@ while (idx <= N ) {
 println(n1);
 ```
 
-9. If else
+9. If else:
+
 ```python
 
 const x = 10;
@@ -178,7 +179,8 @@ if (x > 20) {
 
 ```
 
-10. Functions
+10. Functions:
+
 ```python
 func fib(N) {
     
@@ -197,7 +199,8 @@ const result = fib(10);
 println('got result: ', result);
 ```
 
-11. Shell operator
+11. Shell operator:
+
 Shell operator can be used to execute shell commands within the program statements.
 ```python
 
@@ -220,14 +223,16 @@ const res = count_occurences("LICENSE", "GPL")
 println(res);
 ```
 
-12. Lambda functions
+12. Lambda functions:
+
 ```python
 # define a adder that takes two parameters
 const lambda_adder = lambda x, y => x + y
 println(lambda_adder(10, 20)) # 30
 ```
 
-13. Functions as objects
+13. Functions as objects:
+
 ```python
 # here the adder function accepts a function as argument and executes it
 func adder_exec(fn, x, y) {
@@ -244,7 +249,8 @@ const result = adder_exec(adder, 10, 20)
 println(result) # 30
 ```
 
-14. Closures
+14. Closures:
+
 ```python
 
 # this is the wrapper function that returns a adder function with enclosed local variables
@@ -264,6 +270,38 @@ const adder = wrap_adder(10, 20)
 const result = adder()
 println(result) # result = 60
 ```
+
+15. Iterators:
+
+**Note**: Iterators are yet to be tested completely
+```
+const arr = [1, 2, 3, 4]
+const iterator = iter(arr)
+while (has_next(iterator)) {
+    println(next(iterator))
+}
+```
+
+16. Multithreading:
+```python
+# this function prints Hello, world from <thread> every 3 seconds 
+func print_periodic(name) {
+    while (true) {
+        println("Hello, world from ", name);
+        sleep_sec(3);
+    }
+}
+
+# spawn thread1 and spawn thread2
+const th1 = thread print_periodic("thread1");
+const th2 = thread print_periodic("thread2");
+
+# wait for thread 1 and thread 2 to complete
+wait(th1)
+wait(th2)
+```
+
+**Threads and global variables**: In boson, every thread gets it's own copy of global variables space, so when a thread mutates a global variable, it mutates it's local variable copy and not the one in global space.
 
 ### Running tests
 You can use cargo test tools to run the test

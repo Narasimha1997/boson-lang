@@ -9,7 +9,5 @@ func print_periodic(name) {
 const th1 = thread print_periodic("thread1");
 const th2 = thread print_periodic("thread2");
 
-println(th1, th2);
-while (true) {
-    sleep_sec(10);
-}
+wait(th1)
+wait(th2)
