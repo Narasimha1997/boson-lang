@@ -1,0 +1,4 @@
+
+
+const lambda_adder = lambda x, y => x + y
+println(lambda_adder(10, 20))

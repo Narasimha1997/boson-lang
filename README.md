@@ -220,7 +220,14 @@ const res = count_occurences("LICENSE", "GPL")
 println(res);
 ```
 
-12. Functions as objects
+12. Lambda functions
+```python
+# define a adder that takes two parameters
+const lambda_adder = lambda x, y => x + y
+println(lambda_adder(10, 20)) # 30
+```
+
+13. Functions as objects
 ```python
 # here the adder function accepts a function as argument and executes it
 func adder_exec(fn, x, y) {
@@ -237,7 +244,7 @@ const result = adder_exec(adder, 10, 20)
 println(result) # 30
 ```
 
-13. Closures
+14. Closures
 ```python
 
 # this is the wrapper function that returns a adder function with enclosed local variables
