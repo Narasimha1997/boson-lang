@@ -43,6 +43,7 @@ pub enum Object {
     Iter(RefCell<ObjectIterator>),
     Exception(Rc<Exception>),
     Thread(RefCell<ThreadBlock>),
+    NativeModuleHandle(i64),
 }
 
 impl Eq for Object {}
