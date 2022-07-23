@@ -55,17 +55,23 @@ impl BosonFFI {
         }
     }
 
-    pub fn unload_dynlib(&self, descriptor: usize, params: Rc<Object>) -> Result<DynamicModuleResult, FFIError> {
+    pub fn unload_dynlib(
+        &mut self,
+        descriptor: usize,
+        params: Rc<Object>,
+    ) -> Result<DynamicModuleResult, FFIError> {
         unsafe {
             let handle_opt = self.lib_table.get(&descriptor);
             if handle_opt.is_none() {
                 return Err(format!("handle {} is not loaded", descriptor));
             }
 
-
             let handle = handle_opt.unwrap();
 
-            let close_symbol_res: Result<libloading::Symbol<CloseFunctionSymbol>, libloading::Error> = handle.get(b"close");
+            let close_symbol_res: Result<
+                libloading::Symbol<CloseFunctionSymbol>,
+                libloading::Error,
+            > = handle.get(b"close");
             if close_symbol_res.is_err() {
                 return Err(format!("failed to close dynamic module {}", descriptor));
             }
@@ -73,11 +79,63 @@ impl BosonFFI {
             let close_symbol = close_symbol_res.unwrap();
             let close_result = close_symbol(params);
 
+            // remove the module
+            self.lib_table.remove(&descriptor);
             Ok(close_result)
         }
     }
 
-    pub fn call_function(&self, _descriptor: usize, _name: String) -> Result<(), FFIError> {
-        Ok(())
+    pub fn write(
+        &mut self,
+        descriptor: usize,
+        params: Rc<Object>,
+    ) -> Result<DynamicModuleResult, FFIError> {
+        unsafe {
+            let handle_opt = self.lib_table.get(&descriptor);
+            if handle_opt.is_none() {
+                return Err(format!("handle {} is not loaded", descriptor));
+            }
+
+            let handle = handle_opt.unwrap();
+
+            let write_symbol_result: Result<
+                libloading::Symbol<WriteFunctionSymbol>,
+                libloading::Error,
+            > = handle.get(b"write");
+            if write_symbol_result.is_err() {
+                return Err(format!("failed to call write on {}", descriptor));
+            }
+
+            let write_symbol = write_symbol_result.unwrap();
+            let write_result = write_symbol(params);
+            Ok(write_result)
+        }
+    }
+
+    pub fn read(
+        &mut self,
+        descriptor: usize,
+        params: Rc<Object>,
+    ) -> Result<DynamicModuleResult, FFIError> {
+        unsafe {
+            let handle_opt = self.lib_table.get(&descriptor);
+            if handle_opt.is_none() {
+                return Err(format!("handle {} is not loaded", descriptor));
+            }
+
+            let handle = handle_opt.unwrap();
+
+            let read_symbol_result: Result<
+                libloading::Symbol<ReadFunctionSymbol>,
+                libloading::Error,
+            > = handle.get(b"read");
+            if read_symbol_result.is_err() {
+                return Err(format!("failed to call read on {}", descriptor));
+            }
+
+            let read_symbol = read_symbol_result.unwrap();
+            let read_result = read_symbol(params);
+            Ok(read_result)
+        }
     }
 }
