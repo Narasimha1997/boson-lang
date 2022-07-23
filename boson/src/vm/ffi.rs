@@ -1,6 +1,13 @@
 extern crate libloading;
 
+use crate::types::{dyn_module, object::Object};
+
+use dyn_module::{
+    CloseFunctionSymbol, DynamicModuleResult, OpenFunctionSymbol, ReadFunctionSymbol,
+    WriteFunctionSymbol,
+};
 use std::collections::HashMap;
+use std::rc::Rc;
 
 pub type FFIError = String;
 
@@ -17,7 +24,11 @@ impl BosonFFI {
         }
     }
 
-    pub fn load_dynlib(&mut self, path: String) -> Result<usize, FFIError> {
+    pub fn load_dynlib(
+        &mut self,
+        path: String,
+        params: Rc<Object>,
+    ) -> Result<(usize, DynamicModuleResult), FFIError> {
         unsafe {
             let handle_result = libloading::Library::new(path.clone());
             if handle_result.is_err() {
@@ -29,21 +40,41 @@ impl BosonFFI {
             }
 
             let handle = handle_result.unwrap();
+
+            let open_symbol_res: Result<libloading::Symbol<OpenFunctionSymbol>, libloading::Error> =
+                handle.get(b"open");
+            if open_symbol_res.is_err() {
+                return Err(format!("failed to open dynamic module {}", path));
+            }
+
+            let open_symbol = open_symbol_res.unwrap();
+            let open_eval_result = open_symbol(params);
             self.lib_table.insert(self.objects_tracker, handle);
-            let current_fd = self.objects_tracker;
             self.objects_tracker += 1;
-            Ok(current_fd)
+            Ok((self.objects_tracker - 1, open_eval_result))
         }
     }
 
-    pub fn unload_dynlib(&self, descriptor: usize) -> Result<(), FFIError> {
-        let handle_opt = self.lib_table.get(&descriptor);
-        if handle_opt.is_none() {
-            return Err(format!("handle {} is not loaded", descriptor));
-        }
+    pub fn unload_dynlib(&self, descriptor: usize, params: Rc<Object>) -> Result<DynamicModuleResult, FFIError> {
+        unsafe {
+            let handle_opt = self.lib_table.get(&descriptor);
+            if handle_opt.is_none() {
+                return Err(format!("handle {} is not loaded", descriptor));
+            }
 
-        let _handle = handle_opt.unwrap();
-        return Ok(());
+
+            let handle = handle_opt.unwrap();
+
+            let close_symbol_res: Result<libloading::Symbol<CloseFunctionSymbol>, libloading::Error> = handle.get(b"close");
+            if close_symbol_res.is_err() {
+                return Err(format!("failed to close dynamic module {}", descriptor));
+            }
+
+            let close_symbol = close_symbol_res.unwrap();
+            let close_result = close_symbol(params);
+
+            Ok(close_result)
+        }
     }
 
     pub fn call_function(&self, _descriptor: usize, _name: String) -> Result<(), FFIError> {
