@@ -20,6 +20,7 @@ use compiler::symtab::ConstantPool;
 use vm::global::GlobalPool;
 use vm::thread::BosonThreads;
 use vm::thread::ThreadParams;
+use vm::ffi::BosonFFI;
 use vm::BosonVM;
 use config::ENABLE_CONCURRENCY;
 
@@ -72,6 +73,10 @@ pub enum BuiltinKind {
     SRead,
     Wait,
     BytecodeEval,
+    DynlibOpen,
+    DynlibRead,
+    DynlibWrite,
+    DynlibClose,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -135,6 +140,10 @@ impl BuiltinKind {
             BuiltinKind::SWrite => "stdout".to_string(),
             BuiltinKind::FRead => "fread".to_string(),
             BuiltinKind::BytecodeEval => "eval_bytecode".to_string(),
+            BuiltinKind::DynlibOpen => "libffi_open".to_string(),
+            BuiltinKind::DynlibClose => "libffi_close".to_string(),
+            BuiltinKind::DynlibRead => "libffi_read".to_string(),
+            BuiltinKind::DynlibWrite => "libffi_write".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -146,6 +155,7 @@ impl BuiltinKind {
         gp: &mut GlobalPool,
         c: &mut ConstantPool,
         th: &mut BosonThreads,
+        ffi: &mut BosonFFI,
     ) -> Result<Rc<Object>, String> {
         match self {
             BuiltinKind::Print => {
@@ -963,7 +973,7 @@ impl BuiltinKind {
                     }
                     (Object::Builtins(func), Object::Array(params)) => {
                         let params_vec = params.borrow().elements.clone();
-                        let exec_result = func.exec(params_vec, platform, gp, c, th);
+                        let exec_result = func.exec(params_vec, platform, gp, c, th, ffi);
                         return exec_result;
                     }
                     _ => {
@@ -1334,6 +1344,17 @@ impl BuiltinKind {
                     }
                 }
             }
+
+            BuiltinKind::DynlibOpen => {
+                if args.len() != 2 {
+                    return Err(format!(
+                        "libffi_open() takes 2 argument, provided {}", args.len()
+                    ));
+                }
+
+               return Err(format!("to be implemented"))
+            }
+
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),
         }

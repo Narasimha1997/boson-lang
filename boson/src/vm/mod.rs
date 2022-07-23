@@ -1,11 +1,11 @@
 pub mod alu;
 pub mod controls;
 pub mod errors;
+pub mod ffi;
 pub mod frames;
 pub mod global;
 pub mod stack;
 pub mod thread;
-pub mod ffi;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -303,7 +303,8 @@ impl BosonVM {
                         &mut self.globals,
                         &mut self.constants,
                         platform,
-                        &mut self.threads
+                        &mut self.threads,
+                        &mut self.vm_ffi,
                     );
 
                     if result.is_err() {
@@ -343,7 +344,6 @@ impl BosonVM {
 
                     frame.farword_ip(next);
                 }
-
 
                 InstructionKind::ICallAsync => {
                     let n_args = operands[0];
@@ -494,7 +494,8 @@ impl BosonVM {
                         &mut self.globals,
                         &mut self.constants,
                         &mut self.threads,
-                        false
+                        &mut self.vm_ffi,
+                        false,
                     );
 
                     if result.is_some() {
@@ -512,7 +513,8 @@ impl BosonVM {
                         &mut self.globals,
                         &mut self.constants,
                         &mut self.threads,
-                        true
+                        &mut self.vm_ffi,
+                        true,
                     );
 
                     if result.is_some() {
@@ -524,11 +526,7 @@ impl BosonVM {
 
                 InstructionKind::IGetAttr => {
                     let n_attrs = operands[0];
-                    let result = Controls::get_attr(
-                        &mut self.data_stack,
-                        &inst,
-                        n_attrs
-                    );
+                    let result = Controls::get_attr(&mut self.data_stack, &inst, n_attrs);
 
                     if result.is_some() {
                         return Err(result.unwrap());
@@ -541,11 +539,8 @@ impl BosonVM {
                     let n_attrs = operands[0];
                     let n_params = operands[1];
 
-                    let result = Controls::call_attr(
-                        &mut self.data_stack,
-                        &inst,
-                        n_attrs, n_params
-                    );
+                    let result =
+                        Controls::call_attr(&mut self.data_stack, &inst, n_attrs, n_params);
 
                     if result.is_some() {
                         return Err(result.unwrap());
@@ -627,7 +622,8 @@ impl BosonVM {
             &mut vm_instance.globals,
             &mut vm_instance.constants,
             platform,
-            &mut vm_instance.threads
+            &mut vm_instance.threads,
+            &mut vm_instance.vm_ffi,
         );
 
         if exec_frame.is_err() {

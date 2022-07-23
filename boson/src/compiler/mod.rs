@@ -25,7 +25,7 @@ pub struct CompiledBytecode {
 #[derive(Debug, Clone)]
 pub struct OpCode {
     instruction: isa::InstructionKind,
-    pos: usize,
+    pub pos: usize,
 }
 
 impl OpCode {

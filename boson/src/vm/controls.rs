@@ -14,6 +14,7 @@ use crate::vm::frames;
 use crate::vm::global;
 use crate::vm::stack;
 use crate::vm::thread;
+use crate::vm::ffi::BosonFFI;
 
 use std::cell::Ref;
 use std::cell::RefCell;
@@ -376,6 +377,7 @@ impl Controls {
         constants: &mut ConstantPool,
         platform: &Platform,
         threads: &mut thread::BosonThreads,
+        ffi: &mut BosonFFI,
     ) -> Result<Option<RefCell<ExecutionFrame>>, VMError> {
         // pop the function:
 
@@ -396,7 +398,7 @@ impl Controls {
                 let mut args = popped_args.unwrap();
                 args.reverse();
                 // call the builtin:
-                let exec_result = func.exec(args, platform, global_pool, constants, threads);
+                let exec_result = func.exec(args, platform, global_pool, constants, threads, ffi);
                 if exec_result.is_err() {
                     return Err(VMError::new(
                         exec_result.unwrap_err(),
@@ -890,6 +892,7 @@ impl Controls {
         gp: &mut GlobalPool,
         c: &mut ConstantPool,
         th: &mut thread::BosonThreads,
+        ffi: &mut BosonFFI,
         is_raw: bool,
     ) -> Option<VMError> {
         let builtin = if is_raw {
@@ -914,7 +917,7 @@ impl Controls {
                     .collect();
 
                 args.push(popped_obj);
-                let exec_result = builtin.exec(args, platform, gp, c, th);
+                let exec_result = builtin.exec(args, platform, gp, c, th, ffi);
                 if exec_result.is_err() {
                     return Some(VMError::new(
                         exec_result.unwrap_err(),
