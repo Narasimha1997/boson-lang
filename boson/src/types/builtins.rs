@@ -157,7 +157,6 @@ impl BuiltinKind {
         th: &mut BosonThreads,
         ffi: &mut BosonFFI,
     ) -> Result<Rc<Object>, String> {
-
         match self {
             BuiltinKind::Print => {
                 if args.len() == 0 {
@@ -1374,7 +1373,10 @@ impl BuiltinKind {
                         }))));
                     }
                     _ => {
-                        return Err(format!("expected path to be str, got {}", path_obj.get_type()))
+                        return Err(format!(
+                            "expected path to be str, got {}",
+                            path_obj.get_type()
+                        ))
                     }
                 }
             }
@@ -1382,7 +1384,7 @@ impl BuiltinKind {
             BuiltinKind::DynlibClose => {
                 if args.len() != 2 {
                     return Err(format!(
-                        "libffi_open() takes 2 argument, provided {}",
+                        "libffi_close() takes 2 argument, provided {}",
                         args.len()
                     ));
                 }
@@ -1403,7 +1405,74 @@ impl BuiltinKind {
                         return Ok(close_object.unwrap());
                     }
                     _ => {
-                        return Err(format!("expected descriptor to be int {}", path_obj.get_type()))
+                        return Err(format!(
+                            "expected descriptor to be int {}",
+                            path_obj.get_type()
+                        ))
+                    }
+                }
+            }
+
+            BuiltinKind::DynlibWrite => {
+                if args.len() != 2 {
+                    return Err(format!(
+                        "libffi_write() takes 2 argument, provided {}",
+                        args.len()
+                    ));
+                }
+
+                let path_obj = args[0].as_ref();
+                match path_obj {
+                    Object::Int(fd) => {
+                        let ffi_write_result = ffi.write(*fd as usize, args[1].clone());
+                        if ffi_write_result.is_err() {
+                            return Err(ffi_write_result.unwrap_err());
+                        }
+
+                        let write_object = ffi_write_result.unwrap();
+                        if write_object.is_err() {
+                            return Err(write_object.unwrap_err().message);
+                        }
+
+                        return Ok(write_object.unwrap());
+                    }
+                    _ => {
+                        return Err(format!(
+                            "expected descriptor to be int {}",
+                            path_obj.get_type()
+                        ))
+                    }
+                }
+            }
+
+            BuiltinKind::DynlibRead => {
+                if args.len() != 2 {
+                    return Err(format!(
+                        "libffi_read() takes 2 argument, provided {}",
+                        args.len()
+                    ));
+                }
+
+                let path_obj = args[0].as_ref();
+                match path_obj {
+                    Object::Int(fd) => {
+                        let ffi_read_result = ffi.read(*fd as usize, args[1].clone());
+                        if ffi_read_result.is_err() {
+                            return Err(ffi_read_result.unwrap_err());
+                        }
+
+                        let read_object = ffi_read_result.unwrap();
+                        if read_object.is_err() {
+                            return Err(read_object.unwrap_err().message);
+                        }
+
+                        return Ok(read_object.unwrap());
+                    }
+                    _ => {
+                        return Err(format!(
+                            "expected descriptor to be int {}",
+                            path_obj.get_type()
+                        ))
                     }
                 }
             }
