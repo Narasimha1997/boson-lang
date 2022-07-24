@@ -303,6 +303,28 @@ wait(th2)
 
 **Threads and global variables**: In boson, every thread gets it's own copy of global variables space, so when a thread mutates a global variable, it mutates it's local variable copy and not the one in global space.
 
+### Embedding Boson:
+Boson language compiler + VM can be easily integrated into other projects using the API. As of now, any Rust codebase can import statically the Boson crate or use foreign function interface (FFI) to load Boson shared library by manually defining the ABI. We are yet to test [CXXABI](https://github.com/gcc-mirror/gcc/blob/master/libstdc%2B%2B-v3/libsupc%2B%2B/cxxabi.h) compatibility of the boson crate, so it can be considered unsafe to import boson in Non-Rust codebases as of now. 
+
+Here is how you can embed boson in other rust projects:
+```rust
+extern crate boson;
+
+use boson::api::BosonLang;
+
+pub fn main() {
+    let result = BosonLang::eval_buffer(
+        "10 + 3 / 2"
+            .as_bytes()
+            .to_vec()
+    );
+
+    println!("eval result: {}", result);
+    // will output "eval result: Some(Float(11.5))"
+}
+```
+
+
 ### Running tests
 You can use cargo test tools to run the test
 ```

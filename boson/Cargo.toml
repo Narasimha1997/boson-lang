@@ -23,6 +23,11 @@ name = "boson"
 path = "src/bin/boson_repl.rs"
 required-features = ["repl"]
 
+[[bin]]
+name = "boson-embed"
+path = "src/bin/boson_embed.rs"
+
+
 [dependencies]
 rustyline = { version = "1.0.0", optional = true }
 byteorder = { version = "1", default-features = true }

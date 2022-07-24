@@ -63,12 +63,18 @@ function build_compile () {
     cargo build --verbose --release --bin boson-compile
 }
 
+function build_embed () {
+    echo "Building Boson Compiler..."
+    cargo build --verbose --release --bin boson-embed
+}
+
 function install() {
     echo "Installing binaries in system root /usr/local/bin..."
     sudo cp ./target/release/boson /usr/local/bin/
     sudo cp ./target/release/boson-eval /usr/local/bin/
     sudo cp ./target/release/boson-dis /usr/local/bin/
     sudo cp ./target/release/boson-compile /usr/local/bin/
+    sudo cp ./target/release/boson-embed /usr/local/bin/
 }
 
 function run_tests () {
@@ -99,6 +105,8 @@ elif [[ "$arg" == "dis" ]]; then
     build_dis
 elif [[ "$arg" == "compile" ]]; then
     build_compile
+elif [[ "$arg" == "embed" ]]; then
+    build_embed
 elif [[ "$arg" == "install" ]]; then
     install
 elif [[ "$arg" == "no-install" ]]; then
@@ -107,12 +115,14 @@ elif [[ "$arg" == "no-install" ]]; then
     build_compile
     build_repl
     build_dis
+    build_embed
 else
     echo "Building all the binaries..."
     build_eval
     build_compile
     build_repl
     build_dis
+    build_embed
     install
     echo "All Done, you can start using boson, boson-compile, boson-eval and boson-dis"
 fi
