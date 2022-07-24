@@ -16,6 +16,7 @@ pub struct BosonFFI {
     lib_table: HashMap<usize, libloading::Library>,
 }
 
+
 impl BosonFFI {
     pub fn empty() -> Self {
         BosonFFI {
@@ -26,10 +27,11 @@ impl BosonFFI {
 
     pub fn load_dynlib(
         &mut self,
-        path: String,
+        path: &str,
         params: Rc<Object>,
     ) -> Result<(usize, DynamicModuleResult), FFIError> {
         unsafe {
+            println!("ffi load 1");
             let handle_result = libloading::Library::new(path.clone());
             if handle_result.is_err() {
                 return Err(format!(

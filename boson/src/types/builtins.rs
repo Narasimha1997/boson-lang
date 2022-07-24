@@ -8,21 +8,21 @@ use std::rc::Rc;
 use crate::api;
 use crate::api::BosonLang;
 use crate::compiler;
+use crate::config;
 use crate::types::array;
 use crate::types::buffer;
 use crate::types::hash;
 use crate::types::iter;
-use crate::config;
 use crate::types::object;
 use crate::vm;
 
 use compiler::symtab::ConstantPool;
+use config::ENABLE_CONCURRENCY;
+use vm::ffi::BosonFFI;
 use vm::global::GlobalPool;
 use vm::thread::BosonThreads;
 use vm::thread::ThreadParams;
-use vm::ffi::BosonFFI;
 use vm::BosonVM;
-use config::ENABLE_CONCURRENCY;
 
 use api::Platform;
 use array::Array;
@@ -157,6 +157,7 @@ impl BuiltinKind {
         th: &mut BosonThreads,
         ffi: &mut BosonFFI,
     ) -> Result<Rc<Object>, String> {
+
         match self {
             BuiltinKind::Print => {
                 if args.len() == 0 {
@@ -987,8 +988,7 @@ impl BuiltinKind {
             }
 
             BuiltinKind::CallAsync => {
-
-                if ! ENABLE_CONCURRENCY {
+                if !ENABLE_CONCURRENCY {
                     return Err(format!("BosonVM has concurrency disabled."));
                 }
 
@@ -1068,8 +1068,7 @@ impl BuiltinKind {
                 return Ok(Rc::new(Object::Str(result.unwrap())));
             }
             BuiltinKind::Wait => {
-
-                if ! ENABLE_CONCURRENCY {
+                if !ENABLE_CONCURRENCY {
                     return Err(format!("BosonVM has concurrency disabled."));
                 }
 
@@ -1348,13 +1347,37 @@ impl BuiltinKind {
             BuiltinKind::DynlibOpen => {
                 if args.len() != 2 {
                     return Err(format!(
-                        "libffi_open() takes 2 argument, provided {}", args.len()
+                        "libffi_open() takes 2 argument, provided {}",
+                        args.len()
                     ));
                 }
 
-               return Err(format!("to be implemented"))
-            }
+                let path_obj = args[0].as_ref();
+                match path_obj {
+                    Object::Str(path_str) => {
+                        let ffi_open_result = ffi.load_dynlib(path_str, args[1].clone());
+                        if ffi_open_result.is_err() {
+                            return Err(ffi_open_result.unwrap_err());
+                        }
 
+                        let (ffi_id, open_object) = ffi_open_result.unwrap();
+                        if open_object.is_err() {
+                            return Err(open_object.unwrap_err().message);
+                        }
+
+                        let elements =
+                            vec![Rc::new(Object::Int(ffi_id as i64)), open_object.unwrap()];
+
+                        return Ok(Rc::new(Object::Array(RefCell::new(Array {
+                            name: "todo".to_string(),
+                            elements: elements,
+                        }))));
+                    }
+                    _ => {
+                        return Err(format!("expected path to be str, got {}", path_obj.get_type()))
+                    }
+                }
+            }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),
         }
