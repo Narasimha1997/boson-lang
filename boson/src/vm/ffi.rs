@@ -140,4 +140,9 @@ impl BosonFFI {
             Ok(read_result)
         }
     }
+
+    pub fn clear_table(&mut self) {
+        // clear all modules upon exit
+        self.lib_table.clear();
+    }
 }

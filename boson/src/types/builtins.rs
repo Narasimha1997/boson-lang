@@ -1379,6 +1379,35 @@ impl BuiltinKind {
                 }
             }
 
+            BuiltinKind::DynlibClose => {
+                if args.len() != 2 {
+                    return Err(format!(
+                        "libffi_open() takes 2 argument, provided {}",
+                        args.len()
+                    ));
+                }
+
+                let path_obj = args[0].as_ref();
+                match path_obj {
+                    Object::Int(fd) => {
+                        let ffi_close_result = ffi.unload_dynlib(*fd as usize, args[1].clone());
+                        if ffi_close_result.is_err() {
+                            return Err(ffi_close_result.unwrap_err());
+                        }
+
+                        let close_object = ffi_close_result.unwrap();
+                        if close_object.is_err() {
+                            return Err(close_object.unwrap_err().message);
+                        }
+
+                        return Ok(close_object.unwrap());
+                    }
+                    _ => {
+                        return Err(format!("expected descriptor to be int {}", path_obj.get_type()))
+                    }
+                }
+            }
+
             _ => return Err("Trying to invoke invalid builtin".to_string()),
         }
     }

@@ -27,6 +27,17 @@ use crate::types::object;
 
 use object::Object;
 
+// defer - taken from: https://stackoverflow.com/questions/29963449/golang-like-defer-in-rust
+
+struct ScopeCall<F: FnOnce()> {
+    c: Option<F>
+}
+impl<F: FnOnce()> Drop for ScopeCall<F> {
+    fn drop(&mut self) {
+        self.c.take().unwrap()()
+    }
+}
+
 pub struct BosonVM {
     pub constants: ConstantPool,
     pub globals: GlobalPool,
@@ -104,6 +115,7 @@ impl BosonVM {
         pop_last: bool,
         break_on_ret: bool,
     ) -> Result<Rc<Object>, VMError> {
+
         while self.call_stack.top_ref().has_instructions() {
             let mut frame = self.call_stack.top();
 
