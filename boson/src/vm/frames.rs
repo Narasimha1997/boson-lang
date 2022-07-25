@@ -20,8 +20,8 @@ use subroutine::Subroutine;
 
 #[derive(Debug, Clone)]
 pub struct ExceptionHandler {
-    exception_handler: Rc<ClosureContext>,
-    finally_handler: Option<Rc<ClosureContext>>
+    pub exception_handler: Rc<ClosureContext>,
+    pub finally_handler: Option<Rc<ClosureContext>>
 }
 
 pub type ExceptionHandleStack = Vec<ExceptionHandler>;

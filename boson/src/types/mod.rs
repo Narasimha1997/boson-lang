@@ -8,3 +8,4 @@ pub mod iter;
 pub mod exception;
 pub mod buffer;
 pub mod th;
+pub mod dyn_module;

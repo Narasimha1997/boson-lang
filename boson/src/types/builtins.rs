@@ -8,20 +8,21 @@ use std::rc::Rc;
 use crate::api;
 use crate::api::BosonLang;
 use crate::compiler;
+use crate::config;
 use crate::types::array;
 use crate::types::buffer;
 use crate::types::hash;
 use crate::types::iter;
-use crate::config;
 use crate::types::object;
 use crate::vm;
 
 use compiler::symtab::ConstantPool;
+use config::ENABLE_CONCURRENCY;
+use vm::ffi::BosonFFI;
 use vm::global::GlobalPool;
 use vm::thread::BosonThreads;
 use vm::thread::ThreadParams;
 use vm::BosonVM;
-use config::ENABLE_CONCURRENCY;
 
 use api::Platform;
 use array::Array;
@@ -72,6 +73,10 @@ pub enum BuiltinKind {
     SRead,
     Wait,
     BytecodeEval,
+    DynlibOpen,
+    DynlibRead,
+    DynlibWrite,
+    DynlibClose,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -135,6 +140,10 @@ impl BuiltinKind {
             BuiltinKind::SWrite => "stdout".to_string(),
             BuiltinKind::FRead => "fread".to_string(),
             BuiltinKind::BytecodeEval => "eval_bytecode".to_string(),
+            BuiltinKind::DynlibOpen => "libffi_open".to_string(),
+            BuiltinKind::DynlibClose => "libffi_close".to_string(),
+            BuiltinKind::DynlibRead => "libffi_read".to_string(),
+            BuiltinKind::DynlibWrite => "libffi_write".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -146,6 +155,7 @@ impl BuiltinKind {
         gp: &mut GlobalPool,
         c: &mut ConstantPool,
         th: &mut BosonThreads,
+        ffi: &mut BosonFFI,
     ) -> Result<Rc<Object>, String> {
         match self {
             BuiltinKind::Print => {
@@ -963,7 +973,7 @@ impl BuiltinKind {
                     }
                     (Object::Builtins(func), Object::Array(params)) => {
                         let params_vec = params.borrow().elements.clone();
-                        let exec_result = func.exec(params_vec, platform, gp, c, th);
+                        let exec_result = func.exec(params_vec, platform, gp, c, th, ffi);
                         return exec_result;
                     }
                     _ => {
@@ -977,8 +987,7 @@ impl BuiltinKind {
             }
 
             BuiltinKind::CallAsync => {
-
-                if ! ENABLE_CONCURRENCY {
+                if !ENABLE_CONCURRENCY {
                     return Err(format!("BosonVM has concurrency disabled."));
                 }
 
@@ -1058,8 +1067,7 @@ impl BuiltinKind {
                 return Ok(Rc::new(Object::Str(result.unwrap())));
             }
             BuiltinKind::Wait => {
-
-                if ! ENABLE_CONCURRENCY {
+                if !ENABLE_CONCURRENCY {
                     return Err(format!("BosonVM has concurrency disabled."));
                 }
 
@@ -1331,6 +1339,140 @@ impl BuiltinKind {
                     }
                     _ => {
                         return Err(format!(""));
+                    }
+                }
+            }
+
+            BuiltinKind::DynlibOpen => {
+                if args.len() != 2 {
+                    return Err(format!(
+                        "libffi_open() takes 2 argument, provided {}",
+                        args.len()
+                    ));
+                }
+
+                let path_obj = args[0].as_ref();
+                match path_obj {
+                    Object::Str(path_str) => {
+                        let ffi_open_result = ffi.load_dynlib(path_str, args[1].clone());
+                        if ffi_open_result.is_err() {
+                            return Err(ffi_open_result.unwrap_err());
+                        }
+
+                        let (ffi_id, open_object) = ffi_open_result.unwrap();
+                        if open_object.is_err() {
+                            return Err(open_object.unwrap_err().message);
+                        }
+
+                        let elements =
+                            vec![Rc::new(Object::Int(ffi_id as i64)), open_object.unwrap()];
+
+                        return Ok(Rc::new(Object::Array(RefCell::new(Array {
+                            name: "todo".to_string(),
+                            elements: elements,
+                        }))));
+                    }
+                    _ => {
+                        return Err(format!(
+                            "expected path to be str, got {}",
+                            path_obj.get_type()
+                        ))
+                    }
+                }
+            }
+
+            BuiltinKind::DynlibClose => {
+                if args.len() != 2 {
+                    return Err(format!(
+                        "libffi_close() takes 2 argument, provided {}",
+                        args.len()
+                    ));
+                }
+
+                let path_obj = args[0].as_ref();
+                match path_obj {
+                    Object::Int(fd) => {
+                        let ffi_close_result = ffi.unload_dynlib(*fd as usize, args[1].clone());
+                        if ffi_close_result.is_err() {
+                            return Err(ffi_close_result.unwrap_err());
+                        }
+
+                        let close_object = ffi_close_result.unwrap();
+                        if close_object.is_err() {
+                            return Err(close_object.unwrap_err().message);
+                        }
+
+                        return Ok(close_object.unwrap());
+                    }
+                    _ => {
+                        return Err(format!(
+                            "expected descriptor to be int {}",
+                            path_obj.get_type()
+                        ))
+                    }
+                }
+            }
+
+            BuiltinKind::DynlibWrite => {
+                if args.len() != 2 {
+                    return Err(format!(
+                        "libffi_write() takes 2 argument, provided {}",
+                        args.len()
+                    ));
+                }
+
+                let path_obj = args[0].as_ref();
+                match path_obj {
+                    Object::Int(fd) => {
+                        let ffi_write_result = ffi.write(*fd as usize, args[1].clone());
+                        if ffi_write_result.is_err() {
+                            return Err(ffi_write_result.unwrap_err());
+                        }
+
+                        let write_object = ffi_write_result.unwrap();
+                        if write_object.is_err() {
+                            return Err(write_object.unwrap_err().message);
+                        }
+
+                        return Ok(write_object.unwrap());
+                    }
+                    _ => {
+                        return Err(format!(
+                            "expected descriptor to be int {}",
+                            path_obj.get_type()
+                        ))
+                    }
+                }
+            }
+
+            BuiltinKind::DynlibRead => {
+                if args.len() != 2 {
+                    return Err(format!(
+                        "libffi_read() takes 2 argument, provided {}",
+                        args.len()
+                    ));
+                }
+
+                let path_obj = args[0].as_ref();
+                match path_obj {
+                    Object::Int(fd) => {
+                        let ffi_read_result = ffi.read(*fd as usize, args[1].clone());
+                        if ffi_read_result.is_err() {
+                            return Err(ffi_read_result.unwrap_err());
+                        }
+
+                        let read_object = ffi_read_result.unwrap();
+                        if read_object.is_err() {
+                            return Err(read_object.unwrap_err().message);
+                        }
+
+                        return Ok(read_object.unwrap());
+                    }
+                    _ => {
+                        return Err(format!(
+                            "expected descriptor to be int {}",
+                            path_obj.get_type()
+                        ))
                     }
                 }
             }

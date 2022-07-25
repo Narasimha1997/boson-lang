@@ -1,6 +1,7 @@
 pub mod alu;
 pub mod controls;
 pub mod errors;
+pub mod ffi;
 pub mod frames;
 pub mod global;
 pub mod stack;
@@ -26,12 +27,24 @@ use crate::types::object;
 
 use object::Object;
 
+// defer - taken from: https://stackoverflow.com/questions/29963449/golang-like-defer-in-rust
+
+struct ScopeCall<F: FnOnce()> {
+    c: Option<F>
+}
+impl<F: FnOnce()> Drop for ScopeCall<F> {
+    fn drop(&mut self) {
+        self.c.take().unwrap()()
+    }
+}
+
 pub struct BosonVM {
     pub constants: ConstantPool,
     pub globals: GlobalPool,
     pub data_stack: DataStack,
     pub call_stack: CallStack,
     pub threads: thread::BosonThreads,
+    pub vm_ffi: ffi::BosonFFI,
 }
 
 impl BosonVM {
@@ -51,6 +64,7 @@ impl BosonVM {
             data_stack: data_stack,
             globals: globals,
             threads: thread::BosonThreads::new_empty(),
+            vm_ffi: ffi::BosonFFI::empty(),
         };
     }
 
@@ -68,6 +82,7 @@ impl BosonVM {
             data_stack: data_stack,
             globals: globals,
             threads: thread::BosonThreads::new_empty(),
+            vm_ffi: ffi::BosonFFI::empty(),
         };
     }
 
@@ -81,6 +96,7 @@ impl BosonVM {
             data_stack: data_stack,
             globals: globals,
             threads: thread::BosonThreads::new_empty(),
+            vm_ffi: ffi::BosonFFI::empty(),
         };
     }
 
@@ -99,6 +115,7 @@ impl BosonVM {
         pop_last: bool,
         break_on_ret: bool,
     ) -> Result<Rc<Object>, VMError> {
+
         while self.call_stack.top_ref().has_instructions() {
             let mut frame = self.call_stack.top();
 
@@ -298,7 +315,8 @@ impl BosonVM {
                         &mut self.globals,
                         &mut self.constants,
                         platform,
-                        &mut self.threads
+                        &mut self.threads,
+                        &mut self.vm_ffi,
                     );
 
                     if result.is_err() {
@@ -338,7 +356,6 @@ impl BosonVM {
 
                     frame.farword_ip(next);
                 }
-
 
                 InstructionKind::ICallAsync => {
                     let n_args = operands[0];
@@ -489,7 +506,8 @@ impl BosonVM {
                         &mut self.globals,
                         &mut self.constants,
                         &mut self.threads,
-                        false
+                        &mut self.vm_ffi,
+                        false,
                     );
 
                     if result.is_some() {
@@ -507,7 +525,8 @@ impl BosonVM {
                         &mut self.globals,
                         &mut self.constants,
                         &mut self.threads,
-                        true
+                        &mut self.vm_ffi,
+                        true,
                     );
 
                     if result.is_some() {
@@ -519,11 +538,7 @@ impl BosonVM {
 
                 InstructionKind::IGetAttr => {
                     let n_attrs = operands[0];
-                    let result = Controls::get_attr(
-                        &mut self.data_stack,
-                        &inst,
-                        n_attrs
-                    );
+                    let result = Controls::get_attr(&mut self.data_stack, &inst, n_attrs);
 
                     if result.is_some() {
                         return Err(result.unwrap());
@@ -536,11 +551,8 @@ impl BosonVM {
                     let n_attrs = operands[0];
                     let n_params = operands[1];
 
-                    let result = Controls::call_attr(
-                        &mut self.data_stack,
-                        &inst,
-                        n_attrs, n_params
-                    );
+                    let result =
+                        Controls::call_attr(&mut self.data_stack, &inst, n_attrs, n_params);
 
                     if result.is_some() {
                         return Err(result.unwrap());
@@ -622,7 +634,8 @@ impl BosonVM {
             &mut vm_instance.globals,
             &mut vm_instance.constants,
             platform,
-            &mut vm_instance.threads
+            &mut vm_instance.threads,
+            &mut vm_instance.vm_ffi,
         );
 
         if exec_frame.is_err() {
