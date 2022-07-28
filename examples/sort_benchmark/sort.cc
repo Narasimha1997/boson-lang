@@ -5,6 +5,11 @@
 #include <chrono>
 
 using namespace std::chrono;
+using namespace std;
+
+#define m_time() chrono::high_resolution_clock::now()
+#define m_diff(end, start) duration_cast<milliseconds>(end - start).count()
+#define m_sort(vec) sort(vec->begin(), vec->end())
 
 float rand_f()
 {
@@ -14,15 +19,14 @@ float rand_f()
 
 int main(int argc, char **args)
 {
-    std::vector<float> *vec = new std::vector<float>(1000000);
-
-    auto start = high_resolution_clock::now();
+    auto vec = new vector<float>(1000000);
+    auto start = m_time();
     for (int i = 0; i < 1000000; i++)
     {
         vec->push_back(rand_f());
     }
-    std::sort(vec->begin(), vec->end());
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(end - start);
-    std::cout << duration.count() << " ms"<<std::endl;
+    m_sort(vec);
+    auto end = m_time();
+    auto time = m_diff(end, start);
+    std::cout << time << " ms"<<std::endl;
 }
