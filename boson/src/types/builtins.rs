@@ -6,6 +6,8 @@ use std::process;
 use std::rc::Rc;
 
 use crate::api;
+extern crate rand;
+
 use crate::api::BosonLang;
 use crate::compiler;
 use crate::config;
@@ -28,6 +30,7 @@ use api::Platform;
 use array::Array;
 use hash::HashTable;
 use object::Object;
+use rand::Rng;
 
 #[repr(u8)]
 #[derive(PartialEq, Clone, Debug, Eq, Copy)]
@@ -77,6 +80,7 @@ pub enum BuiltinKind {
     DynlibRead,
     DynlibWrite,
     DynlibClose,
+    Rand,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -144,6 +148,7 @@ impl BuiltinKind {
             BuiltinKind::DynlibClose => "libffi_close".to_string(),
             BuiltinKind::DynlibRead => "libffi_read".to_string(),
             BuiltinKind::DynlibWrite => "libffi_write".to_string(),
+            BuiltinKind::Rand => "rand".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -1474,6 +1479,36 @@ impl BuiltinKind {
                             path_obj.get_type()
                         ))
                     }
+                }
+            }
+
+            BuiltinKind::Rand => {
+                if args.len() != 0 && args.len() != 2 {
+                    return Err(format!(
+                        "rand() function either zero or two arguments, provided {}",
+                        args.len()
+                    ));
+                }
+
+                if args.len() == 2 {
+                    let (lb, ub) = match (args[0].as_ref(), args[1].as_ref()) {
+                        (Object::Int(i1), Object::Int(i2)) => (*i1 as f64, *i2 as f64),
+                        (Object::Float(f1), Object::Float(f2)) => (*f1 as f64, *f2 as f64),
+                        (_, _) => {
+                            return Err(format!(
+                                "rand() function takes int or float as argument, but got "
+                            ))
+                        }
+                    };
+
+                    let mut generator = rand::thread_rng();
+                    let result = generator.gen_range(lb, ub);
+
+                    return Ok(Rc::new(Object::Float(result)));
+                } else {
+                    let mut generator = rand::thread_rng();
+                    let result = generator.gen();
+                    return Ok(Rc::new(Object::Float(result)));
                 }
             }
 
