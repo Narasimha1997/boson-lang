@@ -84,6 +84,7 @@ pub enum BuiltinKind {
     DynlibClose,
     Rand,
     Sort,
+    SetAt,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -153,6 +154,7 @@ impl BuiltinKind {
             BuiltinKind::DynlibWrite => "libffi_write".to_string(),
             BuiltinKind::Rand => "rand".to_string(),
             BuiltinKind::Sort => "sort".to_string(),
+            BuiltinKind::SetAt => "set_at".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -1536,6 +1538,28 @@ impl BuiltinKind {
                 }
 
                 Ok(Rc::new(Object::Noval))
+            }
+
+            BuiltinKind::SetAt => {
+                if args.len() != 3 {
+                    return Err(format!(
+                        "set_at() requires three parameters, got {}",
+                        args.len()
+                    ));
+                }
+
+                match (args[0].as_ref(), args[1].as_ref(), args[2].as_ref()) {
+                    (Object::Array(arr), Object::Int(i), _) => {
+                        arr.borrow_mut().set_object(*i as usize, args[2].clone());
+                        return Ok(Rc::new(Object::Int(*i)));
+                    }
+                    (_, _, _) => {
+                        return Err(format!(
+                            "set_at() expects array, int and any as parameters but got {}, {} and {}",
+                            args[0].get_type(), args[1].get_type(), args[2].get_type()
+                        ));
+                    }
+                }
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),
