@@ -102,9 +102,9 @@ impl BosonThreads {
     pub fn create_thread_sandbox(
         &mut self,
         thread_params: ThreadParams,
-        platform: &Platform,
+        platform: &mut Platform,
     ) -> Result<u64, String> {
-        let new_platform = match platform.platform_type {
+        let mut new_platform = match platform.platform_type {
             PlatformKind::Native => BosonLang::prepare_native_platform(),
             _ => {
                 // TODO: re-iterate this section after web assembly support.
@@ -119,7 +119,7 @@ impl BosonThreads {
             let result = BosonVM::execute_sandbox(
                 thread_params.closure,
                 thread_params.params,
-                &new_platform,
+                &mut new_platform,
                 thread_params.globals,
                 thread_params.constants,
             );

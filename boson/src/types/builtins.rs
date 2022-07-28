@@ -1,3 +1,5 @@
+extern crate rand;
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -6,7 +8,8 @@ use std::process;
 use std::rc::Rc;
 
 use crate::api;
-extern crate rand;
+
+use rand::Rng;
 
 use crate::api::BosonLang;
 use crate::compiler;
@@ -30,7 +33,6 @@ use api::Platform;
 use array::Array;
 use hash::HashTable;
 use object::Object;
-use rand::Rng;
 
 #[repr(u8)]
 #[derive(PartialEq, Clone, Debug, Eq, Copy, PartialOrd)]
@@ -158,7 +160,7 @@ impl BuiltinKind {
     pub fn exec(
         &self,
         args: Vec<Rc<Object>>,
-        platform: &Platform,
+        platform: &mut Platform,
         gp: &mut GlobalPool,
         c: &mut ConstantPool,
         th: &mut BosonThreads,
@@ -1503,13 +1505,10 @@ impl BuiltinKind {
                         }
                     };
 
-                    let mut generator = rand::thread_rng();
-                    let result = generator.gen_range(lb, ub);
-
+                    let result = platform.rand_generator.gen_range(lb..ub);
                     return Ok(Rc::new(Object::Float(result)));
                 } else {
-                    let mut generator = rand::thread_rng();
-                    let result = generator.gen();
+                    let result = platform.rand_generator.gen();
                     return Ok(Rc::new(Object::Float(result)));
                 }
             }
