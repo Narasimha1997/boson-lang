@@ -33,7 +33,7 @@ use object::Object;
 use rand::Rng;
 
 #[repr(u8)]
-#[derive(PartialEq, Clone, Debug, Eq, Copy)]
+#[derive(PartialEq, Clone, Debug, Eq, Copy, PartialOrd)]
 pub enum BuiltinKind {
     Print,
     Truthy,
@@ -81,6 +81,7 @@ pub enum BuiltinKind {
     DynlibWrite,
     DynlibClose,
     Rand,
+    Sort,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -149,6 +150,7 @@ impl BuiltinKind {
             BuiltinKind::DynlibRead => "libffi_read".to_string(),
             BuiltinKind::DynlibWrite => "libffi_write".to_string(),
             BuiltinKind::Rand => "rand".to_string(),
+            BuiltinKind::Sort => "sort".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -1510,6 +1512,31 @@ impl BuiltinKind {
                     let result = generator.gen();
                     return Ok(Rc::new(Object::Float(result)));
                 }
+            }
+
+            BuiltinKind::Sort => {
+                if args.len() != 2 {
+                    return Err(format!("sort() function two arguments, got {}", args.len()));
+                }
+
+                let (mut array_ref, reverse) = match (args[0].as_ref(), args[1].as_ref()) {
+                    (Object::Array(arr), Object::Bool(b)) => (arr.borrow_mut(), *b),
+                    (_, _) => {
+                        return Err(format!(
+                            "sort() takes two parameters of type array and bool, but got {} and {}",
+                            args[0].get_type(),
+                            args[1].get_type()
+                        ))
+                    }
+                };
+
+                if reverse {
+                    array_ref.elements.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                } else {
+                    array_ref.elements.sort_by(|a, b| b.partial_cmp(a).unwrap())
+                }
+
+                Ok(Rc::new(Object::Noval))
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),
