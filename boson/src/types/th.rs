@@ -1,7 +1,7 @@
 use std::hash::Hash;
 use std::hash::Hasher;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialOrd)]
 pub struct ThreadBlock {
     // handle_id is a unique 64 bit ID for a thread.
     // handle_id will be assiociated with the thread handle stored as a hash-map

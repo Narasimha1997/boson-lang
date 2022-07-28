@@ -4,6 +4,8 @@ use crate::vm::errors::VMErrorKind;
 use std::hash::Hash;
 use std::hash::Hasher;
 
+use std::cmp::Ordering;
+
 #[derive(Clone, Debug)]
 pub struct Exception {
     handle_name: String,
@@ -43,5 +45,11 @@ impl PartialEq for Exception {
 impl Hash for Exception {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.handle_name.hash(state);
+    }
+}
+
+impl PartialOrd for Exception {
+    fn partial_cmp(&self, _other: &Exception) -> Option<Ordering> {
+        None
     }
 }

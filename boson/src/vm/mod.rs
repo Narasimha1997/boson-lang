@@ -111,7 +111,7 @@ impl BosonVM {
 
     pub fn eval_bytecode(
         &mut self,
-        platform: &Platform,
+        platform: &mut Platform,
         pop_last: bool,
         break_on_ret: bool,
     ) -> Result<Rc<Object>, VMError> {
@@ -603,7 +603,7 @@ impl BosonVM {
     pub fn execute_sandbox(
         closure: Rc<closure::ClosureContext>,
         params: Vec<Rc<Object>>,
-        platform: &Platform,
+        platform: &mut Platform,
         globals: GlobalPool,
         constants: ConstantPool,
     ) -> Result<Rc<Object>, VMError> {

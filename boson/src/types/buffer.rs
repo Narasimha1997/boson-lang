@@ -10,7 +10,7 @@ use byteorder::WriteBytesExt;
 
 use std::mem;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct Buffer {
     pub data: Vec<u8>,
     pub length: usize,

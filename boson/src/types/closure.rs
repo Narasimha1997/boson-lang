@@ -6,7 +6,7 @@ use crate::types::subroutine::Subroutine;
 use crate::types::object::Object;
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialOrd)]
 pub struct ClosureContext {
     pub compiled_fn: Rc<Subroutine>,
     pub free_objects: Vec<Rc<Object>>,

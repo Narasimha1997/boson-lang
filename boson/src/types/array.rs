@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use crate::types::object::Object;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialOrd)]
 pub struct Array {
     pub name: String,
     pub elements: Vec<Rc<Object>>,

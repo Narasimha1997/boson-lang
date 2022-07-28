@@ -8,7 +8,7 @@ use std::rc::Rc;
     Optimal performance not gaurenteed.
 */
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct ObjectIterator {
     pub idx: usize,
     pub size: usize,

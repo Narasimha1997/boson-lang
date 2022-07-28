@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 
 use crate::compiler::CompiledInstructions;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialOrd)]
 pub struct Subroutine {
     pub name: String,
     pub bytecode: CompiledInstructions,

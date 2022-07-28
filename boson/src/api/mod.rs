@@ -1,3 +1,5 @@
+extern crate rand;
+
 use crate::compiler::errors::CompileError;
 use crate::compiler::loader::BytecodeLoader;
 use crate::compiler::loader::BytecodeWriter;
@@ -13,6 +15,9 @@ use crate::vm::BosonVM;
 use std::env::Vars;
 use std::fmt;
 use std::rc::Rc;
+
+use rand::rngs::SmallRng;
+use rand::SeedableRng;
 
 pub mod native;
 
@@ -41,6 +46,7 @@ pub struct Platform {
     pub stdin_read: fn() -> Result<Vec<u8>, String>,
     pub stdout_write: fn(data: &Vec<u8>) -> Result<usize, String>,
     pub read_line: fn(display: Option<String>) -> Result<String, String>,
+    pub rand_generator: SmallRng,
 }
 
 impl fmt::Debug for Platform {
@@ -85,6 +91,7 @@ impl BosonLang {
             stdin_read: native::stdin_read,
             stdout_write: native::stdout_write,
             read_line: native::read_line,
+            rand_generator: SmallRng::from_entropy(),
         };
     }
 
@@ -205,7 +212,7 @@ impl BosonLang {
             .vm
             .as_mut()
             .unwrap()
-            .eval_bytecode(&self.platform, true, false);
+            .eval_bytecode(&mut self.platform, true, false);
 
         if result.is_err() {
             self.__display_error(ErrorKind::VMError(result.unwrap_err()));
@@ -289,9 +296,9 @@ impl BosonLang {
 
         // create VM and run:
         let mut boson_vm = BosonVM::new(&result.unwrap());
-        let platform = BosonLang::prepare_native_platform();
+        let mut platform = BosonLang::prepare_native_platform();
 
-        let result = boson_vm.eval_bytecode(&platform, true, false);
+        let result = boson_vm.eval_bytecode(&mut platform, true, false);
         if result.is_err() {
             let vm_error = result.unwrap_err();
             println!("Runtime Error:");

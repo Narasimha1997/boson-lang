@@ -10,6 +10,8 @@ use crate::types::array::Array;
 use crate::types::object::Object;
 use crate::types::object::AttributeResolver;
 
+use std::cmp::Ordering;
+
 #[derive(Clone, Debug)]
 pub struct HashTable {
     pub name: String,
@@ -234,5 +236,11 @@ impl AttributeResolver for HashTable {
                 ));
             }
         }
+    }
+}
+
+impl PartialOrd for HashTable {
+    fn partial_cmp(&self, _other: &HashTable) -> Option<Ordering> {
+       None
     }
 }

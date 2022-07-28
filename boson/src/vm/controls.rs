@@ -375,7 +375,7 @@ impl Controls {
         n_args: usize,
         global_pool: &mut GlobalPool,
         constants: &mut ConstantPool,
-        platform: &Platform,
+        platform: &mut Platform,
         threads: &mut thread::BosonThreads,
         ffi: &mut BosonFFI,
     ) -> Result<Option<RefCell<ExecutionFrame>>, VMError> {
@@ -773,7 +773,7 @@ impl Controls {
         n_args: usize,
         global_pool: &mut GlobalPool,
         constants: &mut ConstantPool,
-        platform: &Platform,
+        platform: &mut Platform,
         threads: &mut thread::BosonThreads,
         join: bool,
     ) -> Option<VMError> {
@@ -888,7 +888,7 @@ impl Controls {
     pub fn exec_shell(
         inst: &InstructionKind,
         ds: &mut DataStack,
-        platform: &Platform,
+        platform: &mut Platform,
         gp: &mut GlobalPool,
         c: &mut ConstantPool,
         th: &mut thread::BosonThreads,

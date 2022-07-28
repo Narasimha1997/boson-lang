@@ -331,6 +331,9 @@ You can use cargo test tools to run the test
 cargo test
 ```
 
+### Benchmarks
+Benchmarks are still under implementation
+
 ### Credits
 1. [Monkey lang](https://monkeylang.org/)
 2. [Monkey lang rust version](https://github.com/wadackel/rs-monkey-lang)

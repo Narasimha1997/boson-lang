@@ -1,3 +1,5 @@
+extern crate rand;
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -6,6 +8,9 @@ use std::process;
 use std::rc::Rc;
 
 use crate::api;
+
+use rand::Rng;
+
 use crate::api::BosonLang;
 use crate::compiler;
 use crate::config;
@@ -30,7 +35,7 @@ use hash::HashTable;
 use object::Object;
 
 #[repr(u8)]
-#[derive(PartialEq, Clone, Debug, Eq, Copy)]
+#[derive(PartialEq, Clone, Debug, Eq, Copy, PartialOrd)]
 pub enum BuiltinKind {
     Print,
     Truthy,
@@ -77,6 +82,9 @@ pub enum BuiltinKind {
     DynlibRead,
     DynlibWrite,
     DynlibClose,
+    Rand,
+    Sort,
+    SetAt,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -144,6 +152,9 @@ impl BuiltinKind {
             BuiltinKind::DynlibClose => "libffi_close".to_string(),
             BuiltinKind::DynlibRead => "libffi_read".to_string(),
             BuiltinKind::DynlibWrite => "libffi_write".to_string(),
+            BuiltinKind::Rand => "rand".to_string(),
+            BuiltinKind::Sort => "sort".to_string(),
+            BuiltinKind::SetAt => "set_at".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -151,7 +162,7 @@ impl BuiltinKind {
     pub fn exec(
         &self,
         args: Vec<Rc<Object>>,
-        platform: &Platform,
+        platform: &mut Platform,
         gp: &mut GlobalPool,
         c: &mut ConstantPool,
         th: &mut BosonThreads,
@@ -1473,6 +1484,80 @@ impl BuiltinKind {
                             "expected descriptor to be int {}",
                             path_obj.get_type()
                         ))
+                    }
+                }
+            }
+
+            BuiltinKind::Rand => {
+                if args.len() != 0 && args.len() != 2 {
+                    return Err(format!(
+                        "rand() function either zero or two arguments, provided {}",
+                        args.len()
+                    ));
+                }
+
+                if args.len() == 2 {
+                    let (lb, ub) = match (args[0].as_ref(), args[1].as_ref()) {
+                        (Object::Int(i1), Object::Int(i2)) => (*i1 as f64, *i2 as f64),
+                        (Object::Float(f1), Object::Float(f2)) => (*f1 as f64, *f2 as f64),
+                        (_, _) => {
+                            return Err(format!(
+                                "rand() function takes int or float as argument, but got "
+                            ))
+                        }
+                    };
+
+                    let result = platform.rand_generator.gen_range(lb..ub);
+                    return Ok(Rc::new(Object::Float(result)));
+                } else {
+                    let result = platform.rand_generator.gen();
+                    return Ok(Rc::new(Object::Float(result)));
+                }
+            }
+
+            BuiltinKind::Sort => {
+                if args.len() != 2 {
+                    return Err(format!("sort() function two arguments, got {}", args.len()));
+                }
+
+                let (mut array_ref, reverse) = match (args[0].as_ref(), args[1].as_ref()) {
+                    (Object::Array(arr), Object::Bool(b)) => (arr.borrow_mut(), *b),
+                    (_, _) => {
+                        return Err(format!(
+                            "sort() takes two parameters of type array and bool, but got {} and {}",
+                            args[0].get_type(),
+                            args[1].get_type()
+                        ))
+                    }
+                };
+
+                if reverse {
+                    array_ref.elements.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                } else {
+                    array_ref.elements.sort_by(|a, b| b.partial_cmp(a).unwrap())
+                }
+
+                Ok(Rc::new(Object::Noval))
+            }
+
+            BuiltinKind::SetAt => {
+                if args.len() != 3 {
+                    return Err(format!(
+                        "set_at() requires three parameters, got {}",
+                        args.len()
+                    ));
+                }
+
+                match (args[0].as_ref(), args[1].as_ref(), args[2].as_ref()) {
+                    (Object::Array(arr), Object::Int(i), _) => {
+                        arr.borrow_mut().set_object(*i as usize, args[2].clone());
+                        return Ok(Rc::new(Object::Int(*i)));
+                    }
+                    (_, _, _) => {
+                        return Err(format!(
+                            "set_at() expects array, int and any as parameters but got {}, {} and {}",
+                            args[0].get_type(), args[1].get_type(), args[2].get_type()
+                        ));
                     }
                 }
             }

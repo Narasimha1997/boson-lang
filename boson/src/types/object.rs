@@ -25,15 +25,15 @@ pub trait AttributeResolver {
     ) -> Result<Rc<Object>, String>;
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum Object {
     Noval,
     Int(i64),
     Bool(bool),
     Char(char),
     Str(String),
-    Byte(u8),
     Float(f64),
+    Byte(u8),
     Subroutine(Rc<Subroutine>),
     ClosureContext(Rc<ClosureContext>),
     Array(RefCell<Array>),
