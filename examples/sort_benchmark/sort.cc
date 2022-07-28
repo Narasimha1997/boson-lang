@@ -28,5 +28,5 @@ int main(int argc, char **args)
     m_sort(vec);
     auto end = m_time();
     auto time = m_diff(end, start);
-    std::cout << time << " ms"<<std::endl;
+    cout << time << " ms"<<std::endl;
 }
