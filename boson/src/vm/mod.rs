@@ -30,7 +30,7 @@ use object::Object;
 // defer - taken from: https://stackoverflow.com/questions/29963449/golang-like-defer-in-rust
 
 struct ScopeCall<F: FnOnce()> {
-    c: Option<F>
+    c: Option<F>,
 }
 impl<F: FnOnce()> Drop for ScopeCall<F> {
     fn drop(&mut self) {
@@ -115,7 +115,6 @@ impl BosonVM {
         pop_last: bool,
         break_on_ret: bool,
     ) -> Result<Rc<Object>, VMError> {
-
         while self.call_stack.top_ref().has_instructions() {
             let mut frame = self.call_stack.top();
 
@@ -551,8 +550,17 @@ impl BosonVM {
                     let n_attrs = operands[0];
                     let n_params = operands[1];
 
-                    let result =
-                        Controls::call_attr(&mut self.data_stack, &inst, n_attrs, n_params);
+                    let result = Controls::call_attr(
+                        &mut self.data_stack,
+                        &inst,
+                        n_attrs,
+                        n_params,
+                        platform,
+                        &mut self.globals,
+                        &mut self.constants,
+                        &mut self.threads,
+                        &mut self.vm_ffi,
+                    );
 
                     if result.is_some() {
                         return Err(result.unwrap());

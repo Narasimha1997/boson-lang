@@ -991,6 +991,11 @@ impl Controls {
         inst: &InstructionKind,
         n_attrs: usize,
         n_params: usize,
+        platform: &mut Platform,
+        gp: &mut GlobalPool,
+        c: &mut ConstantPool,
+        th: &mut thread::BosonThreads,
+        ffi: &mut BosonFFI,
     ) -> Option<VMError> {
         // pop N objects, which act as attributes
         let pop_res = Controls::pop_n(ds, n_attrs, inst);
@@ -1021,7 +1026,7 @@ impl Controls {
         match parent_obj.as_ref() {
            Object::HashTable(ht) => {
                let call_result = ht.borrow_mut().resolve_call_attr(
-                   &attrs, &params
+                   &attrs, &params, platform, gp, c, th, ffi
                );
 
                if call_result.is_err() {

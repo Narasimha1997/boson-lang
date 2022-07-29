@@ -1,6 +1,8 @@
 extern crate boson;
 
-use boson::types::{dyn_module::DynamicModuleResult, object::Object};
+use boson::types::{
+    dyn_module::DynamicModuleInternalError, dyn_module::DynamicModuleResult, object::Object,
+};
 use std::rc::Rc;
 
 #[no_mangle]
@@ -25,4 +27,27 @@ pub fn write(_write_params: Rc<Object>) -> DynamicModuleResult {
 pub fn read(_read_params: Rc<Object>) -> DynamicModuleResult {
     println!("hello world (read)");
     Ok(Rc::new(Object::Str(format!("called read()"))))
+}
+
+#[no_mangle]
+pub fn exec(method: String, params: &Vec<Rc<Object>>) -> DynamicModuleResult {
+    match method.as_ref() {
+        "greet_me" => {
+            if params.len() != 1 {
+                return Err(DynamicModuleInternalError {
+                    cause: format!("no_param"),
+                    message: format!("parameter 'name' not found"),
+                });
+            }
+
+            let name = params[0].as_ref().describe();
+            return Ok(Rc::new(Object::Str(format!("Hello! {}", name))));
+        }
+        _ => {
+            return Err(DynamicModuleInternalError {
+                cause: format!("no_method"),
+                message: format!("method {} not found", method),
+            })
+        }
+    }
 }

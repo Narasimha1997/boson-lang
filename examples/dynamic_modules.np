@@ -1,13 +1,6 @@
 
 # open a rust module
-const result = libffi_open("./target/debug/libhello_world.so", none);
-const ffi_fd = result[0];
+const result = mod_open("./target/debug/libhello_world.so", none);
+const hello = result[0];
 
-# write
-libffi_write(ffi_fd, none);
-
-# read
-libffi_read(ffi_fd, none);
-
-# close
-libffi_close(ffi_fd, none);
+println(hello.greet_me("Prasanna"));

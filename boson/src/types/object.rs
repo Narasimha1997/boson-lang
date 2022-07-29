@@ -13,6 +13,18 @@ use crate::types::hash::HashTable;
 use crate::types::iter::ObjectIterator;
 use crate::types::subroutine::Subroutine;
 use crate::types::th::ThreadBlock;
+use crate::types::dyn_module::NativeModuleRef;
+
+// needed by attribute function call resolver
+use crate::api;
+use crate::compiler;
+use crate::vm;
+
+use api::Platform;
+use compiler::symtab::ConstantPool;
+use vm::ffi::BosonFFI;
+use vm::global::GlobalPool;
+use vm::thread::BosonThreads;
 
 pub trait AttributeResolver {
     fn attrs(&self) -> Vec<Rc<Object>>;
@@ -22,6 +34,11 @@ pub trait AttributeResolver {
         &mut self,
         keys: &Vec<Rc<Object>>,
         args: &Vec<Rc<Object>>,
+        platform: &mut Platform,
+        gp: &mut GlobalPool,
+        c: &mut ConstantPool,
+        th: &mut BosonThreads,
+        ffi: &mut BosonFFI,
     ) -> Result<Rc<Object>, String>;
 }
 
@@ -43,7 +60,7 @@ pub enum Object {
     Iter(RefCell<ObjectIterator>),
     Exception(Rc<Exception>),
     Thread(RefCell<ThreadBlock>),
-    NativeModuleHandle(i64),
+    NativeModule(NativeModuleRef),
 }
 
 impl Eq for Object {}
@@ -282,11 +299,16 @@ impl AttributeResolver for Object {
         &mut self,
         keys: &Vec<Rc<Object>>,
         args: &Vec<Rc<Object>>,
+        platform: &mut Platform,
+        gp: &mut GlobalPool,
+        c: &mut ConstantPool,
+        th: &mut BosonThreads,
+        ffi: &mut BosonFFI,
     ) -> Result<Rc<Object>, String> {
         match self {
-            Object::HashTable(ht) => {
-                return ht.borrow_mut().resolve_call_attr(&keys, &args)
-            }
+            Object::HashTable(ht) => return ht.borrow_mut().resolve_call_attr(
+                &keys, &args, platform, gp, c, th, ffi
+            ),
             _ => {
                 return Err(format!(
                     "No function attributes found for type {}",

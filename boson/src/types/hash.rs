@@ -7,8 +7,19 @@ use std::rc::Rc;
 use std::vec::Vec;
 
 use crate::types::array::Array;
-use crate::types::object::Object;
 use crate::types::object::AttributeResolver;
+use crate::types::object::Object;
+
+// needed by attribute function call resolver
+use crate::api;
+use crate::compiler;
+use crate::vm;
+
+use api::Platform;
+use compiler::symtab::ConstantPool;
+use vm::ffi::BosonFFI;
+use vm::global::GlobalPool;
+use vm::thread::BosonThreads;
 
 use std::cmp::Ordering;
 
@@ -152,7 +163,6 @@ impl fmt::Display for HashTable {
 }
 
 impl AttributeResolver for HashTable {
-
     fn attrs(&self) -> Vec<Rc<Object>> {
         return vec![
             Rc::new(Object::Str(String::from("keys"))),
@@ -183,57 +193,60 @@ impl AttributeResolver for HashTable {
         return None;
     }
 
-    fn resolve_call_attr(&mut self, keys: &Vec<Rc<Object>>, args: &Vec<Rc<Object>>) -> Result<Rc<Object>, String> {
-
+    fn resolve_call_attr(
+        &mut self,
+        keys: &Vec<Rc<Object>>,
+        args: &Vec<Rc<Object>>,
+        _platform: &mut Platform,
+        _gp: &mut GlobalPool,
+        _c: &mut ConstantPool,
+        _th: &mut BosonThreads,
+        _ffi: &mut BosonFFI,
+    ) -> Result<Rc<Object>, String> {
         let key = &keys[0];
         match key.as_ref() {
-            Object::Str(st) => {
-                match st.as_ref() {
-                    "keys" => {
-                        if args.len() != 0 {
-                            return Err(format!(
-                                "keys() takes zero arguments, provided {}.",
-                                args.len()
-                            ));
-                        }
-        
-                        let key_array = self.keys();
-                        let array_obj = Array {
-                            elements: key_array,
-                            name: self.name.clone(),
-                        };
-        
-                        return Ok(Rc::new(Object::Array(RefCell::new(array_obj))));
-                    }
-                    "values" => {
-                        if args.len() != 0 {
-                            return Err(format!(
-                                "keys() takes zero arguments, provided {}.",
-                                args.len()
-                            ));
-                        }
-        
-                        let key_array = self.values();
-                        let array_obj = Array {
-                            elements: key_array,
-                            name: self.name.clone(),
-                        };
-        
-                        return Ok(Rc::new(Object::Array(RefCell::new(array_obj))));
-                    }
-                    _ => {
+            Object::Str(st) => match st.as_ref() {
+                "keys" => {
+                    if args.len() != 0 {
                         return Err(format!(
-                            "Attribute {} not found for type {}",
-                            key, "HashTable"
+                            "keys() takes zero arguments, provided {}.",
+                            args.len()
                         ));
                     }
+
+                    let key_array = self.keys();
+                    let array_obj = Array {
+                        elements: key_array,
+                        name: self.name.clone(),
+                    };
+
+                    return Ok(Rc::new(Object::Array(RefCell::new(array_obj))));
                 }
-            }
+                "values" => {
+                    if args.len() != 0 {
+                        return Err(format!(
+                            "keys() takes zero arguments, provided {}.",
+                            args.len()
+                        ));
+                    }
+
+                    let key_array = self.values();
+                    let array_obj = Array {
+                        elements: key_array,
+                        name: self.name.clone(),
+                    };
+
+                    return Ok(Rc::new(Object::Array(RefCell::new(array_obj))));
+                }
+                _ => {
+                    return Err(format!(
+                        "Attribute {} not found for type {}",
+                        key, "HashTable"
+                    ));
+                }
+            },
             _ => {
-                return Err(format!(
-                    "Expected string attribute, got {}",
-                    key.get_type()
-                ));
+                return Err(format!("Expected string attribute, got {}", key.get_type()));
             }
         }
     }
@@ -241,6 +254,6 @@ impl AttributeResolver for HashTable {
 
 impl PartialOrd for HashTable {
     fn partial_cmp(&self, _other: &HashTable) -> Option<Ordering> {
-       None
+        None
     }
 }

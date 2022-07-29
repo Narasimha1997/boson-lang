@@ -16,6 +16,7 @@ use crate::compiler;
 use crate::config;
 use crate::types::array;
 use crate::types::buffer;
+use crate::types::dyn_module;
 use crate::types::hash;
 use crate::types::iter;
 use crate::types::object;
@@ -148,10 +149,10 @@ impl BuiltinKind {
             BuiltinKind::SWrite => "stdout".to_string(),
             BuiltinKind::FRead => "fread".to_string(),
             BuiltinKind::BytecodeEval => "eval_bytecode".to_string(),
-            BuiltinKind::DynlibOpen => "libffi_open".to_string(),
-            BuiltinKind::DynlibClose => "libffi_close".to_string(),
-            BuiltinKind::DynlibRead => "libffi_read".to_string(),
-            BuiltinKind::DynlibWrite => "libffi_write".to_string(),
+            BuiltinKind::DynlibOpen => "mod_open".to_string(),
+            BuiltinKind::DynlibClose => "mod_close".to_string(),
+            BuiltinKind::DynlibRead => "mod_read".to_string(),
+            BuiltinKind::DynlibWrite => "mod_write".to_string(),
             BuiltinKind::Rand => "rand".to_string(),
             BuiltinKind::Sort => "sort".to_string(),
             BuiltinKind::SetAt => "set_at".to_string(),
@@ -1375,8 +1376,12 @@ impl BuiltinKind {
                             return Err(open_object.unwrap_err().message);
                         }
 
-                        let elements =
-                            vec![Rc::new(Object::Int(ffi_id as i64)), open_object.unwrap()];
+                        let elements = vec![
+                            Rc::new(Object::NativeModule(dyn_module::NativeModuleRef::new(
+                                ffi_id as i64,
+                            ))),
+                            open_object.unwrap(),
+                        ];
 
                         return Ok(Rc::new(Object::Array(RefCell::new(Array {
                             name: "todo".to_string(),
@@ -1402,8 +1407,9 @@ impl BuiltinKind {
 
                 let path_obj = args[0].as_ref();
                 match path_obj {
-                    Object::Int(fd) => {
-                        let ffi_close_result = ffi.unload_dynlib(*fd as usize, args[1].clone());
+                    Object::NativeModule(fd) => {
+                        let ffi_close_result =
+                            ffi.unload_dynlib(fd.handle as usize, args[1].clone());
                         if ffi_close_result.is_err() {
                             return Err(ffi_close_result.unwrap_err());
                         }
@@ -1434,8 +1440,8 @@ impl BuiltinKind {
 
                 let path_obj = args[0].as_ref();
                 match path_obj {
-                    Object::Int(fd) => {
-                        let ffi_write_result = ffi.write(*fd as usize, args[1].clone());
+                    Object::NativeModule(fd) => {
+                        let ffi_write_result = ffi.write(fd.handle as usize, args[1].clone());
                         if ffi_write_result.is_err() {
                             return Err(ffi_write_result.unwrap_err());
                         }
@@ -1466,8 +1472,8 @@ impl BuiltinKind {
 
                 let path_obj = args[0].as_ref();
                 match path_obj {
-                    Object::Int(fd) => {
-                        let ffi_read_result = ffi.read(*fd as usize, args[1].clone());
+                    Object::NativeModule(fd) => {
+                        let ffi_read_result = ffi.read(fd.handle as usize, args[1].clone());
                         if ffi_read_result.is_err() {
                             return Err(ffi_read_result.unwrap_err());
                         }
