@@ -1,3 +1,0 @@
-ffi load 1
-hello world (open)
-hello world (read)
