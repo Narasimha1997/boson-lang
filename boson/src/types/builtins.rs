@@ -1377,8 +1377,8 @@ impl BuiltinKind {
                         }
 
                         let elements = vec![
-                            Rc::new(Object::NativeModule(dyn_module::NativeModuleRef::new(
-                                ffi_id as i64,
+                            Rc::new(Object::NativeModule(RefCell::new(
+                                dyn_module::NativeModuleRef::new(ffi_id as i64),
                             ))),
                             open_object.unwrap(),
                         ];
@@ -1409,7 +1409,7 @@ impl BuiltinKind {
                 match path_obj {
                     Object::NativeModule(fd) => {
                         let ffi_close_result =
-                            ffi.unload_dynlib(fd.handle as usize, args[1].clone());
+                            ffi.unload_dynlib(fd.borrow().handle as usize, args[1].clone());
                         if ffi_close_result.is_err() {
                             return Err(ffi_close_result.unwrap_err());
                         }
@@ -1441,7 +1441,7 @@ impl BuiltinKind {
                 let path_obj = args[0].as_ref();
                 match path_obj {
                     Object::NativeModule(fd) => {
-                        let ffi_write_result = ffi.write(fd.handle as usize, args[1].clone());
+                        let ffi_write_result = ffi.write(fd.borrow().handle as usize, args[1].clone());
                         if ffi_write_result.is_err() {
                             return Err(ffi_write_result.unwrap_err());
                         }
@@ -1473,7 +1473,7 @@ impl BuiltinKind {
                 let path_obj = args[0].as_ref();
                 match path_obj {
                     Object::NativeModule(fd) => {
-                        let ffi_read_result = ffi.read(fd.handle as usize, args[1].clone());
+                        let ffi_read_result = ffi.read(fd.borrow().handle as usize, args[1].clone());
                         if ffi_read_result.is_err() {
                             return Err(ffi_read_result.unwrap_err());
                         }

@@ -157,9 +157,9 @@ impl BosonFFI {
             let exec_symbol_result: Result<
                 libloading::Symbol<ExecFunctionSymbol>,
                 libloading::Error,
-            > = handle.get(b"read");
+            > = handle.get(b"exec");
             if exec_symbol_result.is_err() {
-                return Err(format!("failed to call read on {}", descriptor));
+                return Err(format!("failed to call exec on {}", descriptor));
             }
 
             let exec_symbol = exec_symbol_result.unwrap();
