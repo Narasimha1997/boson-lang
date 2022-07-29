@@ -4,6 +4,7 @@ use crate::types::object;
 use std::env;
 use std::fs;
 use std::io;
+use std::path::Path;
 use std::process::Command;
 use std::rc::Rc;
 use std::time::SystemTime;
@@ -24,7 +25,6 @@ use std::time::Duration;
 /*
     Contains all the implementation of native built-ins
 */
-
 
 // Used in read_line function
 macro_rules! print_flush {
@@ -333,4 +333,26 @@ pub fn stdout_write(data: &Vec<u8>) -> Result<usize, String> {
     }
 
     return Ok(data.len());
+}
+
+pub fn get_stdlib_path() -> String {
+    let result = env::var("BOSON_STDLIB_PATH");
+    return if result.is_err() {
+        match env::consts::OS {
+            "windows" => Path::new("C:\\")
+                .join(Path::new("boson"))
+                .join(Path::new("lib"))
+                .to_str()
+                .unwrap()
+                .to_string(),
+            _ => Path::new("/usr")
+                .join(Path::new("local"))
+                .join(Path::new("lib").join(Path::new("boson")))
+                .to_str()
+                .unwrap()
+                .to_string(),
+        }
+    } else {
+        result.unwrap()
+    }
 }

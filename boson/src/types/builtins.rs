@@ -4,6 +4,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::hash::Hasher;
+use std::path::Path;
 use std::process;
 use std::rc::Rc;
 
@@ -149,10 +150,10 @@ impl BuiltinKind {
             BuiltinKind::SWrite => "stdout".to_string(),
             BuiltinKind::FRead => "fread".to_string(),
             BuiltinKind::BytecodeEval => "eval_bytecode".to_string(),
-            BuiltinKind::DynlibOpen => "mod_open".to_string(),
-            BuiltinKind::DynlibClose => "mod_close".to_string(),
-            BuiltinKind::DynlibRead => "mod_read".to_string(),
-            BuiltinKind::DynlibWrite => "mod_write".to_string(),
+            BuiltinKind::DynlibOpen => "mopen".to_string(),
+            BuiltinKind::DynlibClose => "mclose".to_string(),
+            BuiltinKind::DynlibRead => "mread".to_string(),
+            BuiltinKind::DynlibWrite => "mwrite".to_string(),
             BuiltinKind::Rand => "rand".to_string(),
             BuiltinKind::Sort => "sort".to_string(),
             BuiltinKind::SetAt => "set_at".to_string(),
@@ -1366,7 +1367,23 @@ impl BuiltinKind {
                 let path_obj = args[0].as_ref();
                 match path_obj {
                     Object::Str(path_str) => {
-                        let ffi_open_result = ffi.load_dynlib(path_str, args[1].clone());
+                        // process path string
+                        let processed_path = if path_str.starts_with("std::") {
+                            let stdlib_path_fn = platform.get_stdlib_path;
+                            let std_path = stdlib_path_fn();
+
+                            let mod_name = path_str[5..].to_string();
+
+                            Path::new(&std_path)
+                                .join(&mod_name)
+                                .to_str()
+                                .unwrap()
+                                .to_string()
+                        } else {
+                            path_str.to_string()
+                        };
+
+                        let ffi_open_result = ffi.load_dynlib(&processed_path, args[1].clone());
                         if ffi_open_result.is_err() {
                             return Err(ffi_open_result.unwrap_err());
                         }
@@ -1441,7 +1458,8 @@ impl BuiltinKind {
                 let path_obj = args[0].as_ref();
                 match path_obj {
                     Object::NativeModule(fd) => {
-                        let ffi_write_result = ffi.write(fd.borrow().handle as usize, args[1].clone());
+                        let ffi_write_result =
+                            ffi.write(fd.borrow().handle as usize, args[1].clone());
                         if ffi_write_result.is_err() {
                             return Err(ffi_write_result.unwrap_err());
                         }
@@ -1473,7 +1491,8 @@ impl BuiltinKind {
                 let path_obj = args[0].as_ref();
                 match path_obj {
                     Object::NativeModule(fd) => {
-                        let ffi_read_result = ffi.read(fd.borrow().handle as usize, args[1].clone());
+                        let ffi_read_result =
+                            ffi.read(fd.borrow().handle as usize, args[1].clone());
                         if ffi_read_result.is_err() {
                             return Err(ffi_read_result.unwrap_err());
                         }

@@ -1,6 +1,6 @@
 
 # open a rust module
-const result = mod_open("./target/debug/libhello_world.so", none);
+const result = mopen("./target/debug/libhello_world.so", none);
 const hello = result[0];
 
 println(hello.greet_me("Prasanna"));
