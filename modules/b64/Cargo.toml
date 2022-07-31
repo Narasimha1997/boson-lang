@@ -1,5 +1,5 @@
 [package]
-name = "hello-world"
+name = "b64"
 version = "0.0.1"
 authors = ["Narasimha1997 <yogaimpression@gmail.com>"]
 edition = "2018"
@@ -9,3 +9,4 @@ crate-type = ["rlib", "cdylib"]
 
 [dependencies]
 boson = { path = "../../boson" }
+base64 = "0.13.0"

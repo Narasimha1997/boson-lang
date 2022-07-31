@@ -38,6 +38,7 @@ pub struct Platform {
     pub get_platform_info: fn() -> Vec<String>,
     pub sleep: fn(duration_ms: &f64),
     pub sys_shell: fn() -> String,
+    pub get_stdlib_path: fn() -> String,
     pub fread:
         fn(path: String, start: Option<u64>, n_b: Option<u64>) -> Result<(Vec<u8>, u64), String>,
     pub fwrite: fn(path: String, data: &Vec<u8>) -> Result<u64, String>,
@@ -73,6 +74,7 @@ pub enum ErrorKind {
 
 impl BosonLang {
     pub fn prepare_native_platform() -> Platform {
+
         return Platform {
             platform_type: PlatformKind::Native,
             print: native::print,
@@ -82,6 +84,7 @@ impl BosonLang {
             get_envs: native::get_envs,
             get_unix_time: native::get_unix_time,
             get_platform_info: native::get_platform_info,
+            get_stdlib_path: native::get_stdlib_path,
             sleep: native::sleep,
             sys_shell: native::sys_shell,
             fread: native::fread,

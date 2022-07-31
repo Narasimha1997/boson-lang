@@ -10,11 +10,11 @@ use crate::types::object;
 use crate::types::th;
 use crate::vm::alu;
 use crate::vm::errors;
+use crate::vm::ffi::BosonFFI;
 use crate::vm::frames;
 use crate::vm::global;
 use crate::vm::stack;
 use crate::vm::thread;
-use crate::vm::ffi::BosonFFI;
 
 use std::cell::Ref;
 use std::cell::RefCell;
@@ -39,10 +39,10 @@ use global::GlobalPool;
 use hash::HashTable;
 use isa::InstructionKind;
 use iter::ObjectIterator;
+use object::AttributeResolver;
 use object::Object;
 use stack::DataStack;
 use th::ThreadBlock;
-use object::AttributeResolver;
 
 pub struct Controls {}
 
@@ -971,7 +971,7 @@ impl Controls {
                 attr_get_result.unwrap_err(),
                 VMErrorKind::AttributeError,
                 Some(inst.clone()),
-                0
+                0,
             ));
         }
 
@@ -991,6 +991,11 @@ impl Controls {
         inst: &InstructionKind,
         n_attrs: usize,
         n_params: usize,
+        platform: &mut Platform,
+        gp: &mut GlobalPool,
+        c: &mut ConstantPool,
+        th: &mut thread::BosonThreads,
+        ffi: &mut BosonFFI,
     ) -> Option<VMError> {
         // pop N objects, which act as attributes
         let pop_res = Controls::pop_n(ds, n_attrs, inst);
@@ -1018,28 +1023,13 @@ impl Controls {
         let mut params = param_pop_result.unwrap();
         params.reverse();
 
-        match parent_obj.as_ref() {
-           Object::HashTable(ht) => {
-               let call_result = ht.borrow_mut().resolve_call_attr(
-                   &attrs, &params
-               );
-
-               if call_result.is_err() {
-                   return Some(VMError::new(
-                       call_result.unwrap_err(),
-                       VMErrorKind::AttributeError,
-                       Some(inst.clone()),
-                       0
-                   ));
-               }
-
-               let object = call_result.unwrap();
-               // push the object
-               let push_result = ds.push_object(object, inst.clone());
-               if push_result.is_err() {
-                   return Some(push_result.unwrap_err());
-               }
-           }
+        let call_result = match parent_obj.as_ref() {
+            Object::HashTable(ht) => ht
+                .borrow_mut()
+                .resolve_call_attr(&attrs, &params, platform, gp, c, th, ffi),
+            Object::NativeModule(nt) => nt
+                .borrow_mut()
+                .resolve_call_attr(&attrs, &params, platform, gp, c, th, ffi),
             _ => {
                 return Some(VMError::new(
                     format!(
@@ -1051,6 +1041,22 @@ impl Controls {
                     0,
                 ));
             }
+        };
+
+        if call_result.is_err() {
+            return Some(VMError::new(
+                call_result.unwrap_err(),
+                VMErrorKind::AttributeError,
+                Some(inst.clone()),
+                0,
+            ));
+        }
+
+        let object = call_result.unwrap();
+        // push the object
+        let push_result = ds.push_object(object, inst.clone());
+        if push_result.is_err() {
+            return Some(push_result.unwrap_err());
         }
 
         return None;

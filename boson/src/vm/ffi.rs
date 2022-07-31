@@ -3,8 +3,8 @@ extern crate libloading;
 use crate::types::{dyn_module, object::Object};
 
 use dyn_module::{
-    CloseFunctionSymbol, DynamicModuleResult, OpenFunctionSymbol, ReadFunctionSymbol,
-    WriteFunctionSymbol,
+    CloseFunctionSymbol, DynamicModuleResult, ExecFunctionSymbol, OpenFunctionSymbol,
+    ReadFunctionSymbol, WriteFunctionSymbol,
 };
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -15,7 +15,6 @@ pub struct BosonFFI {
     objects_tracker: usize,
     lib_table: HashMap<usize, libloading::Library>,
 }
-
 
 impl BosonFFI {
     pub fn empty() -> Self {
@@ -31,7 +30,6 @@ impl BosonFFI {
         params: Rc<Object>,
     ) -> Result<(usize, DynamicModuleResult), FFIError> {
         unsafe {
-            println!("ffi load 1");
             let handle_result = libloading::Library::new(path.clone());
             if handle_result.is_err() {
                 return Err(format!(
@@ -138,6 +136,34 @@ impl BosonFFI {
             let read_symbol = read_symbol_result.unwrap();
             let read_result = read_symbol(params);
             Ok(read_result)
+        }
+    }
+
+    pub fn exec(
+        &mut self,
+        descriptor: usize,
+        method: String,
+        params: &Vec<Rc<Object>>,
+    ) -> Result<DynamicModuleResult, FFIError> {
+        unsafe {
+            let handle_opt = self.lib_table.get(&descriptor);
+            if handle_opt.is_none() {
+                return Err(format!("handle {} is not loaded", descriptor));
+            }
+
+            let handle = handle_opt.unwrap();
+
+            let exec_symbol_result: Result<
+                libloading::Symbol<ExecFunctionSymbol>,
+                libloading::Error,
+            > = handle.get(b"exec");
+            if exec_symbol_result.is_err() {
+                return Err(format!("failed to call exec on {}", descriptor));
+            }
+
+            let exec_symbol = exec_symbol_result.unwrap();
+            let exec_result = exec_symbol(method, params);
+            Ok(exec_result)
         }
     }
 

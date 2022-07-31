@@ -1,0 +1,9 @@
+
+const base64 = mopen("std::b64", none)[0];
+const test_buffer = bytes("hello, world!");
+
+const b64string = base64.encode(test_buffer);
+
+# verify against coreutil's 'base64'
+const result = ($ "printf 'hello, world!' | base64")[1]
+assert (result == b64string), "assert failed"

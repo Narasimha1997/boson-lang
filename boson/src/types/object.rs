@@ -8,11 +8,23 @@ use crate::types::array::Array;
 use crate::types::buffer::Buffer;
 use crate::types::builtins::BuiltinKind;
 use crate::types::closure::ClosureContext;
+use crate::types::dyn_module::NativeModuleRef;
 use crate::types::exception::Exception;
 use crate::types::hash::HashTable;
 use crate::types::iter::ObjectIterator;
 use crate::types::subroutine::Subroutine;
 use crate::types::th::ThreadBlock;
+
+// needed by attribute function call resolver
+use crate::api;
+use crate::compiler;
+use crate::vm;
+
+use api::Platform;
+use compiler::symtab::ConstantPool;
+use vm::ffi::BosonFFI;
+use vm::global::GlobalPool;
+use vm::thread::BosonThreads;
 
 pub trait AttributeResolver {
     fn attrs(&self) -> Vec<Rc<Object>>;
@@ -22,6 +34,11 @@ pub trait AttributeResolver {
         &mut self,
         keys: &Vec<Rc<Object>>,
         args: &Vec<Rc<Object>>,
+        platform: &mut Platform,
+        gp: &mut GlobalPool,
+        c: &mut ConstantPool,
+        th: &mut BosonThreads,
+        ffi: &mut BosonFFI,
     ) -> Result<Rc<Object>, String>;
 }
 
@@ -43,7 +60,7 @@ pub enum Object {
     Iter(RefCell<ObjectIterator>),
     Exception(Rc<Exception>),
     Thread(RefCell<ThreadBlock>),
-    NativeModuleHandle(i64),
+    NativeModule(RefCell<NativeModuleRef>),
 }
 
 impl Eq for Object {}
@@ -63,6 +80,7 @@ impl Hash for Object {
             Object::Exception(exc) => exc.hash(state),
             Object::Byte(byte) => byte.hash(state),
             Object::ByteBuffer(buff) => buff.borrow().hash(state),
+            Object::NativeModule(native) => native.borrow().handle.hash(state),
             // No hash for iterators and thread block
             _ => "undef".hash(state),
         }
@@ -87,6 +105,7 @@ impl Object {
             Object::Exception(exc) => exc.describe(),
             Object::ByteBuffer(buff) => buff.borrow().describe(),
             Object::Thread(th) => th.borrow().describe(),
+            Object::NativeModule(native) => native.borrow().describe(),
             _ => String::from("undef"),
         }
     }
@@ -107,6 +126,7 @@ impl Object {
             Object::Builtins(_) | Object::Subroutine(_) | Object::ClosureContext(_) => {
                 "func".to_string()
             }
+            Object::NativeModule(_) => "native".to_string(),
             _ => "unknown".to_string(),
         }
     }
@@ -282,10 +302,22 @@ impl AttributeResolver for Object {
         &mut self,
         keys: &Vec<Rc<Object>>,
         args: &Vec<Rc<Object>>,
+        platform: &mut Platform,
+        gp: &mut GlobalPool,
+        c: &mut ConstantPool,
+        th: &mut BosonThreads,
+        ffi: &mut BosonFFI,
     ) -> Result<Rc<Object>, String> {
         match self {
             Object::HashTable(ht) => {
-                return ht.borrow_mut().resolve_call_attr(&keys, &args)
+                return ht
+                    .borrow_mut()
+                    .resolve_call_attr(&keys, &args, platform, gp, c, th, ffi)
+            }
+            Object::NativeModule(nt) => {
+                return nt
+                    .borrow_mut()
+                    .resolve_call_attr(&keys, &args, platform, gp, c, th, ffi)
             }
             _ => {
                 return Err(format!(

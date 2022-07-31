@@ -1,0 +1,6 @@
+
+# open a rust module
+const result = mopen("std::hello_world", none);
+const hello = result[0];
+
+println(hello.greet_me("Prasanna"));
