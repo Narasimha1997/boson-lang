@@ -12,27 +12,27 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 #[no_mangle]
-pub fn open(_init_params: Rc<Object>) -> DynamicModuleResult {
+pub extern "Rust" fn open(_init_params: Rc<Object>) -> DynamicModuleResult {
     Ok(Rc::new(Object::Noval))
 }
 
 #[no_mangle]
-pub fn close(_close_params: Rc<Object>) -> DynamicModuleResult {
+pub extern "Rust" fn close(_close_params: Rc<Object>) -> DynamicModuleResult {
     Ok(Rc::new(Object::Noval))
 }
 
 #[no_mangle]
-pub fn write(_write_params: Rc<Object>) -> DynamicModuleResult {
+pub extern "Rust" fn write(_write_params: Rc<Object>) -> DynamicModuleResult {
     Ok(Rc::new(Object::Noval))
 }
 
 #[no_mangle]
-pub fn read(_read_params: Rc<Object>) -> DynamicModuleResult {
+pub extern "Rust" fn read(_read_params: Rc<Object>) -> DynamicModuleResult {
     Ok(Rc::new(Object::Noval))
 }
 
 #[no_mangle]
-pub fn exec(method: String, params: &Vec<Rc<Object>>) -> DynamicModuleResult {
+pub extern "Rust" fn exec(method: String, params: &Vec<Rc<Object>>) -> DynamicModuleResult {
     if params.len() != 1 {
         return Err(DynamicModuleInternalError {
             cause: format!("no_param"),

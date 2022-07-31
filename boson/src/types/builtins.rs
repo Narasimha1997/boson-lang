@@ -781,11 +781,14 @@ impl BuiltinKind {
                     return Err(format!("{}", result_str.unwrap_err()));
                 }
 
+                let result_string = result_str.unwrap();
+                let formatted = result_string[0..result_string.len() - 1].to_string();
+
                 let op_array = Array {
                     name: "todo".to_string(),
                     elements: vec![
                         Rc::new(Object::Int(exit_code as i64)),
-                        Rc::new(Object::Str(result_str.unwrap())),
+                        Rc::new(Object::Str(formatted)),
                     ],
                 };
 
