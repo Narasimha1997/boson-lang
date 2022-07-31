@@ -1,0 +1,14 @@
+
+const base64 = mopen("std::b64", none)[0]
+var idx = 0;
+
+const test_buffer = bytes("hello, world!")
+
+const st = unix_time();
+while (idx < 1000000) {
+    const x = base64.encode(test_buffer);
+    idx = idx + 1
+}
+const et = unix_time();
+
+println(et - st)
