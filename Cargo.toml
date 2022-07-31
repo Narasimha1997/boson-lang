@@ -1,4 +1,4 @@
 
 [workspace]
 
-members = ["boson", "modules/hello-world"]
+members = ["boson", "modules/hello-world", "modules/b64"]

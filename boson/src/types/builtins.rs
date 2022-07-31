@@ -1375,7 +1375,7 @@ impl BuiltinKind {
                             let mod_name = path_str[5..].to_string();
 
                             Path::new(&std_path)
-                                .join(&mod_name)
+                                .join(&format!("lib{}.so", mod_name))
                                 .to_str()
                                 .unwrap()
                                 .to_string()
