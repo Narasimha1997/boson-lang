@@ -68,6 +68,12 @@ function build_embed () {
     cargo build --verbose --release --bin boson-embed
 }
 
+function build_modules () {
+    pushd modules
+        bash ./install.sh
+    popd
+}
+
 function install() {
     echo "Installing binaries in system root /usr/local/bin..."
     sudo cp ./target/release/boson /usr/local/bin/
@@ -107,6 +113,8 @@ elif [[ "$arg" == "compile" ]]; then
     build_compile
 elif [[ "$arg" == "embed" ]]; then
     build_embed
+elif [[ $arg == "modules" ]]; then
+    build_modules
 elif [[ "$arg" == "install" ]]; then
     install
 elif [[ "$arg" == "no-install" ]]; then
@@ -123,6 +131,7 @@ else
     build_repl
     build_dis
     build_embed
+    build_modules
     install
     echo "All Done, you can start using boson, boson-compile, boson-eval and boson-dis"
 fi
