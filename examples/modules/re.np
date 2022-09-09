@@ -1,0 +1,6 @@
+
+const regex = mopen("std::re", none)[0];
+const id = regex.compile("he.?.?o");
+
+const matches = regex.get_matches(id, "hello world! hello everyone!");
+println(matches);

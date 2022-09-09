@@ -47,7 +47,7 @@ fn add_entry_into_table(expression: String) -> Result<Rc<Object>, DynamicModuleI
             let counter = write_handle.counter;
             write_handle.table.insert(counter, regex_handle);
             write_handle.counter += 1;
-            return Ok(Rc::new(Object::Int(write_handle.counter as i64)));
+            return Ok(Rc::new(Object::Int(counter as i64)));
         }
     }
 
