@@ -1,0 +1,12 @@
+
+const regex = mopen("std::re", none)[0];
+const id = regex.compile("he.?.?o");
+
+var i = 0;
+const st = unix_time();
+while (i < 1000000) {
+    const matches = regex.get_matches(id, "hello world! hello everyone!");
+    i = i + 1;
+}
+const et = unix_time();
+println("1M regex match latency", et - st)
