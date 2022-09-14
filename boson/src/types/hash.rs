@@ -15,11 +15,13 @@ use crate::api;
 use crate::compiler;
 use crate::vm;
 
+
 use api::Platform;
 use compiler::symtab::ConstantPool;
 use vm::ffi::BosonFFI;
 use vm::global::GlobalPool;
 use vm::thread::BosonThreads;
+use vm::stack::DataStack;
 
 use std::cmp::Ordering;
 
@@ -197,6 +199,7 @@ impl AttributeResolver for HashTable {
         &mut self,
         keys: &Vec<Rc<Object>>,
         args: &Vec<Rc<Object>>,
+        _ds: &mut DataStack,
         _platform: &mut Platform,
         _gp: &mut GlobalPool,
         _c: &mut ConstantPool,

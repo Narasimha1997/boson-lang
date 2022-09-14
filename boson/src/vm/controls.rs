@@ -1026,10 +1026,10 @@ impl Controls {
         let call_result = match parent_obj.as_ref() {
             Object::HashTable(ht) => ht
                 .borrow_mut()
-                .resolve_call_attr(&attrs, &params, platform, gp, c, th, ffi),
+                .resolve_call_attr(&attrs, &params, ds, platform, gp, c, th, ffi),
             Object::NativeModule(nt) => nt
                 .borrow_mut()
-                .resolve_call_attr(&attrs, &params, platform, gp, c, th, ffi),
+                .resolve_call_attr(&attrs, &params, ds, platform, gp, c, th, ffi),
             _ => {
                 return Some(VMError::new(
                     format!(

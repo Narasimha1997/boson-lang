@@ -15,6 +15,7 @@ use compiler::symtab::ConstantPool;
 use vm::ffi::BosonFFI;
 use vm::global::GlobalPool;
 use vm::thread::BosonThreads;
+use vm::stack::DataStack;
 
 #[derive(Debug, Clone)]
 pub struct DynamicModuleInternalError {
@@ -76,6 +77,7 @@ impl AttributeResolver for NativeModuleRef {
         &mut self,
         keys: &Vec<Rc<Object>>,
         args: &Vec<Rc<Object>>,
+        _ds: &mut DataStack,
         _platform: &mut Platform,
         _gp: &mut GlobalPool,
         _c: &mut ConstantPool,
