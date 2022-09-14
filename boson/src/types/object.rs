@@ -21,6 +21,7 @@ use crate::compiler;
 use crate::vm;
 
 use api::Platform;
+use vm::stack::DataStack;
 use compiler::symtab::ConstantPool;
 use vm::ffi::BosonFFI;
 use vm::global::GlobalPool;
@@ -34,6 +35,7 @@ pub trait AttributeResolver {
         &mut self,
         keys: &Vec<Rc<Object>>,
         args: &Vec<Rc<Object>>,
+        ds: &mut DataStack,
         platform: &mut Platform,
         gp: &mut GlobalPool,
         c: &mut ConstantPool,
@@ -302,6 +304,7 @@ impl AttributeResolver for Object {
         &mut self,
         keys: &Vec<Rc<Object>>,
         args: &Vec<Rc<Object>>,
+        ds: &mut DataStack,
         platform: &mut Platform,
         gp: &mut GlobalPool,
         c: &mut ConstantPool,
@@ -312,12 +315,12 @@ impl AttributeResolver for Object {
             Object::HashTable(ht) => {
                 return ht
                     .borrow_mut()
-                    .resolve_call_attr(&keys, &args, platform, gp, c, th, ffi)
+                    .resolve_call_attr(&keys, &args, ds, platform, gp, c, th, ffi)
             }
             Object::NativeModule(nt) => {
                 return nt
                     .borrow_mut()
-                    .resolve_call_attr(&keys, &args, platform, gp, c, th, ffi)
+                    .resolve_call_attr(&keys, &args, ds, platform, gp, c, th, ffi)
             }
             _ => {
                 return Err(format!(
