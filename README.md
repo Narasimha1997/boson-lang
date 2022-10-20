@@ -303,6 +303,33 @@ wait(th2)
 
 **Threads and global variables**: In boson, every thread gets it's own copy of global variables space, so when a thread mutates a global variable, it mutates it's local variable copy and not the one in global space.
 
+### Native modules
+Boson has a support for native modules written in Rust, every module has to implement a set of functions as per the standard function signatures shown below:
+```rust
+pub type OpenFunctionSymbol = unsafe extern "Rust" fn(Rc<Object>) -> DynamicModuleResult;
+pub type CloseFunctionSymbol = unsafe extern "Rust" fn(Rc<Object>) -> DynamicModuleResult;
+pub type ReadFunctionSymbol = unsafe extern "Rust" fn(Rc<Object>) -> DynamicModuleResult;
+pub type WriteFunctionSymbol = unsafe extern "Rust" fn(Rc<Object>) -> DynamicModuleResult;
+pub type ExecFunctionSymbol = unsafe extern "Rust" fn(String, &Vec<Rc<Object>>) -> DynamicModuleResult;
+```
+
+Any cargo crate that implements these functions can be loaded and used as a dynamic module. Look at the [hello-world module](https://github.com/Narasimha1997/boson-lang/blob/main/modules/hello_world/src/lib.rs) for reference. Make sure you add the following lines to `Cargo.toml` of the cargo crate you are trying to build as a module:
+```
+[lib]
+crate-type = ["rlib", "cdylib"]
+```
+
+The native modules that are under `modules/` directory will be installed at `/usr/local/lib/boson` and can be loaded using `mopen`:
+```
+# you can pass init parameters also while calling `mopen`
+const regex = mopen("std::re", none)[0];
+```
+This will look for `libre.so` in `/usr/local/lib/boson`, in general it will look at `/usr/local/bin/boson/lib{{module-name}}.so`. However you can also load modules directly by their file-paths like:
+
+```
+const regex = mopen("/usr/local/lib/boson/libre.so", none)[0];
+```
+
 ### Embedding Boson:
 Boson language compiler + VM can be easily integrated into other projects using the API. As of now, any Rust codebase can import statically the Boson crate or use foreign function interface (FFI) to load Boson shared library by manually defining the ABI. We are yet to test [CXXABI](https://github.com/gcc-mirror/gcc/blob/master/libstdc%2B%2B-v3/libsupc%2B%2B/cxxabi.h) compatibility of the boson crate, so it can be considered unsafe to import boson in Non-Rust codebases as of now. 
 
