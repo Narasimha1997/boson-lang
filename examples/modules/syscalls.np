@@ -1,4 +1,4 @@
 const sys = mopen("std::syscalls", none)[0]
 
 const syscalls = sys.get_syscalls()
-println(syscalls["EPOLL_CREATE"])
+println(syscalls.EPOLL_CREATE)

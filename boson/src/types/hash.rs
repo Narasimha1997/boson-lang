@@ -85,13 +85,17 @@ impl HashTable {
     }
 
     pub fn get_attribute(&self, key: &String) -> Result<Rc<Object>, String> {
+
         match key.as_ref() {
             "__name__" => return Ok(Rc::new(Object::Str(self.name.clone()))),
             _ => {
-                return Err(format!(
-                    "Attribute {} not found for type {}",
-                    key, "HashTable"
-                ));
+                let key_owned = Object::Str(key.to_owned());
+                let val_opt = self.entries.get(&key_owned);
+                if val_opt.is_some() {
+                    return Ok(val_opt.unwrap().clone())
+                }
+
+                return Ok(Rc::new(Object::Noval));
             }
         }
     }
@@ -181,7 +185,14 @@ impl AttributeResolver for HashTable {
                 match st.as_ref() {
                     // base attributes
                     "__name__" => return Ok(Rc::new(Object::Str(self.name.clone()))),
-                    _ => {}
+                    _ => {
+                        let val_opt = self.entries.get(f_key);
+                        if val_opt.is_some() {
+                            return Ok(val_opt.unwrap().clone())
+                        }
+        
+                        return Ok(Rc::new(Object::Noval));
+                    }
                 }
             }
 
