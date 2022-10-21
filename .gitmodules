@@ -1,0 +1,5 @@
+[submodule "third_party/syscall-numbers"]
+	path = third_party/syscall-numbers
+	url = https://github.com/Narasimha1997/syscall-numbers.git
+	branch = master
+
