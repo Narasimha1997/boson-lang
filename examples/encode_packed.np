@@ -1,0 +1,4 @@
+
+
+const encoded_data = encode_packed(["string", "int32", "string"], ["hello", 132, "world"], false);
+println(encoded_data);
