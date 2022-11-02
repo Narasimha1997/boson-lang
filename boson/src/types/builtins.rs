@@ -12,7 +12,7 @@ use crate::api;
 
 use rand::Rng;
 
-use crate::api::{BosonLang, packing::encode_boson_types};
+use crate::api::{packing::encode_boson_types, BosonLang};
 use crate::compiler;
 use crate::config;
 use crate::types::array;
@@ -1587,6 +1587,35 @@ impl BuiltinKind {
                         return Err(format!(
                             "set_at() expects array, int and any as parameters but got {}, {} and {}",
                             args[0].get_type(), args[1].get_type(), args[2].get_type()
+                        ));
+                    }
+                }
+            }
+
+            BuiltinKind::EncodePacked => {
+                if args.len() != 3 {
+                    return Err(format!(
+                        "encode_packed() requires 3 parameters, got {}",
+                        args.len(),
+                    ));
+                }
+
+                match (args[0].as_ref(), args[1].as_ref(), args[2].as_ref()) {
+                    (Object::Array(types_array), Object::Array(data), _) => {
+                        let data_buffer_result = encode_boson_types(
+                            &types_array.borrow().get_values_ref(),
+                            &data.borrow().get_values_ref(),
+                            args[2].clone(),
+                        );
+
+                        return data_buffer_result;
+                    }
+                    _ => {
+                        return Err(format!(
+                            "encode_packed() requires array, array and bool, but got {} {} and {}",
+                            args[0].get_type(),
+                            args[1].get_type(),
+                            args[2].get_type()
                         ));
                     }
                 }
