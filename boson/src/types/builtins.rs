@@ -12,7 +12,7 @@ use crate::api;
 
 use rand::Rng;
 
-use crate::api::BosonLang;
+use crate::api::{BosonLang, packing::encode_boson_types};
 use crate::compiler;
 use crate::config;
 use crate::types::array;
@@ -87,6 +87,7 @@ pub enum BuiltinKind {
     Rand,
     Sort,
     SetAt,
+    EncodePacked,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -157,6 +158,7 @@ impl BuiltinKind {
             BuiltinKind::Rand => "rand".to_string(),
             BuiltinKind::Sort => "sort".to_string(),
             BuiltinKind::SetAt => "set_at".to_string(),
+            BuiltinKind::EncodePacked => "encode_packed".to_string(),
             _ => "undef".to_string(),
         }
     }

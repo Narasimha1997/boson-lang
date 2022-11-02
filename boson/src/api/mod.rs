@@ -1,5 +1,6 @@
 extern crate rand;
 
+
 use crate::compiler::errors::CompileError;
 use crate::compiler::loader::BytecodeLoader;
 use crate::compiler::loader::BytecodeWriter;
@@ -20,6 +21,7 @@ use rand::rngs::SmallRng;
 use rand::SeedableRng;
 
 pub mod native;
+pub mod packing;
 
 #[derive(Debug)]
 pub enum PlatformKind {
