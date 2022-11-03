@@ -1,0 +1,12 @@
+const sys = mopen("std::syscalls", none)[0]
+
+const syscalls = sys.get_syscalls()
+
+const string_to_write = "hello, world!"
+
+sys.call(
+    syscalls.WRITE,
+    1,
+    string_to_write, 
+    len(string_to_write)
+);

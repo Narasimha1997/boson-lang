@@ -56,7 +56,6 @@ fn get_syscalls_as_map() -> Rc<Object> {
 #[inline(always)]
 unsafe fn syscall_raw(no: usize, params: &[Rc<Object>]) -> Result<Rc<Object>, String> {
     let mut usize_pointers = vec![];
-    usize_pointers.resize(params.len(), 0);
 
     for param in params.iter() {
         match param.as_ref() {
