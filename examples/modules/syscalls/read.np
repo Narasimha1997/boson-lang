@@ -3,6 +3,11 @@ const no = sys.get_syscalls()
 
 const fd = sys.call(no.OPEN, "hello.txt", 0)
 
+if (fd < 0) {
+    println("file hello.txt not found")
+    exit(fd)
+}
+
 const buffer = create_buffer(10)
 
 sys.call(

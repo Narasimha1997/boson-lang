@@ -7,11 +7,14 @@ An interpreted, dynamically-typed, multi-threaded, general purpose hobby program
 3. Variables and Constants
 4. Control and Looping structures
 5. Functions and Lambda expressions
-6. Threads and Multi-threading
-7. Shell operator to run shell commands within the language statements
-8. Some basic built-in functions
-9. Iterators (psuedo iterators)
-10. Byte code generation, serialization and loading
+6. Many built-in functions
+7. Threads and Multi-threading
+8. Shell operator to run shell commands within the language statements
+9. Some basic built-in functions
+10. Iterators (psuedo iterators)
+11. Byte code generation, serialization and loading
+12. Dynamic modules - can load rust modules at runtime as addons
+13. System calls
 
 Note: The documentation of this project is still in early stages.
 
