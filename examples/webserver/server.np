@@ -9,7 +9,7 @@ const SOCK_STREAM = 1;
 const PORT = 9000;
 const INADDR_ANY = 0;
 
-const HTTP_DATA = bytes("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<body><h2>Welcome to boson lang!</h2></body>");
+const HTTP_DATA = bytes("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + ($ "cat data.html")[1]);
 
 # create a new socket
 func create_socket() {
