@@ -1,0 +1,10 @@
+const sys = mopen("std::syscalls", none)[0]
+const no = sys.get_syscalls()
+
+const fd = sys.call(no.OPEN, "examples/hello.txt", 0)
+
+const buffer = create_buffer(10)
+
+sys.call(no.READ, fd, buffer, 10)
+
+println(string(buffer))
