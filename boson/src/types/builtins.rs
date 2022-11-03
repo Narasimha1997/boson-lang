@@ -246,6 +246,7 @@ impl BuiltinKind {
                     Object::HashTable(ht) => {
                         Ok(Rc::new(Object::Int(ht.borrow().entries.len() as i64)))
                     }
+                    Object::ByteBuffer(buffer) => Ok(Rc::new(Object::Int(buffer.borrow().length as i64))),
                     _ => Err(format!("len() cannot be applied on {}", obj.get_type())),
                 }
             }

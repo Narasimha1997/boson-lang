@@ -1,4 +1,8 @@
 
+func encode() {
+    const x = 132;
+    const encoded_data = encode_packed(["string", "int32", "string"], ["hello", x, "world"], false);
+    println(encoded_data);
+}
 
-const encoded_data = encode_packed(["string", "int32", "string"], ["hello", 132, "world"], false);
-println(encoded_data);
+// const sock_addr = encode_packed(["uint16", "bytes", "uint32", "uint64"], [AF_INET, port_bytes, INADDR_ANY, 0], false);

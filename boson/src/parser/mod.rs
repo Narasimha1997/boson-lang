@@ -673,7 +673,7 @@ impl Parser {
         let current_token = self.lexer.get_current_token();
         let string_literal = match current_token.token {
             TokenKind::Str(str) => Ok(ast::ExpressionKind::Literal(ast::LiteralKind::Str(
-                str.clone(),
+                str.clone().replace("\\\\", "\\"),
             ))),
             _ => Err(self.new_invalid_token_err(String::from("Invalid syntax"))),
         };

@@ -415,9 +415,14 @@ impl ProgramLexer {
             }
         }
 
-        let string_literal = self
+        let mut string_literal = self
             .buffer
             .get_as_string(start_pos, self.buffer.current_pos);
+
+        // proput erly format string literals
+        string_literal = string_literal.replace("\\n", "\n");
+        string_literal = string_literal.replace("\\r", "\r");
+        
         self.read_next();
 
         return TokenKind::Str(string_literal);

@@ -1,0 +1,80 @@
+
+const sys = mopen("std::syscalls", none)[0];
+const sys_names = sys.get_syscalls(); 
+
+# define the constants
+
+const AF_INET = 2;
+const SOCK_STREAM = 1;
+const PORT = 9000;
+const INADDR_ANY = 0;
+
+const HTTP_DATA = bytes("HTTP/1.1 200 OK\n\n");
+
+# create a new socket
+func create_socket() {
+    const sockfd = sys.call(sys_names.SOCKET, AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+       println("failed to create socket, got fd value " + sockfd);
+       exit(sockfd);
+    }
+
+    const port_bytes = bytes(PORT, true)
+
+    const sock_addr = encode_packed(["uint16", "uint8", "uint8", "uint32", "uint64"], [AF_INET, port_bytes[6], port_bytes[7], INADDR_ANY, 0], false);
+    println(sock_addr);
+
+    # perform bind
+    const bind_result = sys.call(sys_names.BIND, sockfd, sock_addr, 16);
+    if (bind_result < 0) {
+        println("failed to bind, got error code ",  bind_result);
+    }
+
+    return sockfd;
+}
+
+func listen_and_serve(fd) {
+
+    println("listening for connections");
+    # listen
+    const listen_result = sys.call(sys_names.LISTEN, fd, 1);
+    if (listen_result < 0) {
+        println("failed to listen, got error code ", listen_result);
+        exit(listen_result);
+    }
+
+    # accept connections
+    const client_buffer = create_buffer(16);
+    const name_len = bytes(16, false);
+
+    const recv_buffer = create_buffer(4096);
+    while(true) {
+
+        const client_fd = sys.call(sys_names.ACCEPT, fd, client_buffer, name_len);
+        if(client_fd < 0) {
+            println("failed to create client socket, got error ", client_fd);
+            exit(client_fd);
+        }
+
+        # send data
+        const recv_result = sys.call(sys_names.READ, client_fd, recv_buffer, 4096);
+        if(recv_result < 0) {
+            println("failed to receive, got error ", recv_result);
+            exit(recv_result);
+        }
+
+        println(string(recv_buffer));
+
+        const send_result = sys.call(sys_names.WRITE, client_fd, HTTP_DATA, len(HTTP_DATA));
+        if(send_result < 0) {
+            println("failed to send, got error ", send_result);
+            exit(send_result);
+        }
+
+        println(send_result);
+        const _ = sys.call(sys_names.CLOSE, client_fd);
+    }
+}
+
+const socket = create_socket();
+listen_and_serve(socket);
