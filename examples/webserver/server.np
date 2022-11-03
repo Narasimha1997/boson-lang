@@ -9,7 +9,7 @@ const SOCK_STREAM = 1;
 const PORT = 9000;
 const INADDR_ANY = 0;
 
-const HTTP_DATA = bytes("HTTP/1.1 200 OK\n\n");
+const HTTP_DATA = bytes("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<body><h2>Welcome to boson lang!</h2></body>");
 
 # create a new socket
 func create_socket() {
@@ -22,7 +22,6 @@ func create_socket() {
     const port_bytes = bytes(PORT, true)
 
     const sock_addr = encode_packed(["uint16", "uint8", "uint8", "uint32", "uint64"], [AF_INET, port_bytes[6], port_bytes[7], INADDR_ANY, 0], false);
-    println(sock_addr);
 
     # perform bind
     const bind_result = sys.call(sys_names.BIND, sockfd, sock_addr, 16);
@@ -48,6 +47,8 @@ func listen_and_serve(fd) {
     const name_len = bytes(16, false);
 
     const recv_buffer = create_buffer(4096);
+
+    println("webserver is not accepting connections....")
     while(true) {
 
         const client_fd = sys.call(sys_names.ACCEPT, fd, client_buffer, name_len);
@@ -63,15 +64,12 @@ func listen_and_serve(fd) {
             exit(recv_result);
         }
 
-        println(string(recv_buffer));
-
         const send_result = sys.call(sys_names.WRITE, client_fd, HTTP_DATA, len(HTTP_DATA));
         if(send_result < 0) {
             println("failed to send, got error ", send_result);
             exit(send_result);
         }
 
-        println(send_result);
         const _ = sys.call(sys_names.CLOSE, client_fd);
     }
 }
