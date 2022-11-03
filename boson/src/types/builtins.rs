@@ -36,6 +36,8 @@ use array::Array;
 use hash::HashTable;
 use object::Object;
 
+use super::buffer::Buffer;
+
 #[repr(u8)]
 #[derive(PartialEq, Clone, Debug, Eq, Copy, PartialOrd)]
 pub enum BuiltinKind {
@@ -64,6 +66,7 @@ pub enum BuiltinKind {
     Bytes,
     TypeOf,
     CreateArray,
+    CreateBuffer,
     Exec,
     ExecRaw,
     ExecShell,
@@ -125,6 +128,7 @@ impl BuiltinKind {
             BuiltinKind::Envs => "envs".to_string(),
             BuiltinKind::Platform => "platform".to_string(),
             BuiltinKind::CreateArray => "create_array".to_string(),
+            BuiltinKind::CreateBuffer => "create_buffer".to_string(),
             BuiltinKind::Int => "int".to_string(),
             BuiltinKind::String => "string".to_string(),
             BuiltinKind::Float => "float".to_string(),
@@ -459,6 +463,29 @@ impl BuiltinKind {
                             "create_array() expects int as first argument, provided {}.",
                             args[0].get_type()
                         ));
+                    }
+                }
+            }
+
+            BuiltinKind::CreateBuffer => {
+                if args.len() != 1 {
+                    return Err(format!(
+                        "create_buffer() takes one argument, provided {}.",
+                        args.len(),
+                    ));
+                }
+
+                match args[0].as_ref() {
+                    Object::Int(size) => {
+                        return Ok(Rc::new(Object::ByteBuffer(RefCell::new(
+                            Buffer::new_empty(*size as usize, true),
+                        ))));
+                    }
+                    _ => {
+                        return Err(format!(
+                            "create_buffer() takes int as argument, but got {}.",
+                            args[0].get_type(),
+                        ))
                     }
                 }
             }

@@ -138,6 +138,18 @@ impl Buffer {
         let bytes_repr = string.as_bytes().to_vec();
         return Buffer::from_u8(bytes_repr, "todo".to_string(), false);
     }
+
+    pub fn new_empty(size: usize, is_little_endian: bool) -> Buffer {
+        let mut inner = vec![];
+        inner.resize(size, 0);
+
+        Self {
+            data: inner,
+            length: size,
+            name: "todo".to_string(),
+            is_little_endian,
+        }
+    }
 }
 
 impl Hash for Buffer {
