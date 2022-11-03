@@ -333,6 +333,31 @@ This will look for `libre.so` in `/usr/local/lib/boson`, in general it will look
 const regex = mopen("/usr/local/lib/boson/libre.so", none)[0];
 ```
 
+### System calls
+In boson, system calls are provided as a rust dynamic module called `syscalls` (look at `modules/syscalls`). Here is an example of making a system call in boson:
+```python
+const sys = mopen("std::syscalls", none)[0]
+const no = sys.get_syscalls()
+
+const fd = sys.call(no.OPEN, "hello.txt", 0)
+
+if (fd < 0) {
+    println("file hello.txt not found")
+    exit(fd)
+}
+
+const buffer = create_buffer(10)
+
+sys.call(
+    no.READ,
+    fd, 
+    buffer,
+    10
+)
+
+println(string(buffer))
+```
+
 ### Embedding Boson:
 Boson language compiler + VM can be easily integrated into other projects using the API. As of now, any Rust codebase can import statically the Boson crate or use foreign function interface (FFI) to load Boson shared library by manually defining the ABI. We are yet to test [CXXABI](https://github.com/gcc-mirror/gcc/blob/master/libstdc%2B%2B-v3/libsupc%2B%2B/cxxabi.h) compatibility of the boson crate, so it can be considered unsafe to import boson in Non-Rust codebases as of now. 
 
