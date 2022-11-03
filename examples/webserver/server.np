@@ -48,7 +48,7 @@ func listen_and_serve(fd) {
 
     const recv_buffer = create_buffer(4096);
 
-    println("webserver is not accepting connections....")
+    println("webserver is now accepting connections....")
     while(true) {
 
         const client_fd = sys.call(sys_names.ACCEPT, fd, client_buffer, name_len);
