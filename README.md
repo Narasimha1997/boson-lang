@@ -1,6 +1,14 @@
 # boson
 An interpreted, dynamically-typed, multi-threaded, general purpose hobby programming language written in Rust.
 
+
+## Check out the live web server written in boson-lang:
+To experiment with the capabilities of boson, I wrote a simple TCP single threaded web server which serves a sample HTML document. Check out this URL (The static web server is packaged as a container image and is deployed on Heroku)
+
+* [Live demo](https://boson-demo.herokuapp.com/)
+* [Source code can be found here](https://github.com/Narasimha1997/boson-lang/blob/main/examples/webserver/server.np)
+
+
 ## Features:
 1. Multiple Data Types: char, int, float, string, array, hashtable, bytes and buffer
 2. Airthmetic, Logical operations
