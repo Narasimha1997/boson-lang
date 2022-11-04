@@ -40,6 +40,7 @@ dependencies = [
  "packed-encoder",
  "rand",
  "rustyline",
+ "syscall-numbers",
 ]
 
 [[package]]
@@ -214,14 +215,6 @@ dependencies = [
 [[package]]
 name = "syscall-numbers"
 version = "3.0.0"
-
-[[package]]
-name = "syscalls"
-version = "0.1.0"
-dependencies = [
- "boson",
- "syscall-numbers",
-]
 
 [[package]]
 name = "unicode-width"

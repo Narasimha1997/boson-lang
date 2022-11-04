@@ -24,6 +24,7 @@ impl Arithmetic {
         );
     }
 
+    #[inline(always)]
     pub fn add(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Int(lval), Object::Int(rval)) => {
@@ -66,6 +67,7 @@ impl Arithmetic {
         }
     }
 
+    #[inline(always)]
     pub fn sub(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Int(lval), Object::Int(rval)) => {
@@ -103,6 +105,7 @@ impl Arithmetic {
         }
     }
 
+    #[inline(always)]
     pub fn mul(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Int(lval), Object::Int(rval)) => {
@@ -140,6 +143,7 @@ impl Arithmetic {
         }
     }
 
+    #[inline(always)]
     pub fn div(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Int(lval), Object::Int(rval)) => {
@@ -201,6 +205,7 @@ impl Arithmetic {
         }
     }
 
+    #[inline(always)]
     pub fn modulus(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Int(lval), Object::Int(rval)) => {
@@ -264,6 +269,8 @@ impl Arithmetic {
 }
 
 impl Bitwise {
+
+    #[inline(always)]
     pub fn and(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Int(lval), Object::Int(rval)) => {
@@ -284,6 +291,7 @@ impl Bitwise {
         }
     }
 
+    #[inline(always)]
     pub fn or(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Int(lval), Object::Int(rval)) => {
@@ -304,6 +312,7 @@ impl Bitwise {
         }
     }
 
+    #[inline(always)]
     pub fn not(obj: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match obj.as_ref() {
             Object::Int(val) => {
@@ -324,16 +333,20 @@ impl Bitwise {
 pub struct Logical {}
 
 impl Logical {
+
+    #[inline(always)]
     pub fn or(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         let result = left.is_true() || right.is_true();
         return Ok(Rc::new(Object::Bool(result)));
     }
 
+    #[inline(always)]
     pub fn and(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         let result = left.is_true() && right.is_true();
         return Ok(Rc::new(Object::Bool(result)));
     }
 
+    #[inline(always)]
     pub fn not(obj: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         let result = !obj.is_true();
         return Ok(Rc::new(Object::Bool(result)));
@@ -343,6 +356,8 @@ impl Logical {
 pub struct Comparision {}
 
 impl Comparision {
+
+    #[inline(always)]
     pub fn gt(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Char(lval), Object::Char(rval)) => {
@@ -380,6 +395,7 @@ impl Comparision {
         }
     }
 
+    #[inline(always)]
     pub fn gte(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Char(lval), Object::Char(rval)) => {
@@ -417,6 +433,7 @@ impl Comparision {
         }
     }
 
+    #[inline(always)]
     pub fn lt(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Char(lval), Object::Char(rval)) => {
@@ -454,6 +471,7 @@ impl Comparision {
         }
     }
 
+    #[inline(always)]
     pub fn lte(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Char(lval), Object::Char(rval)) => {
@@ -491,6 +509,7 @@ impl Comparision {
         }
     }
 
+    #[inline(always)]
     pub fn eq(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Char(lval), Object::Char(rval)) => {
@@ -532,6 +551,7 @@ impl Comparision {
         }
     }
 
+    #[inline(always)]
     pub fn neq(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
             (Object::Char(lval), Object::Char(rval)) => {

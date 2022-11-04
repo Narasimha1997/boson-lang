@@ -105,7 +105,7 @@ impl DataStack {
 
         let mut stack = vec![];
         if USE_STATIC_DATA_STACK {
-            stack.resize(DATA_STACK_SIZE, Rc::new(Object::Noval));
+            stack.reserve(DATA_STACK_SIZE);
         }
 
         return DataStack {

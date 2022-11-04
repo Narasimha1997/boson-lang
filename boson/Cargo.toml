@@ -34,6 +34,8 @@ byteorder = { version = "1", default-features = true }
 libloading = "0.7"
 rand = {version = "0.8.4", features = [ "small_rng" ]}
 packed-encoder = "0.1.1"
+syscall-numbers = { path = "../third_party/syscall-numbers" }
+
 
 [features]
 repl = ["rustyline"]

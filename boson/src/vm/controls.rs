@@ -217,6 +217,7 @@ impl Controls {
         return Ok((left_pop.unwrap(), right_pop.unwrap()));
     }
 
+    #[inline(always)]
     pub fn execute_binary_op(inst: &InstructionKind, ds: &mut DataStack) -> Option<VMError> {
         let operands_result = Controls::get_binary_operands(ds, inst);
         if operands_result.is_err() {

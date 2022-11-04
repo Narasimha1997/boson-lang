@@ -20,8 +20,10 @@ use std::rc::Rc;
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
 
+
 pub mod native;
 pub mod packing;
+pub mod arch_syscalls;
 
 #[derive(Debug)]
 pub enum PlatformKind {
@@ -50,6 +52,8 @@ pub struct Platform {
     pub stdout_write: fn(data: &Vec<u8>) -> Result<usize, String>,
     pub read_line: fn(display: Option<String>) -> Result<String, String>,
     pub rand_generator: SmallRng,
+    pub get_supported_syscalls: fn() -> Rc<Object>,
+    pub syscall: fn(Vec<Rc<Object>>) -> Result<Rc<Object>, String>
 }
 
 impl fmt::Debug for Platform {
@@ -97,6 +101,8 @@ impl BosonLang {
             stdout_write: native::stdout_write,
             read_line: native::read_line,
             rand_generator: SmallRng::from_entropy(),
+            get_supported_syscalls: native::get_syscalls_as_map,
+            syscall: native::execute_syscall,
         };
     }
 

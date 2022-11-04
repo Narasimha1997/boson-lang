@@ -1,3 +1,6 @@
+extern crate syscall_numbers;
+
+use crate::api::arch_syscalls;
 use crate::types::hash;
 use crate::types::object;
 
@@ -354,5 +357,97 @@ pub fn get_stdlib_path() -> String {
         }
     } else {
         result.unwrap()
+    };
+}
+
+pub fn get_syscalls_as_map() -> Rc<Object> {
+    let all_syscall_names = syscall_numbers::syscall_names();
+    let mut hash_map = HashTable {
+        name: "syscall_names".to_string(),
+        entries: HashMap::new(),
+    };
+
+    for (idx, syscall_name) in all_syscall_names.iter().enumerate() {
+        if *syscall_name == "" {
+            hash_map.entries.insert(
+                Rc::new(Object::Str(format!("{}_{}", "SYSCALL", idx))),
+                Rc::new(Object::Int(idx as i64)),
+            );
+        } else {
+            hash_map.entries.insert(
+                Rc::new(Object::Str(syscall_name.to_string().to_uppercase())),
+                Rc::new(Object::Int(idx as i64)),
+            );
+        }
     }
+
+    Rc::new(Object::HashTable(RefCell::new(hash_map)))
+}
+
+#[inline(always)]
+unsafe fn syscall_raw(params: &[Rc<Object>]) -> Result<Rc<Object>, String> {
+    let mut usize_pointers = vec![];
+    let mut syscall_no: usize = 0;
+
+    let mut is_first = true;
+
+    for param in params.iter() {
+        match param.as_ref() {
+            Object::Str(str) => {
+                if is_first {
+                    return Err(format!(
+                        "expected first argument to be of type 'int' but got {}",
+                        param.get_type()
+                    ));
+                }
+
+                usize_pointers.push(str.as_ptr() as usize);
+            }
+            Object::ByteBuffer(buffer) => {
+                if is_first {
+                    return Err(format!(
+                        "expected first argument to be of type 'int' but got {}",
+                        param.get_type()
+                    ));
+                }
+                usize_pointers.push(buffer.borrow().data.as_ptr() as usize);
+            }
+            Object::Int(i) => {
+                if is_first {
+                    syscall_no = *i as usize;
+                    is_first = false;
+                }
+
+                usize_pointers.push(*i as usize);
+            }
+            _ => {
+                return Err(format!(
+                    "value of type {} cannot be converted into a syscall compatible parameter",
+                    param.get_type()
+                ))
+            }
+        }
+    }
+
+    let syscall_result = match usize_pointers.len() {
+        0 => arch_syscalls::syscall0(syscall_no),
+        1 => arch_syscalls::syscall1(syscall_no, &usize_pointers),
+        2 => arch_syscalls::syscall2(syscall_no, &usize_pointers),
+        3 => arch_syscalls::syscall3(syscall_no, &usize_pointers),
+        4 => arch_syscalls::syscall4(syscall_no, &usize_pointers),
+        5 => arch_syscalls::syscall5(syscall_no, &usize_pointers),
+        6 => arch_syscalls::syscall6(syscall_no, &usize_pointers),
+        _ => {
+            return Err(format!(
+                "max supported system call arguments are 6, but got {}",
+                usize_pointers.len()
+            ))
+        }
+    };
+
+    Ok(Rc::new(Object::Int(syscall_result as i64)))
+}
+
+pub fn execute_syscall(params: Vec<Rc<Object>>) -> Result<Rc<Object>, String> {
+    unsafe { syscall_raw(&params) }
 }
