@@ -342,12 +342,11 @@ const regex = mopen("/usr/local/lib/boson/libre.so", none)[0];
 ```
 
 ### System calls
-In boson, system calls are provided as a rust dynamic module called `syscalls` (look at `modules/syscalls`). Here is an example of making a system call in boson:
+System call methods are provided as builtin functions in boson. `get_syscalls` method returns a list of all the system calls supported on the target architecture and `syscall` method executes the system call. Look at the example below:
 ```python
-const sys = mopen("std::syscalls", none)[0]
-const no = sys.get_syscalls()
 
-const fd = sys.call(no.OPEN, "hello.txt", 0)
+const no = get_syscalls();
+const fd = syscall(no.OPEN, "hello.txt", 0)
 
 if (fd < 0) {
     println("file hello.txt not found")
@@ -356,7 +355,7 @@ if (fd < 0) {
 
 const buffer = create_buffer(10)
 
-sys.call(
+syscall(
     no.READ,
     fd, 
     buffer,
