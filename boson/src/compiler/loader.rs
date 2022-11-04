@@ -14,6 +14,7 @@ use crate::types::subroutine::Subroutine;
 use std::collections::HashMap;
 use std::fs;
 use std::mem;
+use std::ptr;
 use std::rc::Rc;
 use std::slice;
 
@@ -46,9 +47,17 @@ impl ByteOps {
     // returns the typed representation of a slice of bytes
     // zero-copy, this just returns the typed reference, does not copy any data.
     pub unsafe fn as_type<T: Sized>(buf: &[u8]) -> Option<T> {
+
         if buf.len() == mem::size_of::<T>() {
-            let typed_ref_repr: T = mem::transmute_copy(&buf[0]);
-            return Some(typed_ref_repr);
+
+            let addr = &buf[0];
+            if mem::align_of::<T>() > mem::align_of::<u8>() {
+                let type_def = ptr::read_unaligned::<T>(addr as *const u8 as *const T);
+                return Some(type_def);
+            } else {
+                let type_def = ptr::read::<T>(addr as *const u8 as *const T);
+                return  Some(type_def);
+            }
         } else {
             return None;
         }
@@ -121,6 +130,8 @@ impl ByteOps {
     }
 
     pub fn generate_magic() -> u64 {
+
+        println!("generating magic");
         let result = unsafe { ByteOps::as_type::<u64>(MAGIC.as_bytes()) };
 
         match result {
@@ -244,12 +255,15 @@ impl BytecodeWriter {
     fn encode_to_binary(&mut self, bytecode: &CompiledBytecode) -> Result<Vec<u8>, String> {
         // prepare the main function subroutine pool:
 
+        println!("serializing the object: {:?}", bytecode.instructions);
+
         // main function:
         self.new_subroutine_idx(-1, "main".to_string(), 0, 0, false, &bytecode.instructions);
 
         let mut current_count = 0;
         // now compile the constant pool:
         for object in &bytecode.constant_pool.objects {
+
             match object.as_ref() {
                 Object::Bool(b) => {
                     let b_val = if *b { vec![1u8] } else { vec![0u8] };

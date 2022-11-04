@@ -267,6 +267,7 @@ impl BosonLang {
 
         // save the bytecode:
         let mut b_writer = BytecodeWriter::new();
+
         let result = b_writer.save_bytecode(fname, &bytecode_res.unwrap());
         if result.is_err() {
             println!("Error: {}\n", result.unwrap_err());
