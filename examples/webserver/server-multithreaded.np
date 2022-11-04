@@ -1,0 +1,82 @@
+
+const sys_names = get_syscalls(); 
+
+# define the constants
+
+const AF_INET = 2;
+const SOCK_STREAM = 1;
+const PORT = int(env("PORT"));
+const INADDR_ANY = 0;
+
+const HTTP_DATA = bytes("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + ($ "cat data.html")[1]);
+
+# create a new socket
+func create_socket() {
+    const sockfd = syscall(sys_names.SOCKET, AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+       println("failed to create socket, got fd value " + sockfd);
+       exit(sockfd);
+    }
+
+    const port_bytes = bytes(PORT, true)
+
+    const sock_addr = encode_packed(["uint16", "uint8", "uint8", "uint32", "uint64"], [AF_INET, port_bytes[6], port_bytes[7], INADDR_ANY, 0], false);
+
+    # perform bind
+    const bind_result = syscall(sys_names.BIND, sockfd, sock_addr, 16);
+    if (bind_result < 0) {
+        println("failed to bind, got error code ",  bind_result);
+        exit(bind_result)
+    }
+
+    return sockfd;
+}
+
+func request_server(client_fd, recv_buffer) {
+     # send data
+    const recv_result = syscall(sys_names.READ, client_fd, recv_buffer, 4096);
+    if(recv_result < 0) {
+        println("failed to receive, got error ", recv_result);
+        exit(recv_result);
+    }
+
+    const send_result = syscall(sys_names.WRITE, client_fd, HTTP_DATA, len(HTTP_DATA));
+    if(send_result < 0) {
+        println("failed to send, got error ", send_result);
+        exit(send_result);
+    }
+
+    const _ = syscall(sys_names.CLOSE, client_fd);
+}
+
+func listen_and_serve(fd) {
+
+    println("listening for connections");
+    # listen
+    const listen_result = syscall(sys_names.LISTEN, fd, 1);
+    if (listen_result < 0) {
+        println("failed to listen, got error code ", listen_result);
+        exit(listen_result);
+    }
+
+    # accept connections
+    const client_buffer = create_buffer(16);
+    const name_len = bytes(16, false);
+
+    const recv_buffer = create_buffer(4096);
+
+    println("webserver is now accepting connections....")
+    while(true) {
+
+        const client_fd = syscall(sys_names.ACCEPT, fd, client_buffer, name_len);
+        if(client_fd < 0) {
+            println("failed to create client socket, got error ", client_fd);
+            exit(client_fd);
+        }
+
+        const _ = thread request_server(client_fd, recv_buffer);
+    }
+}
+
+const socket = create_socket();
+listen_and_serve(socket);

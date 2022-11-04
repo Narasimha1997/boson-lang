@@ -7,6 +7,7 @@ To experiment with the capabilities of boson, I wrote a simple TCP single thread
 
 * [Live demo](https://boson-demo.herokuapp.com/)
 * [Source code can be found here](https://github.com/Narasimha1997/boson-lang/blob/main/examples/webserver/server.np)
+* [Multithreaded web server](https://github.com/Narasimha1997/boson-lang/blob/main/examples/webserver/server-multithreaded.np)
 
 
 ## Features:
