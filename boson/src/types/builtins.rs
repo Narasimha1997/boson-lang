@@ -91,6 +91,8 @@ pub enum BuiltinKind {
     Sort,
     SetAt,
     EncodePacked,
+    GetSyscalls,
+    Syscall,
     EndMark, // the end marker will tell the number of varinats in BuiltinKind, since
              // they are sequential.
 }
@@ -163,6 +165,8 @@ impl BuiltinKind {
             BuiltinKind::Sort => "sort".to_string(),
             BuiltinKind::SetAt => "set_at".to_string(),
             BuiltinKind::EncodePacked => "encode_packed".to_string(),
+            BuiltinKind::GetSyscalls => "get_syscalls".to_string(),
+            BuiltinKind::Syscall => "syscall".to_string(),
             _ => "undef".to_string(),
         }
     }
@@ -246,7 +250,9 @@ impl BuiltinKind {
                     Object::HashTable(ht) => {
                         Ok(Rc::new(Object::Int(ht.borrow().entries.len() as i64)))
                     }
-                    Object::ByteBuffer(buffer) => Ok(Rc::new(Object::Int(buffer.borrow().length as i64))),
+                    Object::ByteBuffer(buffer) => {
+                        Ok(Rc::new(Object::Int(buffer.borrow().length as i64)))
+                    }
                     _ => Err(format!("len() cannot be applied on {}", obj.get_type())),
                 }
             }
@@ -1647,6 +1653,16 @@ impl BuiltinKind {
                         ));
                     }
                 }
+            }
+
+            BuiltinKind::GetSyscalls => {
+                let caller = platform.get_supported_syscalls;
+                return Ok(caller());
+            }
+
+            BuiltinKind::Syscall => {
+                let caller = platform.syscall;
+                return caller(args);
             }
 
             _ => return Err("Trying to invoke invalid builtin".to_string()),
