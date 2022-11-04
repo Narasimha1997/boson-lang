@@ -1,7 +1,6 @@
-const sys = mopen("std::syscalls", none)[0]
-const no = sys.get_syscalls()
 
-const fd = sys.call(no.OPEN, "hello.txt", 0)
+const no = get_syscalls();
+const fd = syscall(no.OPEN, "hello.txt", 0)
 
 if (fd < 0) {
     println("file hello.txt not found")
@@ -10,7 +9,7 @@ if (fd < 0) {
 
 const buffer = create_buffer(10)
 
-sys.call(
+syscall(
     no.READ,
     fd, 
     buffer,

@@ -1,10 +1,9 @@
-const sys = mopen("std::syscalls", none)[0]
-
-const arch_syscalls = sys.get_syscalls()
+const arch_syscalls = get_syscalls()
+println(arch_syscalls)
 
 const string_to_write = "hello, world!"
 
-sys.call(
+syscall(
     arch_syscalls.WRITE,
     1,
     string_to_write, 
