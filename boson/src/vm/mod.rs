@@ -125,7 +125,6 @@ impl BosonVM {
         pop_last: bool,
         break_on_ret: bool,
     ) -> Result<Rc<Object>, VMError> {
-
         let mut context = BosonVMContext {
             platform: platform,
             globals: &mut self.globals,
@@ -136,7 +135,7 @@ impl BosonVM {
             vm_ffi: &mut self.vm_ffi,
         };
 
-        return Self::eval_bytecode_from_context(&mut context, pop_last, break_on_ret)
+        return Self::eval_bytecode_from_context(&mut context, pop_last, break_on_ret);
     }
 
     pub fn dump_globals(&self) -> String {

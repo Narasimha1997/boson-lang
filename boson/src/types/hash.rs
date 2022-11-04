@@ -15,13 +15,12 @@ use crate::api;
 use crate::compiler;
 use crate::vm;
 
-
 use api::Platform;
 use compiler::symtab::ConstantPool;
 use vm::ffi::BosonFFI;
 use vm::global::GlobalPool;
-use vm::thread::BosonThreads;
 use vm::stack::DataStack;
+use vm::thread::BosonThreads;
 
 use std::cmp::Ordering;
 
@@ -85,14 +84,13 @@ impl HashTable {
     }
 
     pub fn get_attribute(&self, key: &String) -> Result<Rc<Object>, String> {
-
         match key.as_ref() {
             "__name__" => return Ok(Rc::new(Object::Str(self.name.clone()))),
             _ => {
                 let key_owned = Object::Str(key.to_owned());
                 let val_opt = self.entries.get(&key_owned);
                 if val_opt.is_some() {
-                    return Ok(val_opt.unwrap().clone())
+                    return Ok(val_opt.unwrap().clone());
                 }
 
                 return Ok(Rc::new(Object::Noval));
@@ -188,9 +186,9 @@ impl AttributeResolver for HashTable {
                     _ => {
                         let val_opt = self.entries.get(f_key);
                         if val_opt.is_some() {
-                            return Ok(val_opt.unwrap().clone())
+                            return Ok(val_opt.unwrap().clone());
                         }
-        
+
                         return Ok(Rc::new(Object::Noval));
                     }
                 }

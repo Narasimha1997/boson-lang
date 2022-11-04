@@ -14,8 +14,8 @@ use api::Platform;
 use compiler::symtab::ConstantPool;
 use vm::ffi::BosonFFI;
 use vm::global::GlobalPool;
-use vm::thread::BosonThreads;
 use vm::stack::DataStack;
+use vm::thread::BosonThreads;
 
 #[derive(Debug, Clone)]
 pub struct DynamicModuleInternalError {
@@ -43,11 +43,11 @@ pub trait BosonDynamicSubModule {
     fn exec(func: String, params: Rc<Object>) -> DynamicModuleResult;
 }
 
-pub type OpenFunctionSymbol = unsafe extern "Rust" fn(Rc<Object>) -> DynamicModuleResult;
-pub type CloseFunctionSymbol = unsafe extern "Rust" fn(Rc<Object>) -> DynamicModuleResult;
-pub type ReadFunctionSymbol = unsafe extern "Rust" fn(Rc<Object>) -> DynamicModuleResult;
-pub type WriteFunctionSymbol = unsafe extern "Rust" fn(Rc<Object>) -> DynamicModuleResult;
-pub type ExecFunctionSymbol = unsafe extern "Rust" fn(String, &Vec<Rc<Object>>) -> DynamicModuleResult;
+pub type OpenFunctionSymbol = unsafe fn(Rc<Object>) -> DynamicModuleResult;
+pub type CloseFunctionSymbol = unsafe fn(Rc<Object>) -> DynamicModuleResult;
+pub type ReadFunctionSymbol = unsafe fn(Rc<Object>) -> DynamicModuleResult;
+pub type WriteFunctionSymbol = unsafe fn(Rc<Object>) -> DynamicModuleResult;
+pub type ExecFunctionSymbol = unsafe fn(String, &Vec<Rc<Object>>) -> DynamicModuleResult;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct NativeModuleRef {

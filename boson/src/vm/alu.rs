@@ -269,7 +269,6 @@ impl Arithmetic {
 }
 
 impl Bitwise {
-
     #[inline(always)]
     pub fn and(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {
@@ -333,7 +332,6 @@ impl Bitwise {
 pub struct Logical {}
 
 impl Logical {
-
     #[inline(always)]
     pub fn or(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         let result = left.is_true() || right.is_true();
@@ -356,7 +354,6 @@ impl Logical {
 pub struct Comparision {}
 
 impl Comparision {
-
     #[inline(always)]
     pub fn gt(left: &Rc<Object>, right: &Rc<Object>) -> Result<Rc<Object>, ISAError> {
         match (left.as_ref(), right.as_ref()) {

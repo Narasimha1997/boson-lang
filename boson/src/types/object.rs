@@ -21,10 +21,10 @@ use crate::compiler;
 use crate::vm;
 
 use api::Platform;
-use vm::stack::DataStack;
 use compiler::symtab::ConstantPool;
 use vm::ffi::BosonFFI;
 use vm::global::GlobalPool;
+use vm::stack::DataStack;
 use vm::thread::BosonThreads;
 
 pub trait AttributeResolver {

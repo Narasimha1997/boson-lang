@@ -9,14 +9,14 @@ pub const EOF_BYTE: u8 = 0x00;
 pub const SYMBOLS: &'static [&'static str] = &[
     "invalid", "+", "-", "*", "/", "(", ")", "<", ">", "<=", ">=", ";", ",", "%", "!", "=", "==",
     "!=", "{", "}", "&", "|", "~", "&&", "||", "+=", "-=", "++", "--", "*=", "/=", "%=", "[", "]",
-    "=>", ":", ".", "$"
+    "=>", ":", ".", "$",
 ];
 
 #[allow(dead_code)]
 pub const KEYWORDS: &'static [&'static str] = &[
     "invalid", "if", "else", "while", "for", "break", "continue", "const", "var", "none", "func",
     "return", "try", "catch", "finally", "rethrow", "throw", "as", "true", "false", "foreach",
-    "in", "use", "pure", "lambda", "assert", "thread", "async"
+    "in", "use", "pure", "lambda", "assert", "thread", "async",
 ];
 
 #[allow(dead_code)]
@@ -422,7 +422,7 @@ impl ProgramLexer {
         // proput erly format string literals
         string_literal = string_literal.replace("\\n", "\n");
         string_literal = string_literal.replace("\\r", "\r");
-        
+
         self.read_next();
 
         return TokenKind::Str(string_literal);
@@ -670,10 +670,10 @@ impl ProgramLexer {
                         self.read_next();
                         TokenKind::Operator(SymbolKind::SResolve)
                     }
-                    _ => TokenKind::Operator(SymbolKind::SColon)
+                    _ => TokenKind::Operator(SymbolKind::SColon),
                 };
                 combined_token
-            },
+            }
 
             b'.' => TokenKind::Operator(SymbolKind::SDot),
 

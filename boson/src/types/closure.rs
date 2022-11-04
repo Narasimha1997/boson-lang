@@ -1,10 +1,9 @@
+use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 use std::vec::Vec;
-use std::hash::{Hash, Hasher};
 
-use crate::types::subroutine::Subroutine;
 use crate::types::object::Object;
-
+use crate::types::subroutine::Subroutine;
 
 #[derive(Clone, Debug, PartialOrd)]
 pub struct ClosureContext {
@@ -36,4 +35,3 @@ impl Hash for ClosureContext {
         self.compiled_fn.hash(state);
     }
 }
-

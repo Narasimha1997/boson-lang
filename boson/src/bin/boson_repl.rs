@@ -1,5 +1,5 @@
-extern crate rustyline;
 extern crate boson;
+extern crate rustyline;
 
 use boson::api::BosonLang;
 use boson::types::object::Object;
@@ -11,20 +11,25 @@ use rustyline::Editor;
 
 fn display_result(obj: Rc<Object>) {
     match obj.as_ref() {
-        Object::Noval => {},
-        _ => println!("{}", obj.as_ref().describe())
+        Object::Noval => {}
+        _ => println!("{}", obj.as_ref().describe()),
     }
 }
 
 pub fn main() {
     println!("Welcome to Boson REPL");
-    println!("This is a REPL binary for boson - a general purpose programming language written in rust.");
+    println!(
+        "This is a REPL binary for boson - a general purpose programming language written in rust."
+    );
     println!("Boson v0.0.1");
 
     let mut rl = Editor::<()>::new();
 
     let mut lang = BosonLang::new_from_buffer(
-        "println(\"VM Check - Passed.\");\n".as_bytes().to_vec().clone()
+        "println(\"VM Check - Passed.\");\n"
+            .as_bytes()
+            .to_vec()
+            .clone(),
     );
 
     let result = lang.eval_state();

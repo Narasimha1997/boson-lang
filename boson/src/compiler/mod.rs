@@ -864,7 +864,6 @@ impl BytecodeCompiler {
         resolver: &ast::AttributeResolver,
         is_get: bool,
     ) -> Option<errors::CompileError> {
-
         // compile parent:
         let expr_result = self.compile_expression(&resolver.parent);
         if expr_result.is_some() {
@@ -880,20 +879,26 @@ impl BytecodeCompiler {
         // check if the attribute is being called:
         if self.attr_ctls.len() != 0 {
             let attr_params = self.attr_ctls.pop().unwrap();
-            self.save(isa::InstructionKind::ICallAttr, &vec![
-                resolver.child_attrs.len(),
-                attr_params
-            ]);
+            self.save(
+                isa::InstructionKind::ICallAttr,
+                &vec![resolver.child_attrs.len(), attr_params],
+            );
 
             return None;
         }
 
         if is_get {
-            self.save(isa::InstructionKind::IGetAttr, &vec![resolver.child_attrs.len()]);
+            self.save(
+                isa::InstructionKind::IGetAttr,
+                &vec![resolver.child_attrs.len()],
+            );
         } else {
-            self.save(isa::InstructionKind::ISetAttr, &vec![resolver.child_attrs.len()]);
+            self.save(
+                isa::InstructionKind::ISetAttr,
+                &vec![resolver.child_attrs.len()],
+            );
         }
-        
+
         return None;
     }
 
@@ -1387,7 +1392,7 @@ impl BytecodeCompiler {
         }
 
         // resolve function name:
-        
+
         let fn_expr = &node.function;
 
         // check if it's a attribute call:
@@ -1406,7 +1411,7 @@ impl BytecodeCompiler {
         }
 
         if is_attr {
-            return None
+            return None;
         }
 
         // place the call instruction:

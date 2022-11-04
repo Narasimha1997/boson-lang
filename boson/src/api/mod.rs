@@ -1,6 +1,5 @@
 extern crate rand;
 
-
 use crate::compiler::errors::CompileError;
 use crate::compiler::loader::BytecodeLoader;
 use crate::compiler::loader::BytecodeWriter;
@@ -20,10 +19,9 @@ use std::rc::Rc;
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
 
-
+pub mod arch_syscalls;
 pub mod native;
 pub mod packing;
-pub mod arch_syscalls;
 
 #[derive(Debug)]
 pub enum PlatformKind {
@@ -53,7 +51,7 @@ pub struct Platform {
     pub read_line: fn(display: Option<String>) -> Result<String, String>,
     pub rand_generator: SmallRng,
     pub get_supported_syscalls: fn() -> Rc<Object>,
-    pub syscall: fn(Vec<Rc<Object>>) -> Result<Rc<Object>, String>
+    pub syscall: fn(Vec<Rc<Object>>) -> Result<Rc<Object>, String>,
 }
 
 impl fmt::Debug for Platform {
@@ -80,7 +78,6 @@ pub enum ErrorKind {
 
 impl BosonLang {
     pub fn prepare_native_platform() -> Platform {
-
         return Platform {
             platform_type: PlatformKind::Native,
             print: native::print,

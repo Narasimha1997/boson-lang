@@ -39,7 +39,7 @@ pub enum InfixExpKind {
     DivEq,
     AndEq,
     OrEq,
-    ModEq
+    ModEq,
 }
 
 #[derive(PartialEq, PartialOrd, Debug, Clone)]

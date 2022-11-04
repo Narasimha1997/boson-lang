@@ -429,7 +429,6 @@ unsafe fn syscall_raw(params: &[Rc<Object>]) -> Result<Rc<Object>, String> {
         }
     }
 
-
     let syscall_result = match usize_pointers.len() {
         0 => arch_syscalls::syscall0(syscall_no),
         1 => arch_syscalls::syscall1(syscall_no, &usize_pointers),

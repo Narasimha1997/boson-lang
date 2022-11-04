@@ -17,11 +17,10 @@ use isa::Operands;
 use object::Object;
 use subroutine::Subroutine;
 
-
 #[derive(Debug, Clone)]
 pub struct ExceptionHandler {
     pub exception_handler: Rc<ClosureContext>,
-    pub finally_handler: Option<Rc<ClosureContext>>
+    pub finally_handler: Option<Rc<ClosureContext>>,
 }
 
 pub type ExceptionHandleStack = Vec<ExceptionHandler>;
@@ -44,7 +43,7 @@ impl ExecutionFrame {
             instruction_pointer: 0,
             base_pointer: base_pointer,
             bytecode_size: bytecode_size,
-            handlers: vec![]
+            handlers: vec![],
         };
     }
 
@@ -59,7 +58,6 @@ impl ExecutionFrame {
     }
 
     pub fn get_free(&mut self, idx: usize, inst: InstructionKind) -> Result<Rc<Object>, VMError> {
-
         let free_object = self.context.free_objects.get(idx);
         if free_object.is_some() {
             return Ok(free_object.unwrap().clone());

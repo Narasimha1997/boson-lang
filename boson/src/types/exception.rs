@@ -12,7 +12,7 @@ pub struct Exception {
     exception_string: String,
     root_error_type: VMErrorKind,
     pub stack_trace: Vec<StackFrame>, // stack trace is represented backwards, 0th element is the current function,
-                                  // len - 1 is the root function or usually main.
+                                      // len - 1 is the root function or usually main.
 }
 
 impl Exception {

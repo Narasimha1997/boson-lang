@@ -132,13 +132,11 @@ pub enum InstructionKind {
     ICallAttr,
 }
 
-
 pub type Operands = Vec<usize>;
 
 pub struct InstructionPacker {}
 
 impl InstructionPacker {
-
     // TODO: Migrate to byteorder crate later.
 
     fn unpack_16(operand: u16) -> (u8, u8) {
@@ -210,7 +208,6 @@ impl InstructionKind {
     pub fn as_string(&self) -> String {
         match self {
             // TODO: Match more and more instructions,
-
             InstructionKind::IAdd => "IAdd".to_string(),
             InstructionKind::ISub => "ISub".to_string(),
             InstructionKind::IMul => "IMul".to_string(),
@@ -279,7 +276,7 @@ impl InstructionKind {
             | InstructionKind::IJump
             | InstructionKind::INotJump
             | InstructionKind::IIterNext
-            | InstructionKind::IEnumNext 
+            | InstructionKind::IEnumNext
             | InstructionKind::IHash
             | InstructionKind::IArray
             | InstructionKind::ILoadBuiltIn
@@ -288,8 +285,8 @@ impl InstructionKind {
             | InstructionKind::ILoadFree
             | InstructionKind::IPushExcHandle
             | InstructionKind::ICallAsync => vec![2],
-            | InstructionKind::ISetAttr => vec![2],
-            | InstructionKind::IGetAttr => vec![2],
+            InstructionKind::ISetAttr => vec![2],
+            InstructionKind::IGetAttr => vec![2],
 
             InstructionKind::IAdd
             | InstructionKind::ISub
@@ -326,11 +323,9 @@ impl InstructionKind {
             | InstructionKind::IShell
             | InstructionKind::IPopExcHandle => vec![],
 
-            InstructionKind::IClosure
-            | InstructionKind::ICallAttr => vec![2, 2],
+            InstructionKind::IClosure | InstructionKind::ICallAttr => vec![2, 2],
 
-            InstructionKind::IStoreLocal
-            | InstructionKind::ILoadLocal => vec![1],
+            InstructionKind::IStoreLocal | InstructionKind::ILoadLocal => vec![1],
 
             _ => vec![],
         }

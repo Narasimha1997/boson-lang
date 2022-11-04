@@ -93,7 +93,6 @@ impl CallStack {
     }
 }
 
-
 pub struct DataStack {
     pub stack: Vec<O>,
     pub stack_pointer: i64,
@@ -102,7 +101,6 @@ pub struct DataStack {
 
 impl DataStack {
     pub fn new() -> DataStack {
-
         let mut stack = vec![];
         if USE_STATIC_DATA_STACK {
             stack.reserve(DATA_STACK_SIZE);
@@ -117,7 +115,6 @@ impl DataStack {
 }
 
 impl DataStack {
-
     pub fn push_object(&mut self, obj: O, inst: I) -> Result<i64, VMError> {
         if (self.stack_pointer + 1) as usize >= self.max_size {
             return Err(VMError::new(

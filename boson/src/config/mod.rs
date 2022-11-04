@@ -1,4 +1,3 @@
-
 // TODO: Move into a configurable format like JSON/TOML later
 
 pub const BYTE_ENDIAN: &str = "little";

@@ -153,14 +153,16 @@ pub fn exec(method: String, params: &Vec<Rc<Object>>) -> DynamicModuleResult {
                 (Object::Int(counter), Object::Str(target)) => {
                     return extract_matches(*counter as usize, &target)
                 }
-                _ => return Err(DynamicModuleInternalError {
-                    cause: "invalid_type".to_string(),
-                    message: format!(
+                _ => {
+                    return Err(DynamicModuleInternalError {
+                        cause: "invalid_type".to_string(),
+                        message: format!(
                         "get_matches expects parameters of type int and string, but got {} and {}",
                         params[0].as_ref().get_type(),
                         params[1].as_ref().get_type()
                     ),
-                }),
+                    })
+                }
             }
         }
         _ => {
