@@ -250,10 +250,6 @@ impl BytecodeWriter {
     }
 
     fn encode_to_binary(&mut self, bytecode: &CompiledBytecode) -> Result<Vec<u8>, String> {
-        // prepare the main function subroutine pool:
-
-        println!("serializing the object: {:?}", bytecode.instructions);
-
         // main function:
         self.new_subroutine_idx(-1, "main".to_string(), 0, 0, false, &bytecode.instructions);
 
