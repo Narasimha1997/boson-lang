@@ -35,6 +35,9 @@ libloading = "0.7"
 rand = {version = "0.8.4", features = [ "small_rng" ]}
 packed-encoder = "0.1.1"
 syscall-numbers = { path = "../third_party/syscall-numbers" }
+cranelift = "0.85.1"
+cranelift-module = "0.85.1"
+cranelift-jit = "0.85.1"
 
 
 [features]
