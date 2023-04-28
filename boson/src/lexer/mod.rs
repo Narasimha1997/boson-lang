@@ -407,6 +407,9 @@ impl ProgramLexer {
 
                     break;
                 }
+                // If we have reached the end of the file, then the string literal is invalid.
+                EOF_BYTE => return TokenKind::Invalid,
+
                 _ => {
                     prev_char = self.current_char;
                     self.read_next();
